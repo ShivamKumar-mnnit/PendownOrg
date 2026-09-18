@@ -1,0 +1,50 @@
+import { ClipboardList, Users, MessageCircle, Video } from "lucide-react";
+import SectionHeading from "../components/SectionHeading";
+
+const STEPS = [
+  {
+    icon: ClipboardList,
+    title: "Fill the booking form",
+    desc: "Share your name, phone, domain & resume link. Takes under a minute.",
+  },
+  {
+    icon: Users,
+    title: "Get matched",
+    desc: "We assign a mentor based on your domain and their availability.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Confirm on WhatsApp",
+    desc: "We message you your slot directly on WhatsApp — no login needed.",
+  },
+  {
+    icon: Video,
+    title: "Attend on Google Meet",
+    desc: "Show up at your slot and get real, 1:1 interview practice.",
+  },
+];
+
+export default function HowItWorks() {
+  return (
+    <section className="border-y border-white/10 bg-white/[0.02]">
+      <div className="mx-auto max-w-6xl px-5 py-20">
+        <SectionHeading eyebrow="How It Works" title="From form to feedback in four steps" />
+
+        <div className="mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+          {STEPS.map(({ icon: Icon, title, desc }, i) => (
+            <div key={title} className="relative">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-emerald-400 text-sm font-bold text-zinc-950">
+                  {i + 1}
+                </div>
+                <Icon className="h-5 w-5 text-zinc-500" />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-white">{title}</h3>
+              <p className="mt-2 text-sm text-zinc-400">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
