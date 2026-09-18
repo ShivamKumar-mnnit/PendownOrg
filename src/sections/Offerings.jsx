@@ -37,13 +37,13 @@ export default function Offerings() {
         {OFFERINGS.map(({ icon: Icon, title, desc }) => (
           <div
             key={title}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 hover:border-white/20 transition-colors"
+            className="rounded-2xl border border-(--color-border) bg-(--color-card) p-6 hover:border-(--color-border-strong) transition-colors"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/15">
-              <Icon className="h-5 w-5 text-indigo-400" />
+              <Icon className="h-5 w-5 text-(--color-accent)" />
             </div>
-            <h3 className="mt-4 text-base font-semibold text-white">{title}</h3>
-            <p className="mt-2 text-sm text-zinc-400">{desc}</p>
+            <h3 className="mt-4 text-base font-semibold text-(--color-fg)">{title}</h3>
+            <p className="mt-2 text-sm text-(--color-fg-muted)">{desc}</p>
           </div>
         ))}
       </div>

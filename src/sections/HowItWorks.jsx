@@ -26,7 +26,7 @@ const STEPS = [
 
 export default function HowItWorks() {
   return (
-    <section className="border-y border-white/10 bg-white/[0.02]">
+    <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
       <div className="mx-auto max-w-6xl px-5 py-20">
         <SectionHeading eyebrow="How It Works" title="From form to feedback in four steps" />
 
@@ -37,10 +37,10 @@ export default function HowItWorks() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-emerald-400 text-sm font-bold text-zinc-950">
                   {i + 1}
                 </div>
-                <Icon className="h-5 w-5 text-zinc-500" />
+                <Icon className="h-5 w-5 text-(--color-fg-faint)" />
               </div>
-              <h3 className="mt-4 text-base font-semibold text-white">{title}</h3>
-              <p className="mt-2 text-sm text-zinc-400">{desc}</p>
+              <h3 className="mt-4 text-base font-semibold text-(--color-fg)">{title}</h3>
+              <p className="mt-2 text-sm text-(--color-fg-muted)">{desc}</p>
             </div>
           ))}
         </div>

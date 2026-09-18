@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Client-side routing (React Router) — without this, refreshing or
+# directly linking to /book, /colleges, /admin returns a 404 since those
+# aren't real files on the server, only routes React handles in the browser.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

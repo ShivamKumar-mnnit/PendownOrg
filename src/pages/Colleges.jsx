@@ -1,18 +1,17 @@
 import { useState } from "react";
-import { Download, UploadCloud, CheckCircle2, FileSpreadsheet, ExternalLink } from "lucide-react";
+import { Download, UploadCloud, CheckCircle2, FileSpreadsheet, ExternalLink, ArrowRight } from "lucide-react";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import { buildAdminWaLink, openWhatsApp } from "../lib/whatsapp";
 
+// Headers only — no sample name/phone/etc. filled in, so nothing that looks
+// like real (or fake-but-realistic) student data ships in the template.
 const TEMPLATE_HEADERS = ["Name", "Phone", "Domain", "Resume Link"];
-const TEMPLATE_SAMPLE = [
-  { Name: "Ananya Sharma", Phone: "9876543210", Domain: "Software Development (SDE)", "Resume Link": "https://drive.google.com/..." },
-];
 
 const EMPTY_FORM = { college: "", contactName: "", contactPhone: "", studentCount: "" };
 
 async function downloadTemplate() {
   const XLSX = await import("xlsx");
-  const ws = XLSX.utils.json_to_sheet(TEMPLATE_SAMPLE, { header: TEMPLATE_HEADERS });
+  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Students");
   XLSX.writeFile(wb, "pendown-student-template.xlsx");
@@ -87,24 +86,24 @@ export default function Colleges() {
   return (
     <section className="mx-auto max-w-2xl px-5 py-16 sm:py-20">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white">For Colleges &amp; Placement Cells</h1>
-        <p className="mt-3 text-zinc-400">
+        <h1 className="text-3xl font-bold text-(--color-fg)">For Colleges &amp; Placement Cells</h1>
+        <p className="mt-3 text-(--color-fg-muted)">
           Bulk-onboard your students in one go. We match mentors, schedule sessions,
           and confirm every slot on WhatsApp — the same way we work with NIT Allahabad.
         </p>
       </div>
 
-      <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+      <div className="mt-10 rounded-2xl border border-(--color-border) bg-(--color-card) p-6">
         <div className="flex items-start gap-3">
-          <FileSpreadsheet className="h-5 w-5 shrink-0 text-indigo-400 mt-0.5" />
-          <div className="text-sm text-zinc-400">
+          <FileSpreadsheet className="h-5 w-5 shrink-0 text-(--color-accent) mt-0.5" />
+          <div className="text-sm text-(--color-fg-muted)">
             <p>
-              Use our template so we can match columns correctly — <span className="text-zinc-300">Name, Phone, Domain, Resume Link</span>.
+              Use our template so we can match columns correctly — <span className="text-(--color-fg-muted)">Name, Phone, Domain, Resume Link</span>.
             </p>
             <button
               type="button"
               onClick={downloadTemplate}
-              className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white hover:bg-white/5 transition-colors"
+              className="mt-3 inline-flex items-center gap-2 rounded-full border border-(--color-border-strong) px-4 py-2 text-xs font-semibold text-(--color-fg) hover:bg-(--color-input) transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
               Download Excel Template
@@ -116,16 +115,14 @@ export default function Colleges() {
       {sent ? (
         <div className="mt-10 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] p-8 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15">
-            <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+            <CheckCircle2 className="h-7 w-7 text-(--color-accent-emerald)" />
           </div>
-          <h2 className="mt-5 text-xl font-bold text-white">Almost done — one more step</h2>
-          <p className="mt-3 text-sm text-zinc-400">
-            We opened WhatsApp with your details filled in. WhatsApp doesn't let
-            websites attach files automatically, so please{" "}
-            <span className="text-white font-medium">
-              attach the Excel file you selected ({file?.name})
-            </span>{" "}
-            in that chat and hit Send. We'll confirm receipt on WhatsApp shortly.
+          <h2 className="mt-5 text-xl font-bold text-(--color-fg)">You're registered!</h2>
+          <p className="mt-3 text-sm text-(--color-fg-muted)">
+            We've got your batch details for <span className="text-(--color-fg) font-medium">{form.college}</span>.
+            We also opened WhatsApp with a summary, addressed to our team — attach{" "}
+            <span className="text-(--color-fg) font-medium">{file?.name}</span> in that chat and hit Send
+            to complete your registration (a website can't attach files to WhatsApp on its own).
           </p>
           <a
             href={buildAdminWaLink(buildMessage(form, file?.name, preview?.rowCount))}
@@ -134,7 +131,7 @@ export default function Colleges() {
             className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-3 text-sm font-semibold text-white hover:brightness-110 transition-[filter]"
           >
             <WhatsAppIcon className="h-4 w-4" />
-            Reopen WhatsApp
+            Open WhatsApp &amp; Send
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
           <div className="mt-5">
@@ -145,7 +142,7 @@ export default function Colleges() {
                 setFile(null);
                 setPreview(null);
               }}
-              className="text-sm text-zinc-500 hover:text-white transition-colors"
+              className="text-sm text-(--color-fg-faint) hover:text-(--color-fg) transition-colors"
             >
               Submit another batch
             </button>
@@ -178,7 +175,7 @@ export default function Colleges() {
                 type="tel"
                 value={form.contactPhone}
                 onChange={(e) => update("contactPhone", e.target.value)}
-                placeholder="98765 43210"
+                placeholder="70xxxxxxxx"
                 className={inputClass(errors.contactPhone)}
               />
             </Field>
@@ -199,11 +196,11 @@ export default function Colleges() {
             <label
               htmlFor="student-file"
               className={`flex cursor-pointer items-center gap-3 rounded-xl border border-dashed px-4 py-4 text-sm transition-colors ${
-                errors.file ? "border-rose-500/60" : "border-white/15 hover:border-white/30"
+                errors.file ? "border-rose-500/60" : "border-(--color-border-strong) hover:border-(--color-border-strong)"
               }`}
             >
-              <UploadCloud className="h-5 w-5 text-zinc-500" />
-              <span className="text-zinc-400">{file ? file.name : "Click to select a .xlsx, .xls or .csv file"}</span>
+              <UploadCloud className="h-5 w-5 text-(--color-fg-faint)" />
+              <span className="text-(--color-fg-muted)">{file ? file.name : "Click to select a .xlsx, .xls or .csv file"}</span>
             </label>
             <input
               id="student-file"
@@ -213,7 +210,7 @@ export default function Colleges() {
               className="hidden"
             />
             {preview && (
-              <p className="mt-2 text-xs text-emerald-400">
+              <p className="mt-2 text-xs text-(--color-accent-emerald)">
                 Looks good — found {preview.rowCount} row{preview.rowCount === 1 ? "" : "s"}
                 {preview.names.length ? ` (e.g. ${preview.names.join(", ")}…)` : ""}.
               </p>
@@ -223,15 +220,15 @@ export default function Colleges() {
 
           <button
             type="submit"
-            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 py-3.5 text-sm font-semibold text-white hover:brightness-110 transition-[filter]"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-3.5 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors"
           >
-            <WhatsAppIcon className="h-4 w-4" />
-            Send on WhatsApp
+            Confirm &amp; Register
+            <ArrowRight className="h-4 w-4" />
           </button>
 
-          <p className="text-center text-xs text-zinc-600">
-            This opens WhatsApp with your details filled in — you'll attach the file
-            and hit Send yourself, right inside WhatsApp.
+          <p className="text-center text-xs text-(--color-fg-faint)">
+            This also opens WhatsApp with your details ready — you'll attach the file
+            and hit Send there to complete your registration.
           </p>
         </form>
       )}
@@ -242,19 +239,19 @@ export default function Colleges() {
 function Field({ label, error, hint, children }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-zinc-300">{label}</span>
+      <span className="text-sm font-medium text-(--color-fg-muted)">{label}</span>
       <div className="mt-1.5">{children}</div>
       {error ? (
         <span className="mt-1.5 block text-xs text-rose-400">{error}</span>
       ) : hint ? (
-        <span className="mt-1.5 block text-xs text-zinc-600">{hint}</span>
+        <span className="mt-1.5 block text-xs text-(--color-fg-faint)">{hint}</span>
       ) : null}
     </label>
   );
 }
 
 function inputClass(error) {
-  return `w-full rounded-xl border bg-white/5 px-4 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-indigo-400 ${
-    error ? "border-rose-500/60" : "border-white/10"
+  return `w-full rounded-xl border bg-(--color-input) px-4 py-2.5 text-sm text-(--color-fg) placeholder-(--color-fg-faint) outline-none transition-colors focus:border-(--color-accent) ${
+    error ? "border-rose-500/60" : "border-(--color-border)"
   }`;
 }

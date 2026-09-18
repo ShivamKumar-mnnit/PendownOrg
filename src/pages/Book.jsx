@@ -67,19 +67,19 @@ export default function Book() {
     return (
       <section className="mx-auto max-w-lg px-5 py-24 text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15">
-          <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+          <CheckCircle2 className="h-7 w-7 text-(--color-accent-emerald)" />
         </div>
-        <h1 className="mt-6 text-2xl font-bold text-white">You're registered!</h1>
-        <p className="mt-3 text-zinc-400">
-          We've got your details for a <span className="text-white font-medium">{form.sessionType}</span> in{" "}
-          <span className="text-white font-medium">{form.domain}</span>. We'll match you with a
+        <h1 className="mt-6 text-2xl font-bold text-(--color-fg)">You're registered!</h1>
+        <p className="mt-3 text-(--color-fg-muted)">
+          We've got your details for a <span className="text-(--color-fg) font-medium">{form.sessionType}</span> in{" "}
+          <span className="text-(--color-fg) font-medium">{form.domain}</span>. We'll match you with a
           mentor and confirm your slot soon.
         </p>
 
-        <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left">
-          <p className="text-xs text-zinc-500">
+        <div className="mt-8 rounded-xl border border-(--color-border) bg-(--color-card) p-4 text-left">
+          <p className="text-xs text-(--color-fg-faint)">
             We also opened WhatsApp with your details, addressed to our team — if it opened in
-            another tab, just tap <span className="text-white font-medium">Send</span> there to
+            another tab, just tap <span className="text-(--color-fg) font-medium">Send</span> there to
             complete your registration. If it didn't open, use the button below.
           </p>
           <a
@@ -95,7 +95,7 @@ export default function Book() {
         </div>
 
         <div className="mt-6">
-          <button onClick={startOver} className="text-sm text-zinc-500 hover:text-white transition-colors">
+          <button onClick={startOver} className="text-sm text-(--color-fg-faint) hover:text-(--color-fg) transition-colors">
             Register another session
           </button>
         </div>
@@ -106,8 +106,8 @@ export default function Book() {
   return (
     <section className="mx-auto max-w-lg px-5 py-16 sm:py-20">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white">Book a Session</h1>
-        <p className="mt-3 text-zinc-400">
+        <h1 className="text-3xl font-bold text-(--color-fg)">Book a Session</h1>
+        <p className="mt-3 text-(--color-fg-muted)">
           Fill this in to register — we'll match you with a mentor and confirm your
           slot on WhatsApp.
         </p>
@@ -119,7 +119,6 @@ export default function Book() {
             type="text"
             value={form.name}
             onChange={(e) => update("name", e.target.value)}
-            placeholder="Ananya Sharma"
             className={inputClass(errors.name)}
           />
         </Field>
@@ -129,7 +128,6 @@ export default function Book() {
             type="tel"
             value={form.phone}
             onChange={(e) => update("phone", e.target.value)}
-            placeholder="98765 43210"
             className={inputClass(errors.phone)}
           />
         </Field>
@@ -171,20 +169,20 @@ export default function Book() {
 
         <button
           type="submit"
-          className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-zinc-950 hover:bg-zinc-200 transition-colors"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-3.5 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors"
         >
           Confirm &amp; Register
           <ArrowRight className="h-4 w-4" />
         </button>
 
-        <p className="text-center text-xs text-zinc-600">
+        <p className="text-center text-xs text-(--color-fg-faint)">
           This also opens WhatsApp with your details ready to send to our team.
         </p>
       </form>
 
-      <p className="mt-10 text-center text-sm text-zinc-500">
+      <p className="mt-10 text-center text-sm text-(--color-fg-faint)">
         Onboarding students in bulk instead?{" "}
-        <Link to="/colleges" className="text-indigo-400 hover:text-indigo-300">
+        <Link to="/colleges" className="text-(--color-accent) hover:opacity-75 transition-opacity">
           Go to the colleges page →
         </Link>
       </p>
@@ -195,19 +193,19 @@ export default function Book() {
 function Field({ label, error, hint, children }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-zinc-300">{label}</span>
+      <span className="text-sm font-medium text-(--color-fg-muted)">{label}</span>
       <div className="mt-1.5">{children}</div>
       {error ? (
         <span className="mt-1.5 block text-xs text-rose-400">{error}</span>
       ) : hint ? (
-        <span className="mt-1.5 block text-xs text-zinc-600">{hint}</span>
+        <span className="mt-1.5 block text-xs text-(--color-fg-faint)">{hint}</span>
       ) : null}
     </label>
   );
 }
 
 function inputClass(error) {
-  return `w-full rounded-xl border bg-white/5 px-4 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-indigo-400 ${
-    error ? "border-rose-500/60" : "border-white/10"
+  return `w-full rounded-xl border bg-(--color-input) px-4 py-2.5 text-sm text-(--color-fg) placeholder-(--color-fg-faint) outline-none transition-colors focus:border-(--color-accent) ${
+    error ? "border-rose-500/60" : "border-(--color-border)"
   }`;
 }

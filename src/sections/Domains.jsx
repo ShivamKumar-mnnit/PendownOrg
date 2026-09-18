@@ -18,15 +18,15 @@ export default function Domains() {
           <Link
             key={id}
             to="/book"
-            className="group rounded-2xl border border-white/10 bg-white/[0.03] p-6 hover:border-indigo-400/40 hover:bg-white/[0.05] transition-colors"
+            className="group rounded-2xl border border-(--color-border) bg-(--color-card) p-6 hover:border-(--color-accent)/40 hover:bg-(--color-card-alt) transition-colors"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/15">
-              <Icon className="h-5 w-5 text-indigo-400" />
+              <Icon className="h-5 w-5 text-(--color-accent)" />
             </div>
-            <h3 className="mt-4 text-base font-semibold text-white group-hover:text-indigo-300 transition-colors">
+            <h3 className="mt-4 text-base font-semibold text-(--color-fg) group-hover:text-(--color-accent) transition-colors">
               {label}
             </h3>
-            <p className="mt-2 text-sm text-zinc-400">{blurb}</p>
+            <p className="mt-2 text-sm text-(--color-fg-muted)">{blurb}</p>
           </Link>
         ))}
       </div>

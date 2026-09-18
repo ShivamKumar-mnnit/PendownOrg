@@ -1,4 +1,4 @@
-import { Briefcase, Target, Calendar, GraduationCap } from "lucide-react";
+import { Briefcase, Target, Calendar, GraduationCap, Unlock } from "lucide-react";
 import SectionHeading from "../components/SectionHeading";
 
 const POINTS = [
@@ -22,23 +22,28 @@ const POINTS = [
     title: "Built with campuses in mind",
     desc: "Designed alongside placement cells, starting with NIT Allahabad.",
   },
+  {
+    icon: Unlock,
+    title: "No long commitments",
+    desc: "Book a single session or keep going with a mentor — nothing locks you in.",
+  },
 ];
 
 export default function WhyPenDown() {
   return (
-    <section className="border-y border-white/10 bg-white/[0.02]">
+    <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
       <div className="mx-auto max-w-6xl px-5 py-20">
         <SectionHeading eyebrow="Why PenDown" title="Interview prep, minus the friction" center={false} />
 
-        <div className="mt-12 grid gap-8 sm:grid-cols-2">
+        <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {POINTS.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="flex gap-4">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
-                <Icon className="h-5 w-5 text-emerald-400" />
+                <Icon className="h-5 w-5 text-(--color-accent-emerald)" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-white">{title}</h3>
-                <p className="mt-1.5 text-sm text-zinc-400">{desc}</p>
+                <h3 className="text-base font-semibold text-(--color-fg)">{title}</h3>
+                <p className="mt-1.5 text-sm text-(--color-fg-muted)">{desc}</p>
               </div>
             </div>
           ))}

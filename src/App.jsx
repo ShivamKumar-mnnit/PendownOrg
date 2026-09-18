@@ -8,9 +8,9 @@ import Admin from "./pages/Admin";
 function NotFound() {
   return (
     <section className="mx-auto max-w-md px-5 py-32 text-center">
-      <h1 className="text-3xl font-bold text-white">404</h1>
-      <p className="mt-3 text-zinc-400">That page doesn't exist.</p>
-      <Link to="/" className="mt-6 inline-block text-indigo-400 hover:text-indigo-300">
+      <h1 className="text-3xl font-bold text-(--color-fg)">404</h1>
+      <p className="mt-3 text-(--color-fg-muted)">That page doesn't exist.</p>
+      <Link to="/" className="mt-6 inline-block text-(--color-accent) hover:opacity-75 transition-opacity">
         Back to home →
       </Link>
     </section>

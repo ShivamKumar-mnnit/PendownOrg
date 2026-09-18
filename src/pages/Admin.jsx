@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-  Lock, UploadCloud, Download, Plus, Trash2, Send, RotateCcw, CheckCircle2, Info, History,
+  Lock, UploadCloud, Download, Plus, Trash2, Send, RotateCcw, CheckCircle2, Info, History, Award,
 } from "lucide-react";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import { buildWaLink, openWhatsApp, normalizePhone } from "../lib/whatsapp";
 import { ADMIN_PASSCODE } from "../lib/adminConfig";
+import { generateCertificate, downloadCertificate } from "../lib/certificate";
 
 const SESSION_KEY = "pendown_admin_ok";
 const STORAGE_KEY = "pendown_admin_students";
@@ -31,6 +32,7 @@ function rowsFromSheet(json) {
     slot: "",
     mentor: "",
     sent: false,
+    completed: false,
   }));
 }
 
@@ -139,7 +141,7 @@ export default function Admin() {
   function addRow() {
     setRows((prev) => [
       ...prev,
-      { id: newId(), name: "", phone: "", domain: "", resume: "", slot: "", mentor: "", sent: false },
+      { id: newId(), name: "", phone: "", domain: "", resume: "", slot: "", mentor: "", sent: false, completed: false },
     ]);
   }
 
@@ -152,6 +154,20 @@ export default function Admin() {
     openWhatsApp(buildWaLink(digits, buildConfirmationMessage(row)));
     updateRow(row.id, "sent", true);
     logEvent(row);
+  }
+
+  // Issued once a session has actually happened — a PenDown certificate of
+  // completion, not a claim of any outside accreditation. Downloads as a
+  // PNG so it's easy to share straight into the WhatsApp chat with the
+  // student, same as everything else here.
+  function issueCertificate(row) {
+    const dataUrl = generateCertificate({
+      name: row.name,
+      domain: row.domain,
+      mentor: row.mentor,
+    });
+    const safeName = (row.name || "student").trim().replace(/\s+/g, "-").toLowerCase();
+    downloadCertificate(dataUrl, `pendown-certificate-${safeName}.png`);
   }
 
   function sendAll() {
@@ -180,6 +196,7 @@ export default function Admin() {
       Slot: formatSlot(r.slot),
       Mentor: r.mentor,
       "WhatsApp Sent": r.sent ? "Yes" : "No",
+      Completed: r.completed ? "Yes" : "No",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -195,24 +212,24 @@ export default function Admin() {
   if (!unlocked) {
     return (
       <section className="mx-auto max-w-sm px-5 py-24 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/5">
-          <Lock className="h-5 w-5 text-zinc-400" />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-(--color-input)">
+          <Lock className="h-5 w-5 text-(--color-fg-muted)" />
         </div>
-        <h1 className="mt-5 text-xl font-bold text-white">Admin Access</h1>
-        <p className="mt-2 text-sm text-zinc-500">Enter the passcode to continue.</p>
+        <h1 className="mt-5 text-xl font-bold text-(--color-fg)">Admin Access</h1>
+        <p className="mt-2 text-sm text-(--color-fg-faint)">Enter the passcode to continue.</p>
         <form onSubmit={handleUnlock} className="mt-6 space-y-3">
           <input
             type="password"
             value={passInput}
             onChange={(e) => setPassInput(e.target.value)}
             placeholder="Passcode"
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-center text-sm text-white outline-none focus:border-indigo-400"
+            className="w-full rounded-xl border border-(--color-border) bg-(--color-input) px-4 py-2.5 text-center text-sm text-(--color-fg) outline-none focus:border-(--color-accent)"
             autoFocus
           />
           {passError && <p className="text-xs text-rose-400">{passError}</p>}
           <button
             type="submit"
-            className="w-full rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-zinc-200 transition-colors"
+            className="w-full rounded-full bg-(--color-accent-solid) px-6 py-2.5 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors"
           >
             Unlock
           </button>
@@ -225,15 +242,15 @@ export default function Admin() {
     <section className="mx-auto max-w-6xl px-5 py-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Admin — Student Sessions</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-bold text-(--color-fg)">Admin — Student Sessions</h1>
+          <p className="mt-1 text-sm text-(--color-fg-faint)">
             Upload the Excel sheet you received on WhatsApp, assign slots, and send confirmations.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <label
             htmlFor="admin-file"
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white hover:bg-white/5 transition-colors"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-(--color-border-strong) px-4 py-2 text-xs font-semibold text-(--color-fg) hover:bg-(--color-input) transition-colors"
           >
             <UploadCloud className="h-3.5 w-3.5" />
             Upload Excel
@@ -242,7 +259,7 @@ export default function Admin() {
 
           <button
             onClick={addRow}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white hover:bg-white/5 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full border border-(--color-border-strong) px-4 py-2 text-xs font-semibold text-(--color-fg) hover:bg-(--color-input) transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             Add Student
@@ -251,7 +268,7 @@ export default function Admin() {
           <button
             onClick={downloadSheet}
             disabled={rows.length === 0}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white hover:bg-white/5 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+            className="inline-flex items-center gap-2 rounded-full border border-(--color-border-strong) px-4 py-2 text-xs font-semibold text-(--color-fg) hover:bg-(--color-input) transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
           >
             <Download className="h-3.5 w-3.5" />
             Download Sheet
@@ -260,7 +277,7 @@ export default function Admin() {
           <button
             onClick={clearAll}
             disabled={rows.length === 0}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+            className="inline-flex items-center gap-2 rounded-full border border-(--color-border-strong) px-4 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Clear All
@@ -270,12 +287,14 @@ export default function Admin() {
 
       {fileError && <p className="mt-4 text-sm text-amber-400">{fileError}</p>}
 
-      <div className="mt-4 flex items-start gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-zinc-500">
-        <Info className="h-4 w-4 shrink-0 text-zinc-600 mt-0.5" />
+      <div className="mt-4 flex items-start gap-2 rounded-xl border border-(--color-border) bg-(--color-card) px-4 py-3 text-xs text-(--color-fg-faint)">
+        <Info className="h-4 w-4 shrink-0 text-(--color-fg-faint) mt-0.5" />
         <p>
           Set a slot for each student, then click their WhatsApp button to open a
           pre-filled confirmation — you still tap Send yourself. "Send All" does this
-          for every student with a slot set, one tab at a time.
+          for every student with a slot set, one tab at a time. Once a session has
+          actually happened, tick <span className="text-(--color-fg)">Completed</span> to
+          unlock a downloadable certificate of completion you can share with them.
         </p>
       </div>
 
@@ -291,9 +310,9 @@ export default function Admin() {
         </div>
       )}
 
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-(--color-border)">
         <table className="w-full min-w-[900px] text-left text-sm">
-          <thead className="bg-white/[0.04] text-xs uppercase tracking-wide text-zinc-500">
+          <thead className="bg-(--color-card-alt) text-xs uppercase tracking-wide text-(--color-fg-faint)">
             <tr>
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Phone</th>
@@ -302,13 +321,15 @@ export default function Admin() {
               <th className="px-4 py-3 font-medium">Time Slot</th>
               <th className="px-4 py-3 font-medium">Mentor</th>
               <th className="px-4 py-3 font-medium text-center">Status</th>
+              <th className="px-4 py-3 font-medium text-center">Completed</th>
+              <th className="px-4 py-3 font-medium">Certificate</th>
               <th className="px-4 py-3 font-medium"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-(--color-border)">
             {rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-zinc-600">
+                <td colSpan={10} className="px-4 py-10 text-center text-(--color-fg-faint)">
                   No students yet — upload an Excel sheet or add one manually.
                 </td>
               </tr>
@@ -319,21 +340,21 @@ export default function Admin() {
                   <input
                     value={row.name}
                     onChange={(e) => updateRow(row.id, "name", e.target.value)}
-                    className="w-36 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-white outline-none focus:border-indigo-400"
+                    className="w-36 rounded-lg border border-(--color-border) bg-(--color-input) px-2.5 py-1.5 text-(--color-fg) outline-none focus:border-(--color-accent)"
                   />
                 </td>
                 <td className="px-4 py-2.5">
                   <input
                     value={row.phone}
                     onChange={(e) => updateRow(row.id, "phone", e.target.value)}
-                    className="w-32 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-white outline-none focus:border-indigo-400"
+                    className="w-32 rounded-lg border border-(--color-border) bg-(--color-input) px-2.5 py-1.5 text-(--color-fg) outline-none focus:border-(--color-accent)"
                   />
                 </td>
                 <td className="px-4 py-2.5">
                   <input
                     value={row.domain}
                     onChange={(e) => updateRow(row.id, "domain", e.target.value)}
-                    className="w-40 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-white outline-none focus:border-indigo-400"
+                    className="w-40 rounded-lg border border-(--color-border) bg-(--color-input) px-2.5 py-1.5 text-(--color-fg) outline-none focus:border-(--color-accent)"
                   />
                 </td>
                 <td className="px-4 py-2.5">
@@ -342,12 +363,12 @@ export default function Admin() {
                       href={row.resume}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
+                      className="text-(--color-accent) hover:opacity-75 transition-opacity underline underline-offset-2"
                     >
                       Link
                     </a>
                   ) : (
-                    <span className="text-zinc-700">—</span>
+                    <span className="text-(--color-fg-faint)">—</span>
                   )}
                 </td>
                 <td className="px-4 py-2.5">
@@ -355,7 +376,7 @@ export default function Admin() {
                     type="datetime-local"
                     value={row.slot}
                     onChange={(e) => updateRow(row.id, "slot", e.target.value)}
-                    className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-white outline-none focus:border-indigo-400 [color-scheme:dark]"
+                    className="rounded-lg border border-(--color-border) bg-(--color-input) px-2.5 py-1.5 text-(--color-fg) outline-none focus:border-(--color-accent)"
                   />
                 </td>
                 <td className="px-4 py-2.5">
@@ -363,12 +384,12 @@ export default function Admin() {
                     value={row.mentor}
                     onChange={(e) => updateRow(row.id, "mentor", e.target.value)}
                     placeholder="Mentor name"
-                    className="w-32 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-white placeholder-zinc-600 outline-none focus:border-indigo-400"
+                    className="w-32 rounded-lg border border-(--color-border) bg-(--color-input) px-2.5 py-1.5 text-(--color-fg) placeholder-(--color-fg-faint) outline-none focus:border-(--color-accent)"
                   />
                 </td>
                 <td className="px-4 py-2.5 text-center">
                   {row.sent ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+                    <span className="inline-flex items-center gap-1 text-xs text-(--color-accent-emerald)">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       Sent
                     </span>
@@ -384,11 +405,35 @@ export default function Admin() {
                     </button>
                   )}
                 </td>
+                <td className="px-4 py-2.5 text-center">
+                  <input
+                    type="checkbox"
+                    checked={row.completed}
+                    onChange={(e) => updateRow(row.id, "completed", e.target.checked)}
+                    aria-label="Session completed"
+                    className="h-4 w-4 accent-(--color-accent-solid)"
+                  />
+                </td>
+                <td className="px-4 py-2.5">
+                  <button
+                    onClick={() => issueCertificate(row)}
+                    disabled={!row.completed || !row.name}
+                    title={
+                      !row.completed
+                        ? "Mark the session completed first"
+                        : "Download a certificate of completion for this student"
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-full border border-(--color-border-strong) px-3 py-1.5 text-xs font-semibold text-(--color-fg) hover:bg-(--color-input) transition-colors disabled:opacity-30"
+                  >
+                    <Award className="h-3 w-3" />
+                    Certificate
+                  </button>
+                </td>
                 <td className="px-4 py-2.5">
                   <button
                     onClick={() => removeRow(row.id)}
                     aria-label="Remove student"
-                    className="text-zinc-600 hover:text-rose-400 transition-colors"
+                    className="text-(--color-fg-faint) hover:text-rose-400 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -401,22 +446,22 @@ export default function Admin() {
 
       {log.length > 0 && (
         <div className="mt-8">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
-            <History className="h-4 w-4 text-zinc-500" />
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-(--color-fg)">
+            <History className="h-4 w-4 text-(--color-fg-faint)" />
             Activity Log
           </h2>
-          <p className="mt-1 text-xs text-zinc-600">
+          <p className="mt-1 text-xs text-(--color-fg-faint)">
             A private record of every confirmation you've sent — only visible here, never to students.
           </p>
-          <div className="mt-3 max-h-64 overflow-y-auto rounded-xl border border-white/10">
-            <ul className="divide-y divide-white/5">
+          <div className="mt-3 max-h-64 overflow-y-auto rounded-xl border border-(--color-border)">
+            <ul className="divide-y divide-(--color-border)">
               {log.map((entry) => (
                 <li key={entry.id} className="flex items-center justify-between gap-4 px-4 py-2.5 text-xs">
-                  <span className="text-zinc-300">
-                    Sent confirmation to <span className="font-medium text-white">{entry.name}</span>
-                    {entry.slot ? <span className="text-zinc-500"> — slot {formatSlot(entry.slot)}</span> : null}
+                  <span className="text-(--color-fg-muted)">
+                    Sent confirmation to <span className="font-medium text-(--color-fg)">{entry.name}</span>
+                    {entry.slot ? <span className="text-(--color-fg-faint)"> — slot {formatSlot(entry.slot)}</span> : null}
                   </span>
-                  <span className="shrink-0 text-zinc-600">
+                  <span className="shrink-0 text-(--color-fg-faint)">
                     {new Date(entry.ts).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
                   </span>
                 </li>

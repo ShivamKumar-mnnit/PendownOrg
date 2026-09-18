@@ -2,16 +2,16 @@ import { GraduationCap } from "lucide-react";
 
 export default function TrustBar() {
   return (
-    <section className="border-y border-white/10 bg-white/[0.02]">
+    <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
       <div className="mx-auto max-w-6xl px-5 py-8 flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+        <p className="text-xs font-semibold uppercase tracking-widest text-(--color-fg-faint)">
           Trusted by students at
         </p>
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2">
-          <GraduationCap className="h-4 w-4 text-indigo-400" />
-          <span className="text-sm font-semibold text-white">NIT Allahabad</span>
+        <div className="inline-flex items-center gap-2 rounded-full border border-(--color-border) bg-(--color-input) px-4 py-2">
+          <GraduationCap className="h-4 w-4 text-(--color-accent)" />
+          <span className="text-sm font-semibold text-(--color-fg)">NIT Allahabad</span>
         </div>
-        <span className="text-sm text-zinc-500">+ more colleges joining soon</span>
+        <span className="text-sm text-(--color-fg-faint)">+ more colleges joining soon</span>
       </div>
     </section>
   );

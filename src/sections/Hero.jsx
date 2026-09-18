@@ -13,17 +13,17 @@ export default function Hero() {
       />
 
       <div className="mx-auto max-w-6xl px-5 pt-16 pb-20 sm:pt-24 sm:pb-28 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-zinc-300">
-          <GraduationCap className="h-3.5 w-3.5 text-emerald-400" />
+        <div className="inline-flex items-center gap-2 rounded-full border border-(--color-border) bg-(--color-input) px-4 py-1.5 text-xs font-medium text-(--color-fg-muted)">
+          <GraduationCap className="h-3.5 w-3.5 text-(--color-accent-emerald)" />
           Now partnered with NIT Allahabad
         </div>
 
-        <h1 className="mx-auto mt-6 max-w-3xl text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight text-white">
+        <h1 className="mx-auto mt-6 max-w-3xl text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight text-(--color-fg)">
           Practice interviews with{" "}
           <span className="brand-gradient">real mentors</span>, not another app.
         </h1>
 
-        <p className="mx-auto mt-5 max-w-xl text-base sm:text-lg text-zinc-400">
+        <p className="mx-auto mt-5 max-w-xl text-base sm:text-lg text-(--color-fg-muted)">
           PenDown connects college students with industry mentors for 1:1 mock
           interviews and mentorship — booked in minutes, confirmed over WhatsApp.
         </p>
@@ -31,16 +31,16 @@ export default function Hero() {
         <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             to="/book"
-            className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-zinc-950 hover:bg-zinc-200 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-3 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors"
           >
             Book a Mock Interview
             <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
             to="/colleges"
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white hover:bg-white/5 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full border border-(--color-border-strong) px-6 py-3 text-sm font-semibold text-(--color-fg) hover:bg-(--color-input) transition-colors"
           >
-            <Sparkles className="h-4 w-4 text-emerald-400" />
+            <Sparkles className="h-4 w-4 text-(--color-accent-emerald)" />
             For Colleges &amp; Placement Cells
           </Link>
         </div>

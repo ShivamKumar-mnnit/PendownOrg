@@ -16,12 +16,12 @@ export default function Testimonials() {
 
       <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {PLACEHOLDERS.map((t, i) => (
-          <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-            <Quote className="h-5 w-5 text-indigo-400" />
-            <p className="mt-4 text-sm text-zinc-300 italic">"{t.quote}"</p>
-            <div className="mt-5 border-t border-white/10 pt-4">
-              <p className="text-sm font-semibold text-white">{t.name}</p>
-              <p className="text-xs text-zinc-500">{t.meta}</p>
+          <div key={i} className="rounded-2xl border border-(--color-border) bg-(--color-card) p-6">
+            <Quote className="h-5 w-5 text-(--color-accent)" />
+            <p className="mt-4 text-sm text-(--color-fg-muted) italic">"{t.quote}"</p>
+            <div className="mt-5 border-t border-(--color-border) pt-4">
+              <p className="text-sm font-semibold text-(--color-fg)">{t.name}</p>
+              <p className="text-xs text-(--color-fg-faint)">{t.meta}</p>
             </div>
           </div>
         ))}
