@@ -29,9 +29,10 @@ const PARALLELS = [
  * dark/space-colored regardless of the site's light/dark toggle — same
  * as a photo would.
  */
-export default function EarthGlobe({ className = "" }) {
+export default function EarthGlobe({ className = "", size = 460 }) {
+  const dim = `min(90vw, ${size}px)`;
   return (
-    <div className={`relative mx-auto ${className}`} style={{ width: "min(90vw, 460px)", height: "min(90vw, 460px)" }}>
+    <div className={`relative mx-auto ${className}`} style={{ width: dim, height: dim }}>
       {/* Outer atmospheric glow */}
       <div
         className="pointer-events-none absolute inset-[-12%] rounded-full blur-2xl"

@@ -72,18 +72,22 @@ export default function WhyAlgoMate() {
           </div>
         </Reveal>
 
-        <div className="mt-14 grid items-center gap-10 lg:grid-cols-[1fr_auto_1fr]">
-          <StaggerGrid className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+        <div className="mt-14 grid place-items-center gap-10 lg:grid-cols-3">
+          <StaggerGrid className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:self-center">
             {LEFT.map((p) => (
               <Card key={p.title} {...p} />
             ))}
           </StaggerGrid>
 
+          {/* Middle column is the same width as the two flanking columns
+              (equal 1fr/1fr/1fr grid), so the globe is structurally
+              guaranteed to sit in the true center, not just wherever an
+              auto-sized column happens to land. */}
           <Reveal delay={0.15} className="order-first lg:order-none">
-            <EarthGlobe />
+            <EarthGlobe size={340} />
           </Reveal>
 
-          <StaggerGrid className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+          <StaggerGrid className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:self-center">
             {RIGHT.map((p) => (
               <Card key={p.title} {...p} />
             ))}
