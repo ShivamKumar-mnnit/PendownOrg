@@ -1,5 +1,8 @@
+import { Link } from "react-router-dom";
 import { FileText, CalendarClock, MessageCircle, BookOpenCheck, Award } from "lucide-react";
 import SectionHeading from "../components/SectionHeading";
+import Reveal from "../components/Reveal";
+import { StaggerGrid, StaggerItem } from "../components/StaggerGrid";
 
 const ITEMS = [
   {
@@ -25,26 +28,33 @@ const ITEMS = [
   {
     icon: Award,
     title: "A certificate to show for it",
-    desc: "Get a PenDown certificate of completion once your session wraps up — yours to keep and share.",
+    desc: "Get an AlgoMate certificate of completion once your session wraps up — yours to keep and share.",
   },
 ];
 
 export default function BeyondInterview() {
   return (
     <section className="mx-auto max-w-6xl px-5 py-20">
-      <SectionHeading eyebrow="Beyond the Interview" title="What happens after your session" />
+      <Reveal>
+        <SectionHeading eyebrow="Beyond the Interview" title="What happens after your session" />
+      </Reveal>
 
-      <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <StaggerGrid className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {ITEMS.map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="rounded-2xl border border-(--color-border) bg-(--color-card) p-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/15">
-              <Icon className="h-5 w-5 text-(--color-accent)" />
-            </div>
-            <h3 className="mt-4 text-base font-semibold text-(--color-fg)">{title}</h3>
-            <p className="mt-2 text-sm text-(--color-fg-muted)">{desc}</p>
-          </div>
+          <StaggerItem key={title}>
+            <Link
+              to="/book"
+              className="group block h-full rounded-2xl border border-(--color-border) bg-(--color-card) p-6 hover:border-(--color-border-strong) transition-colors"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/15">
+                <Icon className="h-5 w-5 text-(--color-accent)" />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-(--color-fg)">{title}</h3>
+              <p className="mt-2 text-sm text-(--color-fg-muted)">{desc}</p>
+            </Link>
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerGrid>
     </section>
   );
 }

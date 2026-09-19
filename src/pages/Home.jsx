@@ -1,6 +1,6 @@
 import Hero from "../sections/Hero";
 import TrustBar from "../sections/TrustBar";
-import WhyPenDown from "../sections/WhyPenDown";
+import WhyAlgoMate from "../sections/WhyAlgoMate";
 import Offerings from "../sections/Offerings";
 import SessionStyle from "../sections/SessionStyle";
 import SkillCheck from "../sections/SkillCheck";
@@ -23,8 +23,8 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <WhyAlgoMate />
       <TrustBar />
-      <WhyPenDown />
       <Offerings />
       <SessionStyle />
       <SkillCheck />

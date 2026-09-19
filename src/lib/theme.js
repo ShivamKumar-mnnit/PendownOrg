@@ -1,4 +1,4 @@
-const STORAGE_KEY = "pendown_theme"; // "light" | "dark"
+const STORAGE_KEY = "algomate_theme"; // "light" | "dark"
 
 export function getStoredTheme() {
   try {

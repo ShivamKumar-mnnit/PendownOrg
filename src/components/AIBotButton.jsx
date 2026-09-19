@@ -12,7 +12,7 @@ export default function AIBotButton() {
     <div className="group fixed bottom-[5.5rem] right-5 sm:bottom-[5.75rem] sm:right-6 z-50">
       <div
         role="tooltip"
-        className={`absolute bottom-1/2 right-full mr-3 translate-y-1/2 whitespace-nowrap rounded-full border border-(--color-border) bg-(--color-card) px-3.5 py-2 text-xs font-medium text-(--color-fg) shadow-lg transition-opacity duration-150 ${
+        className={`absolute bottom-1/2 right-full mr-3 translate-y-1/2 whitespace-nowrap rounded-full border border-(--color-border) bg-(--color-surface) px-3.5 py-2 text-xs font-medium text-(--color-fg) shadow-lg transition-opacity duration-150 ${
           open ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         }`}
       >

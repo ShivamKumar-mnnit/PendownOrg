@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown } from "lucide-react";
 import SectionHeading from "../components/SectionHeading";
+import Reveal from "../components/Reveal";
 
 const FAQS = [
   {
-    q: "Is PenDown free?",
+    q: "Is AlgoMate free?",
     a: "It depends on your college's partnership or the type of session you book. Message us on WhatsApp and we'll tell you exactly what applies to you before you commit to anything.",
   },
   {
@@ -35,9 +37,15 @@ export default function FAQ() {
   return (
     <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
       <div className="mx-auto max-w-3xl px-5 py-20">
-        <SectionHeading eyebrow="Knowledge Base" title="Frequently asked questions" />
+        <Reveal>
+          <SectionHeading eyebrow="Knowledge Base" title="Frequently asked questions" />
+        </Reveal>
 
-        <div className="mt-10 divide-y divide-(--color-border) rounded-2xl border border-(--color-border) bg-(--color-surface)">
+        <Reveal
+          as="div"
+          delay={0.1}
+          className="mt-10 divide-y divide-(--color-border) rounded-2xl border border-(--color-border) bg-(--color-surface)"
+        >
           {FAQS.map((item, i) => {
             const isOpen = open === i;
             return (
@@ -49,18 +57,26 @@ export default function FAQ() {
                 >
                   <span className="text-sm font-medium text-(--color-fg)">{item.q}</span>
                   <ChevronDown
-                    className={`h-4 w-4 shrink-0 text-(--color-fg-faint) transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    className={`h-4 w-4 shrink-0 text-(--color-fg-faint) transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
                   />
                 </button>
-                {isOpen && (
-                  <div className="px-5 pb-4 text-sm text-(--color-fg-muted)">
-                    {item.a}
-                  </div>
-                )}
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 pb-4 text-sm text-(--color-fg-muted)">{item.a}</div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
-        </div>
+        </Reveal>
       </div>
     </section>
   );

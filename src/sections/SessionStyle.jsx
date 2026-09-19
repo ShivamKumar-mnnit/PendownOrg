@@ -1,5 +1,7 @@
 import { UserCheck, Puzzle, Layers, Compass } from "lucide-react";
 import SectionHeading from "../components/SectionHeading";
+import Reveal from "../components/Reveal";
+import { StaggerGrid, StaggerItem } from "../components/StaggerGrid";
 
 const FEATURES = [
   {
@@ -27,23 +29,25 @@ const FEATURES = [
 export default function SessionStyle() {
   return (
     <section className="mx-auto max-w-6xl px-5 py-20">
-      <SectionHeading
-        eyebrow="How Sessions Are Run"
-        title="Prep that mirrors the real thing"
-        subtitle="No filler content — every session is built around what actually happens in an interview room."
-      />
+      <Reveal>
+        <SectionHeading
+          eyebrow="How Sessions Are Run"
+          title="Prep that mirrors the real thing"
+          subtitle="No filler content — every session is built around what actually happens in an interview room."
+        />
+      </Reveal>
 
-      <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <StaggerGrid className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {FEATURES.map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="rounded-2xl border border-(--color-border) bg-(--color-card) p-6">
+          <StaggerItem key={title} className="rounded-2xl border border-(--color-border) bg-(--color-card) p-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15">
               <Icon className="h-5 w-5 text-(--color-accent-emerald)" />
             </div>
             <h3 className="mt-4 text-base font-semibold text-(--color-fg)">{title}</h3>
             <p className="mt-2 text-sm text-(--color-fg-muted)">{desc}</p>
-          </div>
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerGrid>
     </section>
   );
 }

@@ -7,9 +7,9 @@ import { buildWaLink, openWhatsApp, normalizePhone } from "../lib/whatsapp";
 import { ADMIN_PASSCODE } from "../lib/adminConfig";
 import { generateCertificate, downloadCertificate } from "../lib/certificate";
 
-const SESSION_KEY = "pendown_admin_ok";
-const STORAGE_KEY = "pendown_admin_students";
-const LOG_KEY = "pendown_admin_log";
+const SESSION_KEY = "algomate_admin_ok";
+const STORAGE_KEY = "algomate_admin_students";
+const LOG_KEY = "algomate_admin_log";
 
 function newId() {
   return Math.random().toString(36).slice(2, 10);
@@ -45,7 +45,7 @@ function formatSlot(value) {
 
 function buildConfirmationMessage(row) {
   const lines = [
-    `Hi ${row.name || "there"}! Your *${row.domain || "interview"}* session with PenDown is confirmed.`,
+    `Hi ${row.name || "there"}! Your *${row.domain || "interview"}* session with AlgoMate is confirmed.`,
     "",
     `Slot: ${formatSlot(row.slot)}`,
   ];
@@ -156,7 +156,7 @@ export default function Admin() {
     logEvent(row);
   }
 
-  // Issued once a session has actually happened — a PenDown certificate of
+  // Issued once a session has actually happened — an AlgoMate certificate of
   // completion, not a claim of any outside accreditation. Downloads as a
   // PNG so it's easy to share straight into the WhatsApp chat with the
   // student, same as everything else here.
@@ -167,7 +167,7 @@ export default function Admin() {
       mentor: row.mentor,
     });
     const safeName = (row.name || "student").trim().replace(/\s+/g, "-").toLowerCase();
-    downloadCertificate(dataUrl, `pendown-certificate-${safeName}.png`);
+    downloadCertificate(dataUrl, `algomate-certificate-${safeName}.png`);
   }
 
   function sendAll() {
@@ -201,7 +201,7 @@ export default function Admin() {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Students");
-    XLSX.writeFile(wb, "pendown-students-updated.xlsx");
+    XLSX.writeFile(wb, "algomate-students-updated.xlsx");
   }
 
   function clearAll() {

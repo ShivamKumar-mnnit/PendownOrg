@@ -1,6 +1,6 @@
 // Client-side certificate generator — draws a "Certificate of Completion"
 // onto a canvas and hands back a PNG. No backend, no verification/IDs:
-// this is PenDown's own completion certificate (like a participation
+// this is AlgoMate's own completion certificate (like a participation
 // certificate), not a claim of third-party accreditation. Admin generates
 // it once a session has actually happened and shares it with the student
 // manually (e.g. via WhatsApp), same pattern as everything else on the site.
@@ -36,7 +36,7 @@ export function generateCertificate({ name, domain, mentor, dateLabel }) {
   // Brand mark
   ctx.fillStyle = "#18181b";
   ctx.font = "bold 40px Georgia, serif";
-  wrapCenteredText(ctx, "PenDown", canvas.width / 2, 165);
+  wrapCenteredText(ctx, "AlgoMate", canvas.width / 2, 165);
 
   ctx.fillStyle = "#71717a";
   ctx.font = "20px Arial, sans-serif";
@@ -102,7 +102,7 @@ export function generateCertificate({ name, domain, mentor, dateLabel }) {
   ctx.textAlign = "right";
   ctx.fillStyle = "#18181b";
   ctx.font = "italic 30px Georgia, serif";
-  ctx.fillText("PenDown Team", canvas.width - 150, footerY);
+  ctx.fillText("AlgoMate Team", canvas.width - 150, footerY);
   ctx.fillStyle = "#a1a1aa";
   ctx.font = "16px Arial, sans-serif";
   ctx.fillText("Issued by", canvas.width - 150, footerY + 30);

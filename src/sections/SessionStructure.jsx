@@ -1,5 +1,7 @@
 import { Coffee, Target, MessagesSquare, FileCheck } from "lucide-react";
 import SectionHeading from "../components/SectionHeading";
+import Reveal from "../components/Reveal";
+import { StaggerGrid, StaggerItem } from "../components/StaggerGrid";
 
 const PHASES = [
   {
@@ -31,11 +33,13 @@ const PHASES = [
 export default function SessionStructure() {
   return (
     <section className="mx-auto max-w-6xl px-5 py-20">
-      <SectionHeading eyebrow="Inside a Session" title="What a PenDown session looks like" />
+      <Reveal>
+        <SectionHeading eyebrow="Inside a Session" title="What an AlgoMate session looks like" />
+      </Reveal>
 
-      <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <StaggerGrid className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
         {PHASES.map(({ icon: Icon, phase, title, desc }, i) => (
-          <div key={title} className="relative">
+          <StaggerItem key={title} hover={false} className="relative">
             {i < PHASES.length - 1 && (
               <div className="hidden lg:block absolute top-5 left-[calc(100%-0.5rem)] w-full h-px bg-(--color-border)" />
             )}
@@ -47,9 +51,9 @@ export default function SessionStructure() {
             </div>
             <h3 className="mt-4 text-base font-semibold text-(--color-fg)">{title}</h3>
             <p className="mt-2 text-sm text-(--color-fg-muted)">{desc}</p>
-          </div>
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerGrid>
     </section>
   );
 }

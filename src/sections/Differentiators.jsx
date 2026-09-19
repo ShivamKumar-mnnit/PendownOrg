@@ -1,5 +1,7 @@
 import { Rocket, MessageCircleHeart, SlidersHorizontal, Network, ShieldCheck, HeartHandshake } from "lucide-react";
 import SectionHeading from "../components/SectionHeading";
+import Reveal from "../components/Reveal";
+import { StaggerGrid, StaggerItem } from "../components/StaggerGrid";
 
 const POINTS = [
   {
@@ -38,11 +40,13 @@ export default function Differentiators() {
   return (
     <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
       <div className="mx-auto max-w-6xl px-5 py-20">
-        <SectionHeading eyebrow="What Makes Us Different" title="Built different, on purpose" />
+        <Reveal>
+          <SectionHeading eyebrow="What Makes Us Different" title="Built different, on purpose" />
+        </Reveal>
 
-        <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <StaggerGrid className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {POINTS.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="flex gap-4">
+            <StaggerItem key={title} hover={false} className="flex gap-4">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-emerald-400/20">
                 <Icon className="h-5 w-5 text-(--color-accent)" />
               </div>
@@ -50,9 +54,9 @@ export default function Differentiators() {
                 <h3 className="text-base font-semibold text-(--color-fg)">{title}</h3>
                 <p className="mt-1.5 text-sm text-(--color-fg-muted)">{desc}</p>
               </div>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerGrid>
       </div>
     </section>
   );

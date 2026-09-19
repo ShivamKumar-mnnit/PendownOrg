@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { PenLine } from "lucide-react";
 import WhatsAppIcon from "./WhatsAppIcon";
+import Logo from "./Logo";
 import { ADMIN_WHATSAPP_DISPLAY, buildAdminWaLink } from "../lib/whatsapp";
 
 export default function Footer() {
@@ -8,12 +8,7 @@ export default function Footer() {
     <footer className="border-t border-(--color-border) bg-(--color-surface)">
       <div className="mx-auto max-w-6xl px-5 py-12 grid gap-10 sm:grid-cols-2 md:grid-cols-4">
         <div className="md:col-span-2">
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-emerald-400">
-              <PenLine className="h-4 w-4 text-zinc-950" strokeWidth={2.5} />
-            </span>
-            <span className="text-base font-bold text-(--color-fg)">PenDown</span>
-          </div>
+          <Logo badgeClassName="h-7 w-7" iconClassName="h-4 w-4" textClassName="text-base" />
           <p className="mt-3 max-w-sm text-sm text-(--color-fg-muted)">
             1:1 mock interviews and mentorship for college students — starting with
             NIT Allahabad. Real mentors, honest feedback, no clunky dashboards.
@@ -34,7 +29,7 @@ export default function Footer() {
           <ul className="mt-3 space-y-2 text-sm text-(--color-fg-muted)">
             <li>
               <a
-                href={buildAdminWaLink("Hi PenDown! I have a query.")}
+                href={buildAdminWaLink("Hi AlgoMate! I have a query.")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 hover:text-(--color-fg) transition-colors"
@@ -50,7 +45,7 @@ export default function Footer() {
 
       <div className="border-t border-(--color-border) py-5">
         <div className="mx-auto flex max-w-6xl flex-col-reverse items-center gap-3 px-5 sm:flex-row sm:justify-between">
-          <p className="text-xs text-(--color-fg-faint)">© {new Date().getFullYear()} PenDown. All rights reserved.</p>
+          <p className="text-xs text-(--color-fg-faint)">© {new Date().getFullYear()} AlgoMate. All rights reserved.</p>
           <Link to="/admin" className="text-xs text-(--color-fg-faint) hover:text-(--color-fg-muted) transition-colors">
             Admin
           </Link>

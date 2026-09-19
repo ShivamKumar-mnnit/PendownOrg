@@ -71,18 +71,48 @@ select option {
   color: var(--color-fg);
 }
 
+/* Vivid, animated gradient text — a continuous shimmer sweep across a
+   wide multi-stop rainbow, harmonized with the brand's indigo/violet/
+   emerald palette (plus pink/cyan) rather than a random rainbow. Used for
+   the one or two standout words in a headline, not whole sentences. */
 .brand-gradient {
-  background-image: linear-gradient(135deg, var(--grad-1) 0%, var(--grad-2) 50%, var(--grad-3) 100%);
+  background-image: linear-gradient(
+    90deg,
+    var(--grad-1) 0%,
+    var(--grad-2) 20%,
+    var(--grad-3) 40%,
+    var(--grad-4) 60%,
+    var(--grad-5) 80%,
+    var(--grad-1) 100%
+  );
+  background-size: 250% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  animation: brand-shimmer 6s linear infinite;
   --grad-1: #4f46e5;
-  --grad-2: #7c3aed;
-  --grad-3: #059669;
+  --grad-2: #ec4899;
+  --grad-3: #f97316;
+  --grad-4: #059669;
+  --grad-5: #7c3aed;
 }
 
 :root.dark .brand-gradient {
   --grad-1: #818cf8;
-  --grad-2: #a78bfa;
-  --grad-3: #34d399;
+  --grad-2: #f472b6;
+  --grad-3: #fb923c;
+  --grad-4: #34d399;
+  --grad-5: #a78bfa;
+}
+
+@keyframes brand-shimmer {
+  to {
+    background-position: -250% center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-gradient {
+    animation: none;
+  }
 }

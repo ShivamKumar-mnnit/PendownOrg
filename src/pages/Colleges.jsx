@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { Download, UploadCloud, CheckCircle2, FileSpreadsheet, ExternalLink, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Download, UploadCloud, CheckCircle2, FileSpreadsheet, ExternalLink, ArrowRight,
+  Users, CalendarCheck, MessageCircle,
+} from "lucide-react";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import { buildAdminWaLink, openWhatsApp } from "../lib/whatsapp";
 
@@ -9,17 +13,32 @@ const TEMPLATE_HEADERS = ["Name", "Phone", "Domain", "Resume Link"];
 
 const EMPTY_FORM = { college: "", contactName: "", contactPhone: "", studentCount: "" };
 
+const HIGHLIGHTS = [
+  { icon: Users, text: "Bulk-upload your whole batch at once" },
+  { icon: CalendarCheck, text: "We assign mentors & slots per student" },
+  { icon: MessageCircle, text: "Every student confirmed on WhatsApp" },
+];
+
+const introContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
+};
+const introItem = {
+  hidden: { opacity: 0, y: 18 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
+};
+
 async function downloadTemplate() {
   const XLSX = await import("xlsx");
   const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Students");
-  XLSX.writeFile(wb, "pendown-student-template.xlsx");
+  XLSX.writeFile(wb, "algomate-student-template.xlsx");
 }
 
 function buildMessage(form, fileName, rowCount) {
   const lines = [
-    "Hi PenDown! We'd like to bulk-onboard students for mock interviews / mentorship.",
+    "Hi AlgoMate! We'd like to bulk-onboard students for mock interviews / mentorship.",
     "",
     `College: ${form.college}`,
     `Contact Person: ${form.contactName}`,
@@ -84,155 +103,215 @@ export default function Colleges() {
   }
 
   return (
-    <section className="mx-auto max-w-2xl px-5 py-16 sm:py-20">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-(--color-fg)">For Colleges &amp; Placement Cells</h1>
-        <p className="mt-3 text-(--color-fg-muted)">
-          Bulk-onboard your students in one go. We match mentors, schedule sessions,
-          and confirm every slot on WhatsApp — the same way we work with NIT Allahabad.
-        </p>
-      </div>
-
-      <div className="mt-10 rounded-2xl border border-(--color-border) bg-(--color-card) p-6">
-        <div className="flex items-start gap-3">
-          <FileSpreadsheet className="h-5 w-5 shrink-0 text-(--color-accent) mt-0.5" />
-          <div className="text-sm text-(--color-fg-muted)">
-            <p>
-              Use our template so we can match columns correctly — <span className="text-(--color-fg-muted)">Name, Phone, Domain, Resume Link</span>.
-            </p>
-            <button
-              type="button"
-              onClick={downloadTemplate}
-              className="mt-3 inline-flex items-center gap-2 rounded-full border border-(--color-border-strong) px-4 py-2 text-xs font-semibold text-(--color-fg) hover:bg-(--color-input) transition-colors"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Download Excel Template
-            </button>
-          </div>
-        </div>
-      </div>
-
+    <AnimatePresence mode="wait">
       {sent ? (
-        <div className="mt-10 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] p-8 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15">
-            <CheckCircle2 className="h-7 w-7 text-(--color-accent-emerald)" />
-          </div>
-          <h2 className="mt-5 text-xl font-bold text-(--color-fg)">You're registered!</h2>
-          <p className="mt-3 text-sm text-(--color-fg-muted)">
-            We've got your batch details for <span className="text-(--color-fg) font-medium">{form.college}</span>.
-            We also opened WhatsApp with a summary, addressed to our team — attach{" "}
-            <span className="text-(--color-fg) font-medium">{file?.name}</span> in that chat and hit Send
-            to complete your registration (a website can't attach files to WhatsApp on its own).
-          </p>
-          <a
-            href={buildAdminWaLink(buildMessage(form, file?.name, preview?.rowCount))}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-3 text-sm font-semibold text-white hover:brightness-110 transition-[filter]"
-          >
-            <WhatsAppIcon className="h-4 w-4" />
-            Open WhatsApp &amp; Send
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-          <div className="mt-5">
-            <button
-              onClick={() => {
-                setSent(false);
-                setForm(EMPTY_FORM);
-                setFile(null);
-                setPreview(null);
-              }}
-              className="text-sm text-(--color-fg-faint) hover:text-(--color-fg) transition-colors"
+        <motion.section
+          key="success"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -16 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="mx-auto max-w-2xl px-5 py-24"
+        >
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] p-8 text-center">
+            <motion.div
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15"
             >
-              Submit another batch
-            </button>
+              <CheckCircle2 className="h-7 w-7 text-(--color-accent-emerald)" />
+            </motion.div>
+            <h2 className="mt-5 text-xl font-bold text-(--color-fg)">You're registered!</h2>
+            <p className="mt-3 text-sm text-(--color-fg-muted)">
+              We've got your batch details for <span className="text-(--color-fg) font-medium">{form.college}</span>.
+              We also opened WhatsApp with a summary, addressed to our team — attach{" "}
+              <span className="text-(--color-fg) font-medium">{file?.name}</span> in that chat and hit Send
+              to complete your registration (a website can't attach files to WhatsApp on its own).
+            </p>
+            <a
+              href={buildAdminWaLink(buildMessage(form, file?.name, preview?.rowCount))}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-3 text-sm font-semibold text-white hover:brightness-110 transition-[filter]"
+            >
+              <WhatsAppIcon className="h-4 w-4" />
+              Open WhatsApp &amp; Send
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+            <div className="mt-5">
+              <button
+                onClick={() => {
+                  setSent(false);
+                  setForm(EMPTY_FORM);
+                  setFile(null);
+                  setPreview(null);
+                }}
+                className="text-sm text-(--color-fg-faint) hover:text-(--color-fg) transition-colors"
+              >
+                Submit another batch
+              </button>
+            </div>
           </div>
-        </div>
+        </motion.section>
       ) : (
-        <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
-          <Field label="College Name" error={errors.college}>
-            <input
-              type="text"
-              value={form.college}
-              onChange={(e) => update("college", e.target.value)}
-              placeholder="NIT Allahabad"
-              className={inputClass(errors.college)}
+        <motion.div key="form" exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+          {/* Description first — what this page does and why, before we
+              ask a coordinator to fill anything in. */}
+          <section className="relative overflow-hidden">
+            <div
+              className="pointer-events-none absolute inset-0 -z-10 opacity-40"
+              style={{
+                background:
+                  "radial-gradient(500px circle at 15% 0%, rgba(99,102,241,0.2), transparent 60%), radial-gradient(500px circle at 85% 10%, rgba(52,211,153,0.15), transparent 60%)",
+              }}
             />
-          </Field>
-
-          <div className="grid sm:grid-cols-2 gap-5">
-            <Field label="Contact Person" error={errors.contactName}>
-              <input
-                type="text"
-                value={form.contactName}
-                onChange={(e) => update("contactName", e.target.value)}
-                placeholder="Placement Coordinator Name"
-                className={inputClass(errors.contactName)}
-              />
-            </Field>
-            <Field label="Contact Phone" error={errors.contactPhone}>
-              <input
-                type="tel"
-                value={form.contactPhone}
-                onChange={(e) => update("contactPhone", e.target.value)}
-                placeholder="70xxxxxxxx"
-                className={inputClass(errors.contactPhone)}
-              />
-            </Field>
-          </div>
-
-          <Field label="Approx. Number of Students" hint="Optional">
-            <input
-              type="number"
-              min="0"
-              value={form.studentCount}
-              onChange={(e) => update("studentCount", e.target.value)}
-              placeholder="60"
-              className={inputClass()}
-            />
-          </Field>
-
-          <Field label="Student List (Excel / CSV)" error={errors.file}>
-            <label
-              htmlFor="student-file"
-              className={`flex cursor-pointer items-center gap-3 rounded-xl border border-dashed px-4 py-4 text-sm transition-colors ${
-                errors.file ? "border-rose-500/60" : "border-(--color-border-strong) hover:border-(--color-border-strong)"
-              }`}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={introContainer}
+              className="mx-auto max-w-2xl px-5 pt-16 pb-10 sm:pt-20 text-center"
             >
-              <UploadCloud className="h-5 w-5 text-(--color-fg-faint)" />
-              <span className="text-(--color-fg-muted)">{file ? file.name : "Click to select a .xlsx, .xls or .csv file"}</span>
-            </label>
-            <input
-              id="student-file"
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={handleFile}
-              className="hidden"
-            />
-            {preview && (
-              <p className="mt-2 text-xs text-(--color-accent-emerald)">
-                Looks good — found {preview.rowCount} row{preview.rowCount === 1 ? "" : "s"}
-                {preview.names.length ? ` (e.g. ${preview.names.join(", ")}…)` : ""}.
-              </p>
-            )}
-            {parseError && <p className="mt-2 text-xs text-amber-400">{parseError}</p>}
-          </Field>
+              <motion.p variants={introItem} className="text-xs font-semibold uppercase tracking-widest text-(--color-accent)">
+                For Colleges &amp; Placement Cells
+              </motion.p>
+              <motion.h1 variants={introItem} className="mt-3 text-3xl sm:text-4xl font-extrabold text-(--color-fg)">
+                Onboard your whole batch at once.
+              </motion.h1>
+              <motion.p variants={introItem} className="mt-4 text-(--color-fg-muted)">
+                Bulk-upload your students, and we handle mentor matching, scheduling, and
+                WhatsApp confirmations for every one of them — the same way we work with
+                NIT Allahabad.
+              </motion.p>
 
-          <button
-            type="submit"
-            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-3.5 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors"
+              <motion.div variants={introItem} className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                {HIGHLIGHTS.map(({ icon: Icon, text }) => (
+                  <span
+                    key={text}
+                    className="inline-flex items-center gap-2 rounded-full border border-(--color-border) bg-(--color-card) px-4 py-2 text-xs font-medium text-(--color-fg-muted)"
+                  >
+                    <Icon className="h-3.5 w-3.5 text-(--color-accent-emerald)" />
+                    {text}
+                  </span>
+                ))}
+              </motion.div>
+            </motion.div>
+          </section>
+
+          <motion.section
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="mx-auto max-w-2xl px-5 pb-16 sm:pb-20"
           >
-            Confirm &amp; Register
-            <ArrowRight className="h-4 w-4" />
-          </button>
+            <div className="rounded-2xl border border-(--color-border) bg-(--color-card) p-6">
+              <div className="flex items-start gap-3">
+                <FileSpreadsheet className="h-5 w-5 shrink-0 text-(--color-accent) mt-0.5" />
+                <div className="text-sm text-(--color-fg-muted)">
+                  <p>
+                    Use our template so we can match columns correctly — <span className="text-(--color-fg-muted)">Name, Phone, Domain, Resume Link</span>.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={downloadTemplate}
+                    className="mt-3 inline-flex items-center gap-2 rounded-full border border-(--color-border-strong) px-4 py-2 text-xs font-semibold text-(--color-fg) hover:bg-(--color-input) transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Download Excel Template
+                  </button>
+                </div>
+              </div>
+            </div>
 
-          <p className="text-center text-xs text-(--color-fg-faint)">
-            This also opens WhatsApp with your details ready — you'll attach the file
-            and hit Send there to complete your registration.
-          </p>
-        </form>
+            <form onSubmit={handleSubmit} noValidate className="mt-6 rounded-2xl border border-(--color-border) bg-(--color-card) p-6 sm:p-8 space-y-5">
+              <Field label="College Name" error={errors.college}>
+                <input
+                  type="text"
+                  value={form.college}
+                  onChange={(e) => update("college", e.target.value)}
+                  placeholder="NIT Allahabad"
+                  className={inputClass(errors.college)}
+                />
+              </Field>
+
+              <div className="grid sm:grid-cols-2 gap-5">
+                <Field label="Contact Person" error={errors.contactName}>
+                  <input
+                    type="text"
+                    value={form.contactName}
+                    onChange={(e) => update("contactName", e.target.value)}
+                    placeholder="Placement Coordinator Name"
+                    className={inputClass(errors.contactName)}
+                  />
+                </Field>
+                <Field label="Contact Phone" error={errors.contactPhone}>
+                  <input
+                    type="tel"
+                    value={form.contactPhone}
+                    onChange={(e) => update("contactPhone", e.target.value)}
+                    placeholder="70xxxxxxxx"
+                    className={inputClass(errors.contactPhone)}
+                  />
+                </Field>
+              </div>
+
+              <Field label="Approx. Number of Students" hint="Optional">
+                <input
+                  type="number"
+                  min="0"
+                  value={form.studentCount}
+                  onChange={(e) => update("studentCount", e.target.value)}
+                  placeholder="60"
+                  className={inputClass()}
+                />
+              </Field>
+
+              <Field label="Student List (Excel / CSV)" error={errors.file}>
+                <label
+                  htmlFor="student-file"
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl border border-dashed px-4 py-4 text-sm transition-colors ${
+                    errors.file ? "border-rose-500/60" : "border-(--color-border-strong) hover:border-(--color-accent)/50"
+                  }`}
+                >
+                  <UploadCloud className="h-5 w-5 text-(--color-fg-faint)" />
+                  <span className="text-(--color-fg-muted)">{file ? file.name : "Click to select a .xlsx, .xls or .csv file"}</span>
+                </label>
+                <input
+                  id="student-file"
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleFile}
+                  className="hidden"
+                />
+                {preview && (
+                  <p className="mt-2 text-xs text-(--color-accent-emerald)">
+                    Looks good — found {preview.rowCount} row{preview.rowCount === 1 ? "" : "s"}
+                    {preview.names.length ? ` (e.g. ${preview.names.join(", ")}…)` : ""}.
+                  </p>
+                )}
+                {parseError && <p className="mt-2 text-xs text-amber-400">{parseError}</p>}
+              </Field>
+
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-3.5 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors"
+              >
+                Confirm &amp; Register
+                <ArrowRight className="h-4 w-4" />
+              </motion.button>
+
+              <p className="text-center text-xs text-(--color-fg-faint)">
+                This also opens WhatsApp with your details ready — you'll attach the file
+                and hit Send there to complete your registration.
+              </p>
+            </form>
+          </motion.section>
+        </motion.div>
       )}
-    </section>
+    </AnimatePresence>
   );
 }
 

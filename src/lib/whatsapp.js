@@ -1,5 +1,5 @@
 // Central place for everything WhatsApp-related.
-// PenDown has no backend, so "sending" a WhatsApp message always means:
+// AlgoMate has no backend, so "sending" a WhatsApp message always means:
 // build a wa.me link with the message pre-filled, open it, and let a human
 // (student, college coordinator, or admin) press Send inside WhatsApp.
 
@@ -27,7 +27,7 @@ export function buildWaLink(phoneDigits, message) {
   return `https://wa.me/${phoneDigits}?text=${encodeURIComponent(message)}`;
 }
 
-/** Shortcut for messages headed to the PenDown admin number. */
+/** Shortcut for messages headed to the AlgoMate admin number. */
 export function buildAdminWaLink(message) {
   return buildWaLink(ADMIN_WHATSAPP, message);
 }

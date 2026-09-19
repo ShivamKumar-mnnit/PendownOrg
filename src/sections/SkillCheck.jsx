@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
+import { motion } from "motion/react";
 import { Timer, ArrowRight, CheckCircle2, Circle } from "lucide-react";
-import SectionHeading from "../components/SectionHeading";
 
 // Illustrative only — shows what a timed skill-check round looks like.
 // Booking one happens through the same registration flow as everything else.
@@ -8,7 +8,12 @@ export default function SkillCheck() {
   return (
     <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
       <div className="mx-auto max-w-6xl px-5 py-20 grid gap-12 lg:grid-cols-2 lg:items-center">
-        <div>
+        <motion.div
+          initial={{ opacity: 0, x: -24 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
           <p className="text-xs font-semibold uppercase tracking-widest text-(--color-accent)">Skill Check</p>
           <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-(--color-fg)">
             Not sure where you stand? Start with a skill check.
@@ -20,15 +25,21 @@ export default function SkillCheck() {
           </p>
           <Link
             to="/book"
-            className="mt-7 inline-flex items-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-3 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors"
+            className="mt-7 inline-flex items-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-3 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) hover:scale-[1.03] active:scale-[0.97] transition-[background-color,transform]"
           >
             Book a Skill Check
             <ArrowRight className="h-4 w-4" />
           </Link>
-        </div>
+        </motion.div>
 
         {/* Illustrative mock-up of a skill-check round — not a live widget */}
-        <div className="rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-xl shadow-black/20">
+        <motion.div
+          initial={{ opacity: 0, x: 24 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-xl shadow-black/20"
+        >
           <div className="flex items-center justify-between text-xs text-zinc-500">
             <span>Software Development — Round 1</span>
             <span className="inline-flex items-center gap-1.5 text-amber-400">
@@ -37,7 +48,13 @@ export default function SkillCheck() {
             </span>
           </div>
           <div className="mt-3 h-1.5 w-full rounded-full bg-white/10">
-            <div className="h-1.5 w-2/5 rounded-full bg-gradient-to-r from-indigo-500 to-emerald-400" />
+            <motion.div
+              initial={{ width: 0 }}
+              whileInView={{ width: "40%" }}
+              viewport={{ once: true }}
+              transition={{ duration: 1, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="h-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-emerald-400"
+            />
           </div>
 
           <p className="mt-6 text-sm text-zinc-200">
@@ -58,7 +75,7 @@ export default function SkillCheck() {
             ))}
           </div>
           <p className="mt-4 text-[11px] text-zinc-600">Sample question shown for illustration.</p>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
