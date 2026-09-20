@@ -16,7 +16,7 @@ import Differentiators from "../sections/Differentiators";
 import IndustryReach from "../sections/IndustryReach";
 import ForColleges from "../sections/ForColleges";
 import ResourcesTeaser from "../sections/ResourcesTeaser";
-import Testimonials from "../sections/Testimonials";
+import CompanyPrep from "../sections/CompanyPrep";
 import FAQ from "../sections/FAQ";
 import CTA from "../sections/CTA";
 
@@ -47,7 +47,7 @@ export default function Home() {
       <IndustryReach />
       <ForColleges />
       <ResourcesTeaser />
-      <Testimonials />
+      <CompanyPrep />
       <FAQ />
       <CTA />
     </>

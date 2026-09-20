@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowRight, CheckCircle2, ExternalLink, Users, MessageCircle, FileCheck } from "lucide-react";
 import WhatsAppIcon from "../components/WhatsAppIcon";
@@ -10,7 +10,7 @@ import { usePageSEO } from "../lib/seo";
 
 const SESSION_TYPES = ["Mock Interview", "1:1 Mentorship"];
 
-const EMPTY_FORM = { name: "", phone: "", sessionType: SESSION_TYPES[0], domain: "", resume: "" };
+const EMPTY_FORM = { name: "", phone: "", sessionType: SESSION_TYPES[0], domain: "", company: "", resume: "" };
 
 const HIGHLIGHTS = [
   { icon: Users, text: "Matched to a mentor in your domain" },
@@ -27,7 +27,7 @@ const introItem = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
 };
 
-function buildMessage({ name, phone, sessionType, domain, resume }) {
+function buildMessage({ name, phone, sessionType, domain, company, resume }) {
   const lines = [
     `Hi Anobyt! I'd like to book a *${sessionType}*.`,
     "",
@@ -35,6 +35,7 @@ function buildMessage({ name, phone, sessionType, domain, resume }) {
     `Phone: ${phone}`,
     `Domain: ${domain}`,
   ];
+  if (company.trim()) lines.push(`Target Company: ${company.trim()}`);
   if (resume.trim()) lines.push(`Resume: ${resume.trim()}`);
   lines.push("", "Please share the next available slot. Thank you!");
   return lines.join("\n");
@@ -48,7 +49,10 @@ export default function Book() {
     path: "/book",
   });
 
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [searchParams] = useSearchParams();
+  const prefillCompany = searchParams.get("company") || "";
+
+  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, company: prefillCompany }));
   const [errors, setErrors] = useState({});
   const [submittedLink, setSubmittedLink] = useState(null);
 
@@ -158,10 +162,10 @@ export default function Book() {
               className="mx-auto max-w-2xl px-5 pt-16 pb-10 sm:pt-20 text-center"
             >
               <motion.p variants={introItem} className="text-xs font-semibold uppercase tracking-widest text-(--color-accent)">
-                Book a Session
+                {prefillCompany ? `${prefillCompany} Prep` : "Book a Session"}
               </motion.p>
               <motion.h1 variants={introItem} className="mt-3 text-3xl sm:text-4xl font-extrabold text-(--color-fg)">
-                Let's get you ready for the real thing.
+                {prefillCompany ? `Let's mock your ${prefillCompany} interview.` : "Let's get you ready for the real thing."}
               </motion.h1>
               <motion.p variants={introItem} className="mt-4 text-(--color-fg-muted)">
                 Tell us who you are and what you're prepping for. We'll match you with a mentor
@@ -225,6 +229,16 @@ export default function Book() {
                     options={DOMAIN_LABELS}
                     placeholder="Select a domain"
                     error={errors.domain}
+                  />
+                </Field>
+
+                <Field label="Target Company" hint="Optional — we'll tailor the mock interview to their typical process.">
+                  <input
+                    type="text"
+                    value={form.company}
+                    onChange={(e) => update("company", e.target.value)}
+                    placeholder="e.g. Google, TCS, Deloitte..."
+                    className={inputClass()}
                   />
                 </Field>
 
