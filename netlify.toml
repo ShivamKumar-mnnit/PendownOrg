@@ -5,6 +5,17 @@
 [build.environment]
   NODE_VERSION = "22"
 
+[functions]
+  directory = "netlify/functions"
+
+# Evaluated top-to-bottom, first match wins — so this has to come before
+# the SPA catch-all below, or /api/compile would resolve to index.html
+# instead of reaching the function.
+[[redirects]]
+  from = "/api/compile"
+  to = "/.netlify/functions/compile"
+  status = 200
+
 # Client-side routing (React Router) — without this, refreshing or
 # directly linking to /book, /colleges, /admin returns a 404 since those
 # aren't real files on the server, only routes React handles in the browser.

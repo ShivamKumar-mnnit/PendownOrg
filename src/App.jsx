@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Book from "./pages/Book";
 import Colleges from "./pages/Colleges";
 import Admin from "./pages/Admin";
+import Compiler from "./pages/Compiler";
 
 function NotFound() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/book" element={<Book />} />
           <Route path="/colleges" element={<Colleges />} />
+          <Route path="/compiler" element={<Compiler />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Route>

@@ -9,6 +9,7 @@ const LINKS = [
   { to: "/", label: "Home" },
   { to: "/book", label: "Book a Session" },
   { to: "/colleges", label: "For Colleges" },
+  { to: "/compiler", label: "Online C&C" },
 ];
 
 // Not real pages yet — shown in nav as a heads-up, not a working link.
