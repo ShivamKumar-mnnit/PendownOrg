@@ -1,33 +1,11 @@
 import { motion } from "motion/react";
 
-// Deterministic scatter of "city light" dots within the sphere's circle —
-// polar coordinates so they stay inside the visible disc, no image asset.
-const CITY_LIGHTS = Array.from({ length: 34 }).map((_, i) => {
-  const angle = (i * 47) % 360;
-  const radius = 10 + ((i * 13) % 38); // percent from center, stays inside the disc
-  const rad = (angle * Math.PI) / 180;
-  return {
-    x: 50 + radius * Math.cos(rad),
-    y: 50 + radius * Math.sin(rad) * 0.9,
-    size: 1 + (i % 3),
-  };
-});
-
-const MERIDIANS = [98, 80, 55, 25]; // rx of vertical (longitude) ellipses, ry is constant 98
-const PARALLELS = [
-  { cy: 45, rx: 80 },
-  { cy: 72, rx: 93 },
-  { cy: 100, rx: 98 },
-  { cy: 128, rx: 93 },
-  { cy: 155, rx: 80 },
-];
-
 /**
- * Big rotating "Earth" — CSS/SVG only (dark sphere with scattered amber
- * "city light" dots + a wireframe lat/long grid + atmospheric glow), plus
- * one or two large orbiting planets. No image asset, so it stays fixed
- * dark/space-colored regardless of the site's light/dark toggle — same
- * as a photo would.
+ * Central "planet" is the Anobyt brand mark instead of a generic Earth —
+ * same orbiting-planets/atmosphere staging as before, just with the sphere
+ * itself replaced by the logo so this centerpiece doubles as brand real
+ * estate. Fixed dark/space-colored regardless of the site's light/dark
+ * toggle, same as the orbiting planets around it.
  */
 export default function EarthGlobe({ className = "", size = 460 }) {
   const dim = `min(90vw, ${size}px)`;
@@ -123,9 +101,9 @@ export default function EarthGlobe({ className = "", size = 460 }) {
         />
       </motion.div>
 
-      {/* The Earth itself */}
+      {/* The planet itself — the Anobyt mark, on a dark sphere-like disc */}
       <motion.div
-        className="absolute inset-0 overflow-hidden rounded-full"
+        className="absolute inset-0 overflow-hidden rounded-full flex items-center justify-center"
         style={{
           background: "radial-gradient(circle at 32% 28%, #1e3a5f 0%, #0f2340 45%, #050b14 85%)",
           boxShadow:
@@ -134,27 +112,7 @@ export default function EarthGlobe({ className = "", size = 460 }) {
         animate={{ rotate: 360 }}
         transition={{ duration: 70, repeat: Infinity, ease: "linear" }}
       >
-        {/* City lights */}
-        {CITY_LIGHTS.map((c, i) => (
-          <motion.span
-            key={i}
-            className="absolute rounded-full bg-amber-300"
-            style={{ left: `${c.x}%`, top: `${c.y}%`, width: c.size, height: c.size }}
-            animate={{ opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 3 + (i % 3), delay: (i % 5) * 0.4, repeat: Infinity, ease: "easeInOut" }}
-          />
-        ))}
-
-        {/* Wireframe grid */}
-        <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full">
-          <circle cx="100" cy="100" r="98" fill="none" stroke="rgba(94,234,212,0.25)" strokeWidth="0.6" />
-          {MERIDIANS.map((rx) => (
-            <ellipse key={rx} cx="100" cy="100" rx={rx} ry="98" fill="none" stroke="rgba(148,163,184,0.18)" strokeWidth="0.5" />
-          ))}
-          {PARALLELS.map((p) => (
-            <ellipse key={p.cy} cx="100" cy={p.cy} rx={p.rx} ry="9" fill="none" stroke="rgba(148,163,184,0.18)" strokeWidth="0.5" />
-          ))}
-        </svg>
+        <img src="/anobyt-icon.svg" alt="" className="w-[70%] h-[70%] object-contain drop-shadow-[0_0_20px_rgba(45,212,191,0.45)]" />
       </motion.div>
     </div>
   );

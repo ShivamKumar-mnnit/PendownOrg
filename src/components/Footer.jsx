@@ -29,7 +29,7 @@ export default function Footer() {
           <ul className="mt-3 space-y-2 text-sm text-(--color-fg-muted)">
             <li>
               <a
-                href={buildAdminWaLink("Hi InoByt! I have a query.")}
+                href={buildAdminWaLink("Hi Anobyt! I have a query.")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 hover:text-(--color-fg) transition-colors"
@@ -45,7 +45,7 @@ export default function Footer() {
 
       <div className="border-t border-(--color-border) py-5">
         <div className="mx-auto flex max-w-6xl flex-col-reverse items-center gap-3 px-5 sm:flex-row sm:justify-between">
-          <p className="text-xs text-(--color-fg-faint)">© {new Date().getFullYear()} InoByt. All rights reserved.</p>
+          <p className="text-xs text-(--color-fg-faint)">© {new Date().getFullYear()} Anobyt. All rights reserved.</p>
           <Link to="/admin" className="text-xs text-(--color-fg-faint) hover:text-(--color-fg-muted) transition-colors">
             Admin
           </Link>

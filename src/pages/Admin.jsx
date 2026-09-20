@@ -45,7 +45,7 @@ function formatSlot(value) {
 
 function buildConfirmationMessage(row) {
   const lines = [
-    `Hi ${row.name || "there"}! Your *${row.domain || "interview"}* session with InoByt is confirmed.`,
+    `Hi ${row.name || "there"}! Your *${row.domain || "interview"}* session with Anobyt is confirmed.`,
     "",
     `Slot: ${formatSlot(row.slot)}`,
   ];
@@ -156,7 +156,7 @@ export default function Admin() {
     logEvent(row);
   }
 
-  // Issued once a session has actually happened — an InoByt certificate of
+  // Issued once a session has actually happened — an Anobyt certificate of
   // completion, not a claim of any outside accreditation. Downloads as a
   // PNG so it's easy to share straight into the WhatsApp chat with the
   // student, same as everything else here.

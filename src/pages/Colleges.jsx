@@ -38,7 +38,7 @@ async function downloadTemplate() {
 
 function buildMessage(form, fileName, rowCount) {
   const lines = [
-    "Hi InoByt! We'd like to bulk-onboard students for mock interviews / mentorship.",
+    "Hi Anobyt! We'd like to bulk-onboard students for mock interviews / mentorship.",
     "",
     `College: ${form.college}`,
     `Contact Person: ${form.contactName}`,

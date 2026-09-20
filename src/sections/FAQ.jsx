@@ -6,7 +6,7 @@ import Reveal from "../components/Reveal";
 
 const FAQS = [
   {
-    q: "Is InoByt free?",
+    q: "Is Anobyt free?",
     a: "It depends on your college's partnership or the type of session you book. Message us on WhatsApp and we'll tell you exactly what applies to you before you commit to anything.",
   },
   {

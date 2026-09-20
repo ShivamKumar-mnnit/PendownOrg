@@ -55,7 +55,7 @@ function Card({ icon: Icon, title, desc }) {
 // Fixed-dark section (like the Hero) so the space-themed globe reads
 // correctly regardless of the site's light/dark toggle — same exception
 // pattern, used here because the globe is inherently a dark/space visual.
-export default function WhyInoByt() {
+export default function WhyAnobyt() {
   return (
     <section className="relative isolate overflow-hidden" style={{ backgroundColor: "#050b14" }}>
       <div
@@ -67,7 +67,7 @@ export default function WhyInoByt() {
       <div className="relative mx-auto max-w-6xl px-5 py-20">
         <Reveal>
           <div className="text-center">
-            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400">Why InoByt</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400">Why Anobyt</p>
             <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-white">Interview prep, minus the friction</h2>
           </div>
         </Reveal>

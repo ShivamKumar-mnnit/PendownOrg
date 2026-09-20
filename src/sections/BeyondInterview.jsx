@@ -28,7 +28,7 @@ const ITEMS = [
   {
     icon: Award,
     title: "A certificate to show for it",
-    desc: "Get an InoByt certificate of completion once your session wraps up — yours to keep and share.",
+    desc: "Get an Anobyt certificate of completion once your session wraps up — yours to keep and share.",
   },
 ];
 

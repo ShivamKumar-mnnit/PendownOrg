@@ -34,7 +34,7 @@ export default function SessionStructure() {
   return (
     <section className="mx-auto max-w-6xl px-5 py-20">
       <Reveal>
-        <SectionHeading eyebrow="Inside a Session" title="What an InoByt session looks like" />
+        <SectionHeading eyebrow="Inside a Session" title="What an Anobyt session looks like" />
       </Reveal>
 
       <StaggerGrid className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">

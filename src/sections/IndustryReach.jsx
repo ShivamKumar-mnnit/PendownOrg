@@ -2,7 +2,7 @@ import { Building2, Cpu, Rocket, FlaskConical, Briefcase, Landmark } from "lucid
 import Reveal from "../components/Reveal";
 import { StaggerGrid, StaggerItem } from "../components/StaggerGrid";
 
-// Category tiles rather than specific company logos — InoByt doesn't
+// Category tiles rather than specific company logos — Anobyt doesn't
 // have verified alumni placements at named companies yet, so this stays
 // honest about the *kinds* of roles students prep for. Swap this grid for
 // real hiring-partner logos the moment there's confirmed data — the card

@@ -32,7 +32,7 @@ export default function TwoTracks() {
     <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
       <div className="mx-auto max-w-6xl px-5 py-20">
         <Reveal>
-          <SectionHeading eyebrow="Pick Your Track" title="Two ways to prep with InoByt" />
+          <SectionHeading eyebrow="Pick Your Track" title="Two ways to prep with Anobyt" />
         </Reveal>
 
         <StaggerGrid className="mt-12 grid gap-6 sm:grid-cols-2">

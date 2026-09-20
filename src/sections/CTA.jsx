@@ -6,7 +6,7 @@ export default function CTA() {
   return (
     <section className="mx-auto max-w-6xl px-5 pb-24">
       <Reveal as="div" className="rounded-3xl border border-(--color-border) bg-(--color-card) p-10 sm:p-14 text-center">
-        <h2 className="text-2xl sm:text-3xl font-bold text-(--color-fg)">Ready to prep with InoByt?</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-(--color-fg)">Ready to prep with Anobyt?</h2>
         <p className="mx-auto mt-3 max-w-md text-(--color-fg-muted)">
           Book your mock interview or mentorship session — we'll take it from there.
         </p>

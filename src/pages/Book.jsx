@@ -28,7 +28,7 @@ const introItem = {
 
 function buildMessage({ name, phone, sessionType, domain, resume }) {
   const lines = [
-    `Hi InoByt! I'd like to book a *${sessionType}*.`,
+    `Hi Anobyt! I'd like to book a *${sessionType}*.`,
     "",
     `Name: ${name}`,
     `Phone: ${phone}`,
