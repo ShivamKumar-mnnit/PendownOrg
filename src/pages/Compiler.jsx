@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 import { Play, Loader2, Maximize2, Minimize2, ArrowLeft, RotateCcw, Terminal } from "lucide-react";
 import Select from "../components/Select";
 import { LANGUAGES, getLanguage, runCode } from "../lib/compiler";
+import { usePageSEO } from "../lib/seo";
 
 /** Tracks the `.dark` class on <html>, which ThemeToggle owns, so the editor
  *  theme follows the site theme without a separate source of truth. */
@@ -26,6 +27,13 @@ function useIsDark() {
 const LANGUAGE_OPTIONS = LANGUAGES.map((l) => ({ value: l.id, label: l.label }));
 
 export default function Compiler() {
+  usePageSEO({
+    title: "Online Code Compiler — Python, JavaScript, Java, C, C++",
+    description:
+      "Free online compiler and code editor. Write and run Python, JavaScript, Java, C, and C++ code directly in your browser — no signup required.",
+    path: "/compiler",
+  });
+
   const isDark = useIsDark();
   const [languageId, setLanguageId] = useState(LANGUAGES[0].id);
   const [codeByLanguage, setCodeByLanguage] = useState(() =>

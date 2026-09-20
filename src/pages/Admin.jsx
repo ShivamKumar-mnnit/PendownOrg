@@ -6,6 +6,7 @@ import WhatsAppIcon from "../components/WhatsAppIcon";
 import { buildWaLink, openWhatsApp, normalizePhone } from "../lib/whatsapp";
 import { ADMIN_PASSCODE } from "../lib/adminConfig";
 import { generateCertificate, downloadCertificate } from "../lib/certificate";
+import { usePageSEO } from "../lib/seo";
 
 const SESSION_KEY = "algomate_admin_ok";
 const STORAGE_KEY = "algomate_admin_students";
@@ -55,6 +56,13 @@ function buildConfirmationMessage(row) {
 }
 
 export default function Admin() {
+  usePageSEO({
+    title: "Admin",
+    description: "Internal admin panel.",
+    path: "/admin",
+    noindex: true,
+  });
+
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
   const [passInput, setPassInput] = useState("");
   const [passError, setPassError] = useState("");
@@ -167,7 +175,7 @@ export default function Admin() {
       mentor: row.mentor,
     });
     const safeName = (row.name || "student").trim().replace(/\s+/g, "-").toLowerCase();
-    downloadCertificate(dataUrl, `inobyt-certificate-${safeName}.png`);
+    downloadCertificate(dataUrl, `anobyt-certificate-${safeName}.png`);
   }
 
   function sendAll() {
@@ -201,7 +209,7 @@ export default function Admin() {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Students");
-    XLSX.writeFile(wb, "inobyt-students-updated.xlsx");
+    XLSX.writeFile(wb, "anobyt-students-updated.xlsx");
   }
 
   function clearAll() {

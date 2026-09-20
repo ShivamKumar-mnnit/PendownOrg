@@ -6,6 +6,7 @@ import WhatsAppIcon from "../components/WhatsAppIcon";
 import Select from "../components/Select";
 import { DOMAIN_LABELS } from "../lib/domains";
 import { buildAdminWaLink, openWhatsApp, normalizePhone } from "../lib/whatsapp";
+import { usePageSEO } from "../lib/seo";
 
 const SESSION_TYPES = ["Mock Interview", "1:1 Mentorship"];
 
@@ -40,6 +41,13 @@ function buildMessage({ name, phone, sessionType, domain, resume }) {
 }
 
 export default function Book() {
+  usePageSEO({
+    title: "Book a Mock Interview or Mentorship Session",
+    description:
+      "Register for a 1:1 mock interview or mentorship session. Tell us your domain and we'll match you with a mentor and confirm your slot on WhatsApp.",
+    path: "/book",
+  });
+
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [submittedLink, setSubmittedLink] = useState(null);

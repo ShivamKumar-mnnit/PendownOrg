@@ -1,3 +1,4 @@
+import { usePageSEO } from "../lib/seo";
 import Hero from "../sections/Hero";
 import TrustBar from "../sections/TrustBar";
 import WhyAnobyt from "../sections/WhyAnobyt";
@@ -20,6 +21,13 @@ import FAQ from "../sections/FAQ";
 import CTA from "../sections/CTA";
 
 export default function Home() {
+  usePageSEO({
+    title: "Anobyt | Mock Interviews & Mentorship for College Students",
+    description:
+      "Book 1:1 mock interviews and mentorship with industry professionals, matched to your domain (SDE, Data/AI, Product, Consulting) and confirmed over WhatsApp. Starting with NIT Allahabad.",
+    path: "/",
+  });
+
   return (
     <>
       <Hero />

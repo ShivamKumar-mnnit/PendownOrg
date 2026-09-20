@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import { buildAdminWaLink, openWhatsApp } from "../lib/whatsapp";
+import { usePageSEO } from "../lib/seo";
 
 // Headers only — no sample name/phone/etc. filled in, so nothing that looks
 // like real (or fake-but-realistic) student data ships in the template.
@@ -33,7 +34,7 @@ async function downloadTemplate() {
   const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Students");
-  XLSX.writeFile(wb, "inobyt-student-template.xlsx");
+  XLSX.writeFile(wb, "anobyt-student-template.xlsx");
 }
 
 function buildMessage(form, fileName, rowCount) {
@@ -51,6 +52,13 @@ function buildMessage(form, fileName, rowCount) {
 }
 
 export default function Colleges() {
+  usePageSEO({
+    title: "For Colleges & Placement Cells — Bulk Onboarding",
+    description:
+      "Bulk-onboard your college's students for mock interviews and mentorship. Upload a student list, we assign mentors and slots, and confirm every student over WhatsApp.",
+    path: "/colleges",
+  });
+
   const [form, setForm] = useState(EMPTY_FORM);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null); // { rowCount, names }
