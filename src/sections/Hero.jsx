@@ -14,7 +14,7 @@ const item = {
 };
 
 // Honest stand-in for "architected with minds from Google/Meta/..." —
-// AlgoMate has no verified company affiliations to claim, so the same
+// InoByt has no verified company affiliations to claim, so the same
 // large-ghost-text treatment shows the real domains we prep for instead.
 const DOMAIN_WORDS = ["SDE", "DATA / AI", "PRODUCT", "CONSULTING"];
 
@@ -52,7 +52,7 @@ export default function Hero() {
           </motion.h1>
 
           <motion.p variants={item} className="mt-6 max-w-xl text-base sm:text-lg text-slate-400">
-            AlgoMate connects college students with industry mentors for 1:1 mock
+            InoByt connects college students with industry mentors for 1:1 mock
             interviews and mentorship — booked in minutes, confirmed over WhatsApp.
           </motion.p>
 

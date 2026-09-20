@@ -33,12 +33,12 @@ async function downloadTemplate() {
   const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Students");
-  XLSX.writeFile(wb, "algomate-student-template.xlsx");
+  XLSX.writeFile(wb, "inobyt-student-template.xlsx");
 }
 
 function buildMessage(form, fileName, rowCount) {
   const lines = [
-    "Hi AlgoMate! We'd like to bulk-onboard students for mock interviews / mentorship.",
+    "Hi InoByt! We'd like to bulk-onboard students for mock interviews / mentorship.",
     "",
     `College: ${form.college}`,
     `Contact Person: ${form.contactName}`,

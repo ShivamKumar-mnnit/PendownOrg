@@ -1,4 +1,4 @@
-# AlgoMate
+# InoByt
 
 A frontend-only React site for 1:1 mock interviews & mentorship for college
 students, starting with NIT Allahabad. No backend — WhatsApp notifications
@@ -39,7 +39,7 @@ like a screenshot.
   domains, mentor archetypes, FAQ, etc. — see `src/pages/Home.jsx` for the
   full list, each section is its own file under `src/sections/`). Modeled
   on madalgos.in's structure/density with original copy, not copied text.
-  Deliberately avoids fabricated specifics madalgos shows but AlgoMate
+  Deliberately avoids fabricated specifics madalgos shows but InoByt
   doesn't have yet — no fake company logos/alumni claims, no named mentors
   at real companies, no blog posts that don't exist (labeled "Coming
   Soon" instead), no invented attendance numbers.
@@ -71,7 +71,7 @@ like a screenshot.
   4. Tick **Completed** once a session has actually happened to unlock the
      **Certificate** button — downloads a PNG "Certificate of Completion"
      (name, domain, mentor) generated entirely client-side via
-     `src/lib/certificate.js`. This is AlgoMate's own completion
+     `src/lib/certificate.js`. This is InoByt's own completion
      certificate, not a claim of outside accreditation. Share it with the
      student yourself (e.g. attach it in WhatsApp), same manual pattern as
      everything else.

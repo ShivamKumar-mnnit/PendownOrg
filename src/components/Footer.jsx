@@ -8,7 +8,7 @@ export default function Footer() {
     <footer className="border-t border-(--color-border) bg-(--color-surface)">
       <div className="mx-auto max-w-6xl px-5 py-12 grid gap-10 sm:grid-cols-2 md:grid-cols-4">
         <div className="md:col-span-2">
-          <Logo badgeClassName="h-7 w-7" iconClassName="h-4 w-4" textClassName="text-base" />
+          <Logo badgeClassName="h-7 w-7" textClassName="text-base" />
           <p className="mt-3 max-w-sm text-sm text-(--color-fg-muted)">
             1:1 mock interviews and mentorship for college students — starting with
             NIT Allahabad. Real mentors, honest feedback, no clunky dashboards.
@@ -29,7 +29,7 @@ export default function Footer() {
           <ul className="mt-3 space-y-2 text-sm text-(--color-fg-muted)">
             <li>
               <a
-                href={buildAdminWaLink("Hi AlgoMate! I have a query.")}
+                href={buildAdminWaLink("Hi InoByt! I have a query.")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 hover:text-(--color-fg) transition-colors"
@@ -45,7 +45,7 @@ export default function Footer() {
 
       <div className="border-t border-(--color-border) py-5">
         <div className="mx-auto flex max-w-6xl flex-col-reverse items-center gap-3 px-5 sm:flex-row sm:justify-between">
-          <p className="text-xs text-(--color-fg-faint)">© {new Date().getFullYear()} AlgoMate. All rights reserved.</p>
+          <p className="text-xs text-(--color-fg-faint)">© {new Date().getFullYear()} InoByt. All rights reserved.</p>
           <Link to="/admin" className="text-xs text-(--color-fg-faint) hover:text-(--color-fg-muted) transition-colors">
             Admin
           </Link>
