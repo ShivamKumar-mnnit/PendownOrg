@@ -5,16 +5,6 @@ import { makeStars, makeWireShape, makeGlowSprite, makeAtomCluster, createPointe
 const STAR_COUNT = 700;
 const FIELD = { w: 30, h: 20, d: 20 };
 
-// Spin is deliberately tiny — this is a logo decal, not a rotating globe,
-// and the reference art shows it reading clearly and face-on at all times.
-// Any real rotation speed eventually scrolls the crop off past the visible
-// hemisphere and leaves a blank patch showing.
-const LOGO_SPHERES = [
-  { pos: [-2.1, 0.5, 0], radius: 1.6, spin: 0.008 },
-  { pos: [2.0, 1.1, -1.6], radius: 1.05, spin: -0.006 },
-  { pos: [-0.4, -1.5, -1], radius: 0.75, spin: 0.01 },
-];
-
 const MINI_PLANETS = [
   { kind: "rock", pos: [-5.4, -1.9, -0.5], radius: 0.32, color: 0x991b1b, glow: "rgba(239,68,68,0.55)" },
   { kind: "ring", pos: [5.3, 1.9, -1], radius: 0.32, color: 0xd97706, glow: "rgba(251,191,36,0.5)" },
@@ -67,28 +57,6 @@ function makeNetworkNodes() {
   return { points, lines };
 }
 
-// three.js/WebGL can refuse to upload a raw SVG <img> as a texture source
-// ("bad image data") depending on the GL backend — rasterizing it onto a
-// canvas first sidesteps that entirely, same trick the grid texture uses.
-function loadIconTexture(onReady) {
-  const img = new Image();
-  img.onload = () => {
-    const size = 512;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    const scale = Math.min(size / img.width, size / img.height) * 1.75;
-    const w = img.width * scale;
-    const h = img.height * scale;
-    ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
-    const texture = new THREE.CanvasTexture(canvas);
-    if ("colorSpace" in texture) texture.colorSpace = THREE.SRGBColorSpace;
-    onReady(texture);
-  };
-  img.src = "/anobyt-icon.svg";
-}
-
 function makeMiniPlanet({ kind, radius, color }) {
   const group = new THREE.Group();
 
@@ -117,10 +85,10 @@ function makeMiniPlanet({ kind, radius, color }) {
 }
 
 /**
- * WebGL "Why Anobyt" backdrop — a cluster of logo-textured spheres linked
- * by a thin constellation network, plus a handful of small accent planets,
- * over a drifting starfield. Same lazy-load + reduced-motion + cursor-
- * parallax pattern as VortexBackground (see HeroBackground.jsx for why).
+ * WebGL "Why Anobyt" backdrop — a thin constellation network of nodes plus
+ * a handful of small accent planets, over a drifting starfield. Same
+ * lazy-load + reduced-motion + cursor-parallax pattern as VortexBackground
+ * (see HeroBackground.jsx for why).
  */
 export default function PlanetNetwork({ className = "" }) {
   const containerRef = useRef(null);
@@ -154,30 +122,6 @@ export default function PlanetNetwork({ className = "" }) {
 
     const { points: nodePoints, lines: nodeLines } = makeNetworkNodes();
     cluster.add(nodePoints, nodeLines);
-
-    const logoSpheres = LOGO_SPHERES.map(({ pos, radius, spin }) => {
-      const mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(radius, 48, 48),
-        new THREE.MeshBasicMaterial({ color: 0x0a1628 })
-      );
-      mesh.position.set(...pos);
-      const glow = makeGlowSprite("rgba(56,189,248,0.5)", radius * 3.2);
-      glow.position.set(...pos);
-      cluster.add(glow, mesh);
-      return { mesh, spin };
-    });
-
-    loadIconTexture((texture) => {
-      logoSpheres.forEach(({ mesh }) => {
-        mesh.material.map = texture;
-        // Placeholder color was dark so the sphere didn't flash white before
-        // the texture arrived — but MeshBasicMaterial multiplies color * map,
-        // so it has to reset to white now or it crushes the texture's own
-        // colors back down to near-black.
-        mesh.material.color.set(0xffffff);
-        mesh.material.needsUpdate = true;
-      });
-    });
 
     const miniPlanets = MINI_PLANETS.map(({ pos, radius, glow: glowColor, ...rest }) => {
       const group = makeMiniPlanet({ pos, radius, ...rest });
@@ -235,9 +179,6 @@ export default function PlanetNetwork({ className = "" }) {
       cluster.rotation.y = Math.sin(t * 0.08) * 0.12;
       cluster.rotation.x = Math.sin(t * 0.06) * 0.05;
 
-      logoSpheres.forEach(({ mesh, spin }) => {
-        mesh.rotation.y += spin * dt;
-      });
       miniPlanets.forEach((group, i) => {
         group.rotation.y += dt * (0.12 + i * 0.03);
       });
