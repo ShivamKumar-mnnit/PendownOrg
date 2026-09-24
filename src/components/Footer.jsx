@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import WhatsAppIcon from "./WhatsAppIcon";
+import { Mail } from "lucide-react";
 import Logo from "./Logo";
-import { ADMIN_WHATSAPP_DISPLAY, buildAdminWaLink } from "../lib/whatsapp";
+
+const CONTACT_EMAIL = "anobyt@anobyt.in";
 
 export default function Footer() {
   return (
@@ -29,13 +30,11 @@ export default function Footer() {
           <ul className="mt-3 space-y-2 text-sm text-(--color-fg-muted)">
             <li>
               <a
-                href={buildAdminWaLink("Hi Anobyt! I have a query.")}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`mailto:${CONTACT_EMAIL}`}
                 className="inline-flex items-center gap-2 hover:text-(--color-fg) transition-colors"
               >
-                <WhatsAppIcon className="w-4 h-4 text-[#25D366]" />
-                {ADMIN_WHATSAPP_DISPLAY}
+                <Mail className="w-4 h-4 text-(--color-accent)" />
+                {CONTACT_EMAIL}
               </a>
             </li>
             <li className="text-(--color-fg-faint)">Partnered with NIT Allahabad</li>

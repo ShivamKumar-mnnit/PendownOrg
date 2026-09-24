@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { usePageSEO } from "../lib/seo";
 import Hero from "../sections/Hero";
 import TrustBar from "../sections/TrustBar";
@@ -27,6 +29,13 @@ export default function Home() {
       "Book 1:1 mock interviews and mentorship with industry professionals, matched to your domain (SDE, Data/AI, Product, Consulting) and confirmed over WhatsApp. Starting with NIT Allahabad.",
     path: "/",
   });
+
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    const el = document.querySelector(hash);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [hash]);
 
   return (
     <>

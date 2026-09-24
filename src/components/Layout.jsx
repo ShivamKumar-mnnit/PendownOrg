@@ -3,7 +3,8 @@ import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import WhatsAppButton from "./WhatsAppButton";
-import AIBotButton from "./AIBotButton";
+import PlacementAssist from "./PlacementAssist";
+import InterviewPopup from "./InterviewPopup";
 
 const SpaceBackground = lazy(() => import("./SpaceBackground"));
 
@@ -26,8 +27,9 @@ export default function Layout() {
         <Outlet />
       </main>
       {!isChromeFree && <Footer />}
-      {!isChromeFree && <AIBotButton />}
+      {!isChromeFree && <PlacementAssist />}
       {!isChromeFree && <WhatsAppButton />}
+      <InterviewPopup />
     </div>
   );
 }

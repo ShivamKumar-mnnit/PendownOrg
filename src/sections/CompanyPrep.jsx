@@ -48,7 +48,7 @@ function CompanyCard({ company }) {
 
 export default function CompanyPrep() {
   return (
-    <section className="mx-auto max-w-6xl px-5 py-20">
+    <section id="company-prep" className="mx-auto max-w-6xl px-5 py-20">
       <Reveal>
         <SectionHeading
           eyebrow="Company-Wise Prep"
