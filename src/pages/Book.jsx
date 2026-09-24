@@ -195,8 +195,11 @@ export default function Book() {
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="mx-auto max-w-2xl px-5 pb-16 sm:pb-20"
           >
-            <div className="relative overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-card) shadow-xl shadow-black/5">
-              <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-emerald-400" />
+            <div className="relative rounded-2xl border border-(--color-border) bg-(--color-card) shadow-xl shadow-black/5">
+              {/* Rounded on itself, not clipped via overflow-hidden on the
+                  card — that would also clip the Select dropdowns' popup
+                  lists, which need to render outside the card's bounds. */}
+              <div className="h-1.5 rounded-t-2xl bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-emerald-400" />
 
               <div className="p-6 sm:p-9">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-(--color-accent)/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-(--color-accent)">

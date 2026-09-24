@@ -90,10 +90,13 @@ export default function InterviewPopup() {
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-card) shadow-2xl"
+            className="relative w-full max-w-lg rounded-2xl border border-(--color-border) bg-(--color-card) shadow-2xl"
             style={{ backdropFilter: "blur(20px)" }}
           >
-            <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-emerald-400" />
+            {/* Rounded on itself, not clipped via a parent overflow-hidden —
+                that would also clip the Select dropdown's popup list, which
+                needs to render outside the card's bounds. */}
+            <div className="h-1.5 rounded-t-2xl bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-emerald-400" />
 
             <button
               type="button"

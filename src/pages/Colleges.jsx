@@ -232,8 +232,11 @@ export default function Colleges() {
               </div>
             </div>
 
-            <div className="relative mt-6 overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-card) shadow-xl shadow-black/5">
-              <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-emerald-400" />
+            <div className="relative mt-6 rounded-2xl border border-(--color-border) bg-(--color-card) shadow-xl shadow-black/5">
+              {/* Rounded on itself, not clipped via overflow-hidden on the
+                  card — that would also clip the file-picker/Select popup
+                  content, which needs to render outside the card's bounds. */}
+              <div className="h-1.5 rounded-t-2xl bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-emerald-400" />
 
               <form onSubmit={handleSubmit} noValidate className="p-6 sm:p-9 space-y-5">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-(--color-accent)/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-(--color-accent)">
