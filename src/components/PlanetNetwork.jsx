@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { makeStars, makeWireShape, makeGlowSprite, createPointerParallax } from "../lib/threeFx";
+import { makeStars, makeWireShape, makeGlowSprite, makeAtomCluster, createPointerParallax } from "../lib/threeFx";
 
 const STAR_COUNT = 700;
 const FIELD = { w: 30, h: 20, d: 20 };
@@ -16,6 +16,12 @@ const MINI_PLANETS = [
   { kind: "ring", pos: [5.3, 1.9, -1], radius: 0.32, color: 0xd97706, glow: "rgba(251,191,36,0.5)" },
   { kind: "rock", pos: [5.2, -2.2, 0.6], radius: 0.26, color: 0x52525b, glow: "rgba(148,163,184,0.35)" },
   { kind: "crystal", pos: [-5.6, 2.1, 0.3], radius: 0.5, color: 0x38bdf8 },
+];
+
+const ATOM_CLUSTERS = [
+  { pos: [-3.4, 2.6, 0.5], color: 0xbfe3ff, scale: 1.3 },
+  { pos: [4.6, -1.3, 1.2], color: 0x99f6e4, scale: 1 },
+  { pos: [0.6, 2.7, -2], color: 0xfda4af, scale: 0.8 },
 ];
 
 const NODE_COUNT = 20;
@@ -181,6 +187,13 @@ export default function PlanetNetwork({ className = "" }) {
       return group;
     });
 
+    const atomClusters = ATOM_CLUSTERS.map(({ pos, color, scale }) => {
+      const group = makeAtomCluster(color, scale);
+      group.position.set(...pos);
+      cluster.add(group);
+      return group;
+    });
+
     function resize() {
       const { clientWidth: w, clientHeight: h } = container;
       if (!w || !h) return;
@@ -223,6 +236,10 @@ export default function PlanetNetwork({ className = "" }) {
       });
       miniPlanets.forEach((group, i) => {
         group.rotation.y += dt * (0.12 + i * 0.03);
+      });
+      atomClusters.forEach((group, i) => {
+        group.rotation.y += dt * (0.18 + i * 0.05);
+        group.rotation.x += dt * 0.08;
       });
 
       parallax.update();

@@ -13,24 +13,30 @@
    Every themed color in the app reads from one of these custom properties
    instead of a hardcoded zinc/white shade, so light/dark is a matter of
    swapping the variable values here rather than touching every component. */
+/* The whole site now sits on a persistent fixed WebGL space scene
+   (SpaceBackground, mounted once in Layout.jsx) instead of a plain page
+   background — light mode's tokens are set equal to dark mode's so every
+   page reads correctly against it regardless of the theme toggle. The
+   toggle itself is left in place (harmless no-op) rather than ripping it
+   out along with the light theme. */
 :root {
-  --color-surface: #ffffff;
-  --color-surface-alt: #f4f4f5; /* zinc-100, alternating section bg */
-  --color-card: #ffffff;
-  --color-card-alt: #f4f4f5; /* zinc-100, table headers / hover chips */
-  --color-border: #e4e4e7; /* zinc-200 */
-  --color-border-strong: #d4d4d8; /* zinc-300 */
-  --color-input: #f4f4f5; /* zinc-100 */
-  --color-fg: #18181b; /* zinc-900, headings/strong text */
-  --color-fg-muted: #52525b; /* zinc-600, body text */
-  --color-fg-faint: #a1a1aa; /* zinc-400, hints/footnotes */
-  --color-accent: #4f46e5; /* indigo-600, links/eyebrows/icons on light bg */
-  --color-accent-emerald: #059669; /* emerald-600 */
+  --color-surface: #09090b;
+  --color-surface-alt: rgba(255, 255, 255, 0.02); /* alternating section bg */
+  --color-card: rgba(255, 255, 255, 0.03);
+  --color-card-alt: rgba(255, 255, 255, 0.05); /* table headers / hover chips */
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-strong: rgba(255, 255, 255, 0.15);
+  --color-input: rgba(255, 255, 255, 0.05);
+  --color-fg: #f4f4f5; /* headings/strong text */
+  --color-fg-muted: #a1a1aa; /* body text */
+  --color-fg-faint: #71717a; /* hints/footnotes */
+  --color-accent: #818cf8; /* indigo-400, links/eyebrows/icons */
+  --color-accent-emerald: #34d399; /* emerald-400 */
   /* Solid button fill — deliberately constant across themes so a filled
      button always has enough contrast against either page background. */
   --color-accent-solid: #4f46e5;
   --color-accent-solid-hover: #4338ca;
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 :root.dark {
@@ -54,9 +60,12 @@ html {
 }
 
 body {
-  background-color: var(--color-surface);
+  /* Transparent, not --color-surface (which stays solid for things like
+     Select's dropdown panel) — this is what lets SpaceBackground's fixed
+     canvas show through everywhere. */
+  background-color: transparent;
   color: var(--color-fg);
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: color 0.15s ease;
 }
 
 ::selection {

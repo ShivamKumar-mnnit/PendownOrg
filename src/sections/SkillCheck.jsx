@@ -6,7 +6,7 @@ import { Timer, ArrowRight, CheckCircle2, Circle } from "lucide-react";
 // Booking one happens through the same registration flow as everything else.
 export default function SkillCheck() {
   return (
-    <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
+    <section className="border-y border-(--color-border)">
       <div className="mx-auto max-w-6xl px-5 py-20 grid gap-12 lg:grid-cols-2 lg:items-center">
         <motion.div
           initial={{ opacity: 0, x: -24 }}

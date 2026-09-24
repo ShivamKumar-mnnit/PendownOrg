@@ -63,6 +63,35 @@ export function makeGlowSprite(color, size) {
   return sprite;
 }
 
+/** Small "atom" accent — a central sphere with a few smaller satellites on
+ * thin translucent rods, matching the little molecule-like clusters
+ * scattered through the reference art. Self-contained THREE.Group. */
+export function makeAtomCluster(color, scale = 1) {
+  const group = new THREE.Group();
+  const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85 });
+  const rodMaterial = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.4 });
+
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.09 * scale, 12, 12), material);
+  group.add(core);
+
+  const satelliteCount = 3;
+  for (let i = 0; i < satelliteCount; i++) {
+    const angle = (i / satelliteCount) * Math.PI * 2;
+    const tilt = (i % 2 === 0 ? 1 : -1) * 0.6;
+    const dist = 0.42 * scale;
+    const pos = new THREE.Vector3(Math.cos(angle) * dist, Math.sin(angle) * dist * tilt, Math.sin(angle * 1.7) * dist * 0.5);
+
+    const satellite = new THREE.Mesh(new THREE.SphereGeometry(0.045 * scale, 10, 10), material);
+    satellite.position.copy(pos);
+    group.add(satellite);
+
+    const rodGeometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), pos]);
+    group.add(new THREE.LineSegments(rodGeometry, rodMaterial));
+  }
+
+  return group;
+}
+
 /** Smoothed cursor-parallax camera tilt, shared by every WebGL background —
  * call `update()` once per frame after computing `mouse`. */
 export function createPointerParallax(container, camera, baseQuaternion, opts = {}) {

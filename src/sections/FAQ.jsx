@@ -35,7 +35,7 @@ export default function FAQ() {
   const [open, setOpen] = useState(0);
 
   return (
-    <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
+    <section className="border-y border-(--color-border)">
       <div className="mx-auto max-w-3xl px-5 py-20">
         <Reveal>
           <SectionHeading eyebrow="Knowledge Base" title="Frequently asked questions" />

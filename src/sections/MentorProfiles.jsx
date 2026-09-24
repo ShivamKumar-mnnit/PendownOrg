@@ -31,7 +31,7 @@ const ARCHETYPES = [
 
 export default function MentorProfiles() {
   return (
-    <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
+    <section className="border-y border-(--color-border)">
       <div className="mx-auto max-w-6xl px-5 py-20">
         <Reveal>
           <SectionHeading

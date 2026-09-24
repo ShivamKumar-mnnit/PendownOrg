@@ -3,7 +3,7 @@ import Reveal from "../components/Reveal";
 
 export default function TrustBar() {
   return (
-    <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
+    <section className="border-y border-(--color-border)">
       <Reveal
         as="div"
         className="mx-auto max-w-6xl px-5 py-8 flex flex-col sm:flex-row items-center justify-center gap-4 text-center"

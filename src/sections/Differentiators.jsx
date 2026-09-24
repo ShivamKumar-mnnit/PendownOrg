@@ -38,7 +38,7 @@ const POINTS = [
 
 export default function Differentiators() {
   return (
-    <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
+    <section className="border-y border-(--color-border)">
       <div className="mx-auto max-w-6xl px-5 py-20">
         <Reveal>
           <SectionHeading eyebrow="What Makes Us Different" title="Built different, on purpose" />

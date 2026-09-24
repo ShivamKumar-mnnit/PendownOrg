@@ -29,7 +29,7 @@ const TRACKS = [
 
 export default function TwoTracks() {
   return (
-    <section className="border-y border-(--color-border) bg-(--color-surface-alt)">
+    <section className="border-y border-(--color-border)">
       <div className="mx-auto max-w-6xl px-5 py-20">
         <Reveal>
           <SectionHeading eyebrow="Pick Your Track" title="Two ways to prep with Anobyt" />
