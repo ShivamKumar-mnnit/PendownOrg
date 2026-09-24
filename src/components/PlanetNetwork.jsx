@@ -5,10 +5,14 @@ import { makeStars, makeWireShape, makeGlowSprite, makeAtomCluster, createPointe
 const STAR_COUNT = 700;
 const FIELD = { w: 30, h: 20, d: 20 };
 
+// Spin is deliberately tiny — this is a logo decal, not a rotating globe,
+// and the reference art shows it reading clearly and face-on at all times.
+// Any real rotation speed eventually scrolls the crop off past the visible
+// hemisphere and leaves a blank patch showing.
 const LOGO_SPHERES = [
-  { pos: [-2.1, 0.5, 0], radius: 1.6, spin: 0.05 },
-  { pos: [2.0, 1.1, -1.6], radius: 1.05, spin: -0.07 },
-  { pos: [-0.4, -1.5, -1], radius: 0.75, spin: 0.09 },
+  { pos: [-2.1, 0.5, 0], radius: 1.6, spin: 0.008 },
+  { pos: [2.0, 1.1, -1.6], radius: 1.05, spin: -0.006 },
+  { pos: [-0.4, -1.5, -1], radius: 0.75, spin: 0.01 },
 ];
 
 const MINI_PLANETS = [
@@ -74,7 +78,7 @@ function loadIconTexture(onReady) {
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext("2d");
-    const scale = Math.min(size / img.width, size / img.height) * 1.15;
+    const scale = Math.min(size / img.width, size / img.height) * 1.75;
     const w = img.width * scale;
     const h = img.height * scale;
     ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
