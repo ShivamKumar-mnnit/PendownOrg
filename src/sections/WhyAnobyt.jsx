@@ -1,8 +1,9 @@
+import { lazy, Suspense } from "react";
 import { Briefcase, Target, Calendar, GraduationCap, Unlock } from "lucide-react";
 import Reveal from "../components/Reveal";
 import { StaggerGrid, StaggerItem } from "../components/StaggerGrid";
-import EarthGlobe from "../components/EarthGlobe";
-import StarField from "../components/StarField";
+
+const PlanetNetwork = lazy(() => import("../components/PlanetNetwork"));
 
 const POINTS = [
   {
@@ -52,19 +53,19 @@ function Card({ icon: Icon, title, desc }) {
   );
 }
 
-// Fixed-dark section (like the Hero) so the space-themed globe reads
+// Fixed-dark section (like the Hero) so the space-themed backdrop reads
 // correctly regardless of the site's light/dark toggle — same exception
-// pattern, used here because the globe is inherently a dark/space visual.
+// pattern, used here because the scene is inherently a dark/space visual.
 export default function WhyAnobyt() {
   return (
-    <section className="relative isolate overflow-hidden" style={{ backgroundColor: "#050b14" }}>
-      <div
-        className="pointer-events-none absolute inset-0 -z-20"
-        style={{ background: "radial-gradient(ellipse 70% 60% at 50% 45%, rgba(45,212,191,0.12), transparent 70%)" }}
-      />
-      <StarField className="-z-10" />
+    <section className="relative isolate min-h-[680px] overflow-hidden" style={{ backgroundColor: "#050b14" }}>
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <Suspense fallback={null}>
+          <PlanetNetwork />
+        </Suspense>
+      </div>
 
-      <div className="relative mx-auto max-w-6xl px-5 py-20">
+      <div className="relative mx-auto flex min-h-[680px] max-w-6xl flex-col justify-center px-5 py-20">
         <Reveal>
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400">Why Anobyt</p>
@@ -72,22 +73,17 @@ export default function WhyAnobyt() {
           </div>
         </Reveal>
 
-        <div className="mt-14 grid place-items-center gap-10 lg:grid-cols-3">
-          <StaggerGrid className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:self-center">
+        {/* Cards sit left/right, leaving the middle open so the network
+            scene behind them stays the visual focus, not covered by a
+            dedicated center element like the old single-globe layout. */}
+        <div className="mt-14 grid gap-10 sm:grid-cols-2 lg:gap-24">
+          <StaggerGrid className="grid gap-4">
             {LEFT.map((p) => (
               <Card key={p.title} {...p} />
             ))}
           </StaggerGrid>
 
-          {/* Middle column is the same width as the two flanking columns
-              (equal 1fr/1fr/1fr grid), so the globe is structurally
-              guaranteed to sit in the true center, not just wherever an
-              auto-sized column happens to land. */}
-          <Reveal delay={0.15} className="order-first lg:order-none">
-            <EarthGlobe size={340} />
-          </Reveal>
-
-          <StaggerGrid className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:self-center">
+          <StaggerGrid className="grid gap-4">
             {RIGHT.map((p) => (
               <Card key={p.title} {...p} />
             ))}

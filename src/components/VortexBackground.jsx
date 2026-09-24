@@ -1,10 +1,9 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { makeStars, makeWireShape, createPointerParallax } from "../lib/threeFx";
 
 const STAR_COUNT = 900;
-const FIELD_HEIGHT = 26;
-const FIELD_WIDTH = 34;
-const FIELD_DEPTH = 30;
+const FIELD = { w: 34, h: 26, d: 30 };
 
 function makeGridTexture() {
   const size = 256;
@@ -26,31 +25,6 @@ function makeGridTexture() {
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(22, 22);
   return texture;
-}
-
-function makeStars() {
-  const positions = new Float32Array(STAR_COUNT * 3);
-  for (let i = 0; i < STAR_COUNT; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * FIELD_WIDTH;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * FIELD_HEIGHT;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * FIELD_DEPTH;
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  const material = new THREE.PointsMaterial({
-    color: 0xdff4ff,
-    size: 0.055,
-    transparent: true,
-    opacity: 0.85,
-    sizeAttenuation: true,
-  });
-  return new THREE.Points(geometry, material);
-}
-
-function makeWireShape(geometry, color, opacity = 0.55) {
-  const edges = new THREE.EdgesGeometry(geometry);
-  const material = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
-  return new THREE.LineSegments(edges, material);
 }
 
 const SHAPE_LAYOUT = [
@@ -86,7 +60,7 @@ export default function VortexBackground({ className = "" }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
-    const stars = makeStars();
+    const stars = makeStars(STAR_COUNT, FIELD);
     scene.add(stars);
 
     const gridTexture = makeGridTexture();
@@ -123,14 +97,7 @@ export default function VortexBackground({ className = "" }) {
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(container);
 
-    const mouse = { x: 0, y: 0 };
-    const smoothed = { x: 0, y: 0 };
-    function handlePointerMove(e) {
-      const rect = container.getBoundingClientRect();
-      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = ((e.clientY - rect.top) / rect.height) * 2 - 1;
-    }
-    window.addEventListener("mousemove", handlePointerMove);
+    const parallax = createPointerParallax(container, camera, baseQuaternion, { baseY: 1.6 });
 
     let rafId;
     const starPositions = stars.geometry.attributes.position;
@@ -145,7 +112,7 @@ export default function VortexBackground({ className = "" }) {
       for (let i = 0; i < STAR_COUNT; i++) {
         const idx = i * 3 + 1;
         let y = starPositions.array[idx] + dt * 0.6;
-        if (y > FIELD_HEIGHT / 2) y -= FIELD_HEIGHT;
+        if (y > FIELD.h / 2) y -= FIELD.h;
         starPositions.array[idx] = y;
       }
       starPositions.needsUpdate = true;
@@ -158,14 +125,7 @@ export default function VortexBackground({ className = "" }) {
         mesh.position.y = baseY + Math.sin(t * 0.6 + baseY) * bob * 0.3;
       });
 
-      // Cursor parallax — smoothed camera tilt, eased toward the pointer.
-      smoothed.x += (mouse.x - smoothed.x) * 0.04;
-      smoothed.y += (mouse.y - smoothed.y) * 0.04;
-      camera.quaternion.copy(baseQuaternion);
-      camera.rotateY(-smoothed.x * 0.06);
-      camera.rotateX(smoothed.y * 0.035);
-      camera.position.x = smoothed.x * 0.5;
-      camera.position.y = 1.6 + smoothed.y * 0.25;
+      parallax.update();
 
       renderer.render(scene, camera);
       if (!reduceMotion) rafId = requestAnimationFrame(renderFrame);
@@ -175,7 +135,7 @@ export default function VortexBackground({ className = "" }) {
 
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
-      window.removeEventListener("mousemove", handlePointerMove);
+      parallax.dispose();
       resizeObserver.disconnect();
       shapes.forEach(({ mesh }) => {
         mesh.geometry.dispose();
