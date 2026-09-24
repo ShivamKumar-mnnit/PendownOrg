@@ -51,8 +51,9 @@ export default function Book() {
 
   const [searchParams] = useSearchParams();
   const prefillCompany = searchParams.get("company") || "";
+  const prefillDomain = DOMAIN_LABELS.includes(searchParams.get("domain")) ? searchParams.get("domain") : "";
 
-  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, company: prefillCompany }));
+  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, company: prefillCompany, domain: prefillDomain }));
   const [errors, setErrors] = useState({});
   const [submittedLink, setSubmittedLink] = useState(null);
 

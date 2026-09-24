@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import CodeMirror from "@uiw/react-codemirror";
 import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
 import { motion } from "motion/react";
@@ -20,7 +20,11 @@ export default function Compiler() {
   });
 
   const isDark = useIsDark();
-  const [languageId, setLanguageId] = useState(LANGUAGES[0].id);
+  const [searchParams] = useSearchParams();
+  const prefillLang = searchParams.get("lang");
+  const [languageId, setLanguageId] = useState(
+    LANGUAGES.some((l) => l.id === prefillLang) ? prefillLang : LANGUAGES[0].id
+  );
   const [codeByLanguage, setCodeByLanguage] = useState(() =>
     Object.fromEntries(LANGUAGES.map((l) => [l.id, l.boilerplate]))
   );
