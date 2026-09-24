@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import CodeMirror from "@uiw/react-codemirror";
 import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
@@ -7,22 +7,7 @@ import { Play, Loader2, Maximize2, Minimize2, ArrowLeft, RotateCcw, Terminal } f
 import Select from "../components/Select";
 import { LANGUAGES, getLanguage, runCode } from "../lib/compiler";
 import { usePageSEO } from "../lib/seo";
-
-/** Tracks the `.dark` class on <html>, which ThemeToggle owns, so the editor
- *  theme follows the site theme without a separate source of truth. */
-function useIsDark() {
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
-
-  return isDark;
-}
+import { useIsDark } from "../lib/useIsDark";
 
 const LANGUAGE_OPTIONS = LANGUAGES.map((l) => ({ value: l.id, label: l.label }));
 

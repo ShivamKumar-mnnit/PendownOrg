@@ -5,7 +5,7 @@ import { ADMIN_WHATSAPP_DISPLAY, buildAdminWaLink } from "../lib/whatsapp";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-(--color-border) bg-black/20 backdrop-blur-sm">
+    <footer className="border-t border-(--color-border) bg-(--color-surface)/70 backdrop-blur-sm">
       <div className="mx-auto max-w-6xl px-5 py-12 grid gap-10 sm:grid-cols-2 md:grid-cols-4">
         <div className="md:col-span-2">
           <Logo badgeClassName="h-7 w-7" textClassName="text-base" />
