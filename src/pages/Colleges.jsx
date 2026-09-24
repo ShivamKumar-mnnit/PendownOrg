@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Download, UploadCloud, CheckCircle2, FileSpreadsheet, ExternalLink, ArrowRight,
-  Users, CalendarCheck, MessageCircle,
+  Users, CalendarCheck, MessageCircle, Sparkles,
 } from "lucide-react";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import { buildAdminWaLink, openWhatsApp } from "../lib/whatsapp";
@@ -232,90 +232,100 @@ export default function Colleges() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="mt-6 rounded-2xl border border-(--color-border) bg-(--color-card) p-6 sm:p-8 space-y-5">
-              <Field label="College Name" error={errors.college}>
-                <input
-                  type="text"
-                  value={form.college}
-                  onChange={(e) => update("college", e.target.value)}
-                  placeholder="NIT Allahabad"
-                  className={inputClass(errors.college)}
-                />
-              </Field>
+            <div className="relative mt-6 overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-card) shadow-xl shadow-black/5">
+              <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-emerald-400" />
 
-              <div className="grid sm:grid-cols-2 gap-5">
-                <Field label="Contact Person" error={errors.contactName}>
+              <form onSubmit={handleSubmit} noValidate className="p-6 sm:p-9 space-y-5">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-(--color-accent)/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-(--color-accent)">
+                  <Sparkles className="h-3 w-3" />
+                  One form, whole batch
+                </span>
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field label="College Name" error={errors.college}>
+                    <input
+                      type="text"
+                      value={form.college}
+                      onChange={(e) => update("college", e.target.value)}
+                      placeholder="NIT Allahabad"
+                      className={inputClass(errors.college)}
+                    />
+                  </Field>
+                  <Field label="Approx. Number of Students" hint="Optional">
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.studentCount}
+                      onChange={(e) => update("studentCount", e.target.value)}
+                      placeholder="60"
+                      className={inputClass()}
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field label="Contact Person" error={errors.contactName}>
+                    <input
+                      type="text"
+                      value={form.contactName}
+                      onChange={(e) => update("contactName", e.target.value)}
+                      placeholder="Placement Coordinator Name"
+                      className={inputClass(errors.contactName)}
+                    />
+                  </Field>
+                  <Field label="Contact Phone" error={errors.contactPhone}>
+                    <input
+                      type="tel"
+                      value={form.contactPhone}
+                      onChange={(e) => update("contactPhone", e.target.value)}
+                      placeholder="70xxxxxxxx"
+                      className={inputClass(errors.contactPhone)}
+                    />
+                  </Field>
+                </div>
+
+                <Field label="Student List (Excel / CSV)" error={errors.file}>
+                  <label
+                    htmlFor="student-file"
+                    className={`flex cursor-pointer items-center gap-3 rounded-xl border border-dashed px-4 py-4 text-sm transition-colors ${
+                      errors.file ? "border-rose-500/60" : "border-(--color-border-strong) hover:border-(--color-accent)/50"
+                    }`}
+                  >
+                    <UploadCloud className="h-5 w-5 text-(--color-fg-faint)" />
+                    <span className="text-(--color-fg-muted)">{file ? file.name : "Click to select a .xlsx, .xls or .csv file"}</span>
+                  </label>
                   <input
-                    type="text"
-                    value={form.contactName}
-                    onChange={(e) => update("contactName", e.target.value)}
-                    placeholder="Placement Coordinator Name"
-                    className={inputClass(errors.contactName)}
+                    id="student-file"
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleFile}
+                    className="hidden"
                   />
+                  {preview && (
+                    <p className="mt-2 text-xs text-(--color-accent-emerald)">
+                      Looks good — found {preview.rowCount} row{preview.rowCount === 1 ? "" : "s"}
+                      {preview.names.length ? ` (e.g. ${preview.names.join(", ")}…)` : ""}.
+                    </p>
+                  )}
+                  {parseError && <p className="mt-2 text-xs text-amber-400">{parseError}</p>}
                 </Field>
-                <Field label="Contact Phone" error={errors.contactPhone}>
-                  <input
-                    type="tel"
-                    value={form.contactPhone}
-                    onChange={(e) => update("contactPhone", e.target.value)}
-                    placeholder="70xxxxxxxx"
-                    className={inputClass(errors.contactPhone)}
-                  />
-                </Field>
-              </div>
 
-              <Field label="Approx. Number of Students" hint="Optional">
-                <input
-                  type="number"
-                  min="0"
-                  value={form.studentCount}
-                  onChange={(e) => update("studentCount", e.target.value)}
-                  placeholder="60"
-                  className={inputClass()}
-                />
-              </Field>
-
-              <Field label="Student List (Excel / CSV)" error={errors.file}>
-                <label
-                  htmlFor="student-file"
-                  className={`flex cursor-pointer items-center gap-3 rounded-xl border border-dashed px-4 py-4 text-sm transition-colors ${
-                    errors.file ? "border-rose-500/60" : "border-(--color-border-strong) hover:border-(--color-accent)/50"
-                  }`}
+                <motion.button
+                  type="submit"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-400 to-indigo-500 px-6 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-shadow"
                 >
-                  <UploadCloud className="h-5 w-5 text-(--color-fg-faint)" />
-                  <span className="text-(--color-fg-muted)">{file ? file.name : "Click to select a .xlsx, .xls or .csv file"}</span>
-                </label>
-                <input
-                  id="student-file"
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={handleFile}
-                  className="hidden"
-                />
-                {preview && (
-                  <p className="mt-2 text-xs text-(--color-accent-emerald)">
-                    Looks good — found {preview.rowCount} row{preview.rowCount === 1 ? "" : "s"}
-                    {preview.names.length ? ` (e.g. ${preview.names.join(", ")}…)` : ""}.
-                  </p>
-                )}
-                {parseError && <p className="mt-2 text-xs text-amber-400">{parseError}</p>}
-              </Field>
+                  Confirm &amp; Register
+                  <ArrowRight className="h-4 w-4" />
+                </motion.button>
 
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-3.5 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors"
-              >
-                Confirm &amp; Register
-                <ArrowRight className="h-4 w-4" />
-              </motion.button>
-
-              <p className="text-center text-xs text-(--color-fg-faint)">
-                This also opens WhatsApp with your details ready — you'll attach the file
-                and hit Send there to complete your registration.
-              </p>
-            </form>
+                <p className="text-center text-xs text-(--color-fg-faint)">
+                  This also opens WhatsApp with your details ready — you'll attach the file
+                  and hit Send there to complete your registration.
+                </p>
+              </form>
+            </div>
           </motion.section>
         </motion.div>
       )}
@@ -338,7 +348,7 @@ function Field({ label, error, hint, children }) {
 }
 
 function inputClass(error) {
-  return `w-full rounded-xl border bg-(--color-input) px-4 py-2.5 text-sm text-(--color-fg) placeholder-(--color-fg-faint) outline-none transition-colors focus:border-(--color-accent) ${
+  return `w-full rounded-xl border bg-(--color-input) px-4 py-3 text-sm text-(--color-fg) placeholder-(--color-fg-faint) outline-none transition-[border-color,box-shadow] focus:border-(--color-accent) focus:shadow-[0_0_0_4px_rgba(79,70,229,0.15)] ${
     error ? "border-rose-500/60" : "border-(--color-border)"
   }`;
 }

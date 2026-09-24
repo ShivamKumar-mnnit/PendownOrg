@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowRight, CheckCircle2, ExternalLink, Users, MessageCircle, FileCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, ExternalLink, Users, MessageCircle, FileCheck, Sparkles } from "lucide-react";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import Select from "../components/Select";
 import { DOMAIN_LABELS } from "../lib/domains";
@@ -193,80 +193,95 @@ export default function Book() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="mx-auto max-w-lg px-5 pb-16 sm:pb-20"
+            className="mx-auto max-w-2xl px-5 pb-16 sm:pb-20"
           >
-            <div className="rounded-2xl border border-(--color-border) bg-(--color-card) p-6 sm:p-8">
-              <form onSubmit={handleSubmit} noValidate className="space-y-5">
-                <Field label="Full Name" error={errors.name}>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => update("name", e.target.value)}
-                    className={inputClass(errors.name)}
-                  />
-                </Field>
+            <div className="relative overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-card) shadow-xl shadow-black/5">
+              <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-emerald-400" />
 
-                <Field label="Phone Number" error={errors.phone} hint="We'll contact you on this number via WhatsApp.">
-                  <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) => update("phone", e.target.value)}
-                    className={inputClass(errors.phone)}
-                  />
-                </Field>
+              <div className="p-6 sm:p-9">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-(--color-accent)/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-(--color-accent)">
+                  <Sparkles className="h-3 w-3" />
+                  Takes under a minute
+                </span>
 
-                <Field label="Session Type">
-                  <Select
-                    value={form.sessionType}
-                    onChange={(v) => update("sessionType", v)}
-                    options={SESSION_TYPES}
-                  />
-                </Field>
+                <form onSubmit={handleSubmit} noValidate className="mt-5 space-y-5">
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <Field label="Full Name" error={errors.name}>
+                      <input
+                        type="text"
+                        value={form.name}
+                        onChange={(e) => update("name", e.target.value)}
+                        className={inputClass(errors.name)}
+                      />
+                    </Field>
 
-                <Field label="Domain" error={errors.domain}>
-                  <Select
-                    value={form.domain}
-                    onChange={(v) => update("domain", v)}
-                    options={DOMAIN_LABELS}
-                    placeholder="Select a domain"
-                    error={errors.domain}
-                  />
-                </Field>
+                    <Field label="Phone Number" error={errors.phone} hint="We'll contact you on this number via WhatsApp.">
+                      <input
+                        type="tel"
+                        value={form.phone}
+                        onChange={(e) => update("phone", e.target.value)}
+                        className={inputClass(errors.phone)}
+                      />
+                    </Field>
+                  </div>
 
-                <Field label="Target Company" hint="Optional — we'll tailor the mock interview to their typical process.">
-                  <input
-                    type="text"
-                    value={form.company}
-                    onChange={(e) => update("company", e.target.value)}
-                    placeholder="e.g. Google, TCS, Deloitte..."
-                    className={inputClass()}
-                  />
-                </Field>
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <Field label="Session Type">
+                      <Select
+                        value={form.sessionType}
+                        onChange={(v) => update("sessionType", v)}
+                        options={SESSION_TYPES}
+                      />
+                    </Field>
 
-                <Field label="Resume Link" hint="Optional — Google Drive, LinkedIn, etc.">
-                  <input
-                    type="text"
-                    value={form.resume}
-                    onChange={(e) => update("resume", e.target.value)}
-                    placeholder="https://drive.google.com/..."
-                    className={inputClass()}
-                  />
-                </Field>
+                    <Field label="Domain" error={errors.domain}>
+                      <Select
+                        value={form.domain}
+                        onChange={(v) => update("domain", v)}
+                        options={DOMAIN_LABELS}
+                        placeholder="Select a domain"
+                        error={errors.domain}
+                      />
+                    </Field>
+                  </div>
 
-                <motion.button
-                  type="submit"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-3.5 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors"
-                >
-                  Confirm &amp; Register
-                  <ArrowRight className="h-4 w-4" />
-                </motion.button>
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <Field label="Target Company" hint="Optional — we'll tailor the mock interview to their process.">
+                      <input
+                        type="text"
+                        value={form.company}
+                        onChange={(e) => update("company", e.target.value)}
+                        placeholder="e.g. Google, TCS, Deloitte..."
+                        className={inputClass()}
+                      />
+                    </Field>
 
-                <p className="text-center text-xs text-(--color-fg-faint)">
-                  This also opens WhatsApp with your details ready to send to our team.
-                </p>
-              </form>
+                    <Field label="Resume Link" hint="Optional — Google Drive, LinkedIn, etc.">
+                      <input
+                        type="text"
+                        value={form.resume}
+                        onChange={(e) => update("resume", e.target.value)}
+                        placeholder="https://drive.google.com/..."
+                        className={inputClass()}
+                      />
+                    </Field>
+                  </div>
+
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-400 to-indigo-500 px-6 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-shadow"
+                  >
+                    Confirm &amp; Register
+                    <ArrowRight className="h-4 w-4" />
+                  </motion.button>
+
+                  <p className="text-center text-xs text-(--color-fg-faint)">
+                    This also opens WhatsApp with your details ready to send to our team.
+                  </p>
+                </form>
+              </div>
             </div>
 
             <p className="mt-8 text-center text-sm text-(--color-fg-faint)">
@@ -297,7 +312,7 @@ function Field({ label, error, hint, children }) {
 }
 
 function inputClass(error) {
-  return `w-full rounded-xl border bg-(--color-input) px-4 py-2.5 text-sm text-(--color-fg) placeholder-(--color-fg-faint) outline-none transition-colors focus:border-(--color-accent) ${
+  return `w-full rounded-xl border bg-(--color-input) px-4 py-3 text-sm text-(--color-fg) placeholder-(--color-fg-faint) outline-none transition-[border-color,box-shadow] focus:border-(--color-accent) focus:shadow-[0_0_0_4px_rgba(79,70,229,0.15)] ${
     error ? "border-rose-500/60" : "border-(--color-border)"
   }`;
 }
