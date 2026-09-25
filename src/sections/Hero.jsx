@@ -27,7 +27,7 @@ export default function Hero() {
         initial="hidden"
         animate="visible"
         variants={container}
-        className="relative mx-auto max-w-4xl px-5 py-24 sm:py-28 text-center"
+        className="relative mx-auto max-w-6xl px-5 py-24 sm:py-28 text-center"
       >
         <motion.div
           variants={item}
