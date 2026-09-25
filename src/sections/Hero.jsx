@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Code2, BrainCircuit, LineChart, Briefcase } from "lucide-react";
 import HeroBackground from "../components/HeroBackground";
 
 const container = {
@@ -13,10 +13,12 @@ const item = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
 };
 
-// Honest stand-in for "architected with minds from Google/Meta/..." —
-// Anobyt has no verified company affiliations to claim, so the same
-// large-ghost-text treatment shows the real domains we prep for instead.
-const DOMAIN_WORDS = ["SDE", "DATA / AI", "PRODUCT", "CONSULTING"];
+const DOMAINS = [
+  { label: "SDE", icon: Code2 },
+  { label: "Data / AI", icon: BrainCircuit },
+  { label: "Product", icon: LineChart },
+  { label: "Consulting", icon: Briefcase },
+];
 
 export default function Hero() {
   return (
@@ -25,72 +27,70 @@ export default function Hero() {
         initial="hidden"
         animate="visible"
         variants={container}
-        className="relative mx-auto grid max-w-6xl gap-10 px-5 py-20 sm:py-28 lg:grid-cols-[1fr_auto] lg:items-center"
+        className="relative mx-auto max-w-4xl px-5 py-24 sm:py-28 text-center"
       >
-        <div>
-          <motion.div
-            variants={item}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-slate-300"
+        <motion.div
+          variants={item}
+          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-slate-300"
+        >
+          <motion.span
+            className="h-1.5 w-1.5 rounded-full bg-cyan-400"
+            animate={{ opacity: [1, 0.3, 1] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+          />
+          Partnered with NIT Allahabad
+        </motion.div>
+
+        <motion.h1
+          variants={item}
+          className="mt-6 text-4xl sm:text-5xl md:text-6xl font-extrabold leading-[1.15] tracking-tight text-white"
+        >
+          Ace Your Next{" "}
+          <span className="text-cyan-300 underline decoration-cyan-400/50 underline-offset-8">Mock Interview</span>
+          <br />
+          With Real Mentors.
+        </motion.h1>
+
+        <motion.p variants={item} className="mt-6 mx-auto max-w-xl text-base sm:text-lg text-slate-400">
+          Anobyt connects college students with industry mentors for 1:1 mock
+          interviews and mentorship — booked in minutes, confirmed over WhatsApp.
+        </motion.p>
+
+        <motion.div variants={item} className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link
+            to="/book"
+            className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-400 to-indigo-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.03] active:scale-[0.97] transition-[box-shadow,transform]"
           >
-            <motion.span
-              className="h-1.5 w-1.5 rounded-full bg-emerald-400"
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-            />
-            Partnered with NIT Allahabad
-          </motion.div>
-
-          <motion.h1
-            variants={item}
-            className="mt-6 text-4xl sm:text-6xl md:text-7xl font-extrabold leading-[1.05] tracking-tight text-white"
+            Book a Mock Interview
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+          <Link
+            to="/colleges"
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white hover:bg-white/5 hover:scale-[1.03] active:scale-[0.97] transition-[background-color,transform]"
           >
-            Ace Your Next
-            <br />
-            <span className="brand-gradient">Mock Interview</span>
-            <br />
-            <span className="text-slate-400">With Real Mentors.</span>
-          </motion.h1>
+            <Sparkles className="h-4 w-4 text-cyan-400" />
+            For Colleges &amp; Placement Cells
+          </Link>
+        </motion.div>
 
-          <motion.p variants={item} className="mt-6 max-w-xl text-base sm:text-lg text-slate-400">
-            Anobyt connects college students with industry mentors for 1:1 mock
-            interviews and mentorship — booked in minutes, confirmed over WhatsApp.
-          </motion.p>
-
-          <motion.div variants={item} className="mt-9 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <Link
-              to="/book"
-              className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-400 to-indigo-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-[1.03] active:scale-[0.97] transition-[box-shadow,transform]"
-            >
-              Book a Mock Interview
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link
-              to="/colleges"
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white hover:bg-white/5 hover:scale-[1.03] active:scale-[0.97] transition-[background-color,transform]"
-            >
-              <Sparkles className="h-4 w-4 text-emerald-400" />
-              For Colleges &amp; Placement Cells
-            </Link>
-          </motion.div>
-        </div>
-
-        {/* Ghost-text domain stack — desktop only, mirrors the reference's
-            "architected with minds from ..." column but with honest content. */}
-        <motion.div variants={item} className="hidden lg:flex flex-col items-end gap-1 pr-2">
-          <span className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+        <motion.div variants={item} className="mt-14">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
             Domains We Prep For
-          </span>
-          {DOMAIN_WORDS.map((word, i) => (
-            <motion.span
-              key={word}
-              initial={{ opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-              className="font-serif italic text-3xl xl:text-4xl font-bold text-white/10 hover:text-white/25 transition-colors"
-            >
-              {word}
-            </motion.span>
-          ))}
+          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            {DOMAINS.map(({ label, icon: Icon }, i) => (
+              <motion.span
+                key={label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 + i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-200"
+              >
+                <Icon className="h-3.5 w-3.5 text-cyan-400" />
+                {label}
+              </motion.span>
+            ))}
+          </div>
         </motion.div>
       </motion.div>
     </HeroBackground>
