@@ -46,7 +46,24 @@ export default function Hero() {
           className="mt-6 text-4xl sm:text-5xl md:text-6xl font-extrabold leading-[1.15] tracking-tight text-white"
         >
           Ace Your Next{" "}
-          <span className="text-cyan-300 underline decoration-cyan-400/50 underline-offset-8">Mock Interview</span>
+          <span className="relative inline-block text-cyan-300">
+            Mock Interview
+            <svg
+              className="absolute -bottom-2 left-0 h-3 w-full sm:-bottom-3 sm:h-4"
+              viewBox="0 0 200 12"
+              preserveAspectRatio="none"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M0,7 Q8,1 16,7 T32,7 T48,7 T64,7 T80,7 T96,7 T112,7 T128,7 T144,7 T160,7 T176,7 T192,7 T208,7"
+                stroke="currentColor"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+                className="text-cyan-400/70"
+              />
+            </svg>
+          </span>
           <br />
           With Real Mentors.
         </motion.h1>
