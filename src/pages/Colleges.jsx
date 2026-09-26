@@ -188,8 +188,7 @@ export default function Colleges() {
               </motion.h1>
               <motion.p variants={introItem} className="mt-4 text-(--color-fg-muted)">
                 Bulk-upload your students, and we handle mentor matching, scheduling, and
-                WhatsApp confirmations for every one of them — the same way we work with
-                NIT Allahabad.
+                WhatsApp confirmations for every one of them.
               </motion.p>
 
               <motion.div variants={introItem} className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -250,7 +249,7 @@ export default function Colleges() {
                       type="text"
                       value={form.college}
                       onChange={(e) => update("college", e.target.value)}
-                      placeholder="NIT Allahabad"
+                      placeholder="e.g. Your College Name"
                       className={inputClass(errors.college)}
                     />
                   </Field>

@@ -32,7 +32,7 @@ const POINTS = [
   {
     icon: HeartHandshake,
     title: "Campus-first partnerships",
-    desc: "Built alongside placement cells, starting with NIT Allahabad, not bolted on after.",
+    desc: "Built alongside placement cells, not bolted on after.",
   },
 ];
 

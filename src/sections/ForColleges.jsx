@@ -26,8 +26,8 @@ export default function ForColleges() {
               Onboard your whole batch at once
             </h2>
             <p className="mt-3 text-(--color-fg-muted)">
-              Already how we work with NIT Allahabad — send us your student list, and
-              we handle mentor matching, scheduling, and WhatsApp confirmations.
+              Send us your student list, and we handle mentor matching,
+              scheduling, and WhatsApp confirmations for the whole batch.
             </p>
             <Link
               to="/colleges"

@@ -24,7 +24,7 @@ const POINTS = [
   {
     icon: GraduationCap,
     title: "Built with campuses in mind",
-    desc: "Designed alongside placement cells, starting with NIT Allahabad.",
+    desc: "Designed alongside placement cells and student communities.",
   },
   {
     icon: Unlock,

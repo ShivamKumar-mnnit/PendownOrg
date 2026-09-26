@@ -1,7 +1,7 @@
 # Anobyt
 
 A frontend-only React site for 1:1 mock interviews & mentorship for college
-students, starting with NIT Allahabad. No backend — WhatsApp notifications
+students. No backend — WhatsApp notifications
 are done via `wa.me` deep links that a human (student, college coordinator,
 or admin) sends manually; certificates are generated client-side.
 

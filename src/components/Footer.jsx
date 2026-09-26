@@ -28,8 +28,8 @@ export default function Footer() {
         <div className="sm:col-span-2 lg:col-span-2">
           <Logo badgeClassName="h-7 w-7" textClassName="text-base" />
           <p className="mt-3 max-w-sm text-sm text-(--color-fg-muted)">
-            1:1 mock interviews and mentorship for college students — starting with
-            NIT Allahabad. Real mentors, honest feedback, no clunky dashboards.
+            1:1 mock interviews and mentorship for college students. Real
+            mentors, honest feedback, no clunky dashboards.
           </p>
 
           <a
@@ -134,7 +134,6 @@ export default function Footer() {
                 {CONTACT_EMAIL}
               </a>
             </li>
-            <li className="text-(--color-fg-faint)">Partnered with NIT Allahabad</li>
           </ul>
         </div>
       </div>

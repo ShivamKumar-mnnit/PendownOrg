@@ -26,8 +26,8 @@ const FAQS = [
     a: "Based on the domain you select when you book — SDE, Data/AI, Product, Consulting, Cybersecurity, and more.",
   },
   {
-    q: "Is this only for NIT Allahabad students?",
-    a: "NIT Allahabad is our founding campus partner, but any student can book a session directly, and other placement cells can reach out to onboard their batch too.",
+    q: "Is this only for specific colleges?",
+    a: "No — any student can book a session directly, and placement cells at any college can reach out to onboard their whole batch too.",
   },
 ];
 

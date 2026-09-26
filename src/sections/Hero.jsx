@@ -38,7 +38,7 @@ export default function Hero() {
             animate={{ opacity: [1, 0.3, 1] }}
             transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
           />
-          Partnered with NIT Allahabad
+          Now Open for Registrations
         </motion.div>
 
         <motion.h1

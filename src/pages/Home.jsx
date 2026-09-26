@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { usePageSEO } from "../lib/seo";
 import Hero from "../sections/Hero";
-import TrustBar from "../sections/TrustBar";
 import WhyAnobyt from "../sections/WhyAnobyt";
 import Offerings from "../sections/Offerings";
 import SessionStyle from "../sections/SessionStyle";
@@ -26,7 +25,7 @@ export default function Home() {
   usePageSEO({
     title: "Anobyt | Mock Interviews & Mentorship for College Students",
     description:
-      "Book 1:1 mock interviews and mentorship with industry professionals, matched to your domain (SDE, Data/AI, Product, Consulting) and confirmed over WhatsApp. Starting with NIT Allahabad.",
+      "Book 1:1 mock interviews and mentorship with industry professionals, matched to your domain (SDE, Data/AI, Product, Consulting) and confirmed over WhatsApp.",
     path: "/",
   });
 
@@ -41,7 +40,6 @@ export default function Home() {
     <>
       <Hero />
       <WhyAnobyt />
-      <TrustBar />
       <Offerings />
       <SessionStyle />
       <SkillCheck />

@@ -8,7 +8,7 @@ const FORMATS = [
   {
     icon: Presentation,
     title: "On-Campus Workshops",
-    desc: "DSA and system design sessions run directly at partner campuses, starting with NIT Allahabad.",
+    desc: "DSA and system design sessions run directly at partner campuses.",
   },
   {
     icon: Users2,
