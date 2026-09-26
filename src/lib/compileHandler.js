@@ -8,7 +8,7 @@
 // same-origin proxy sidesteps that, and as a bonus keeps the service's auth
 // token out of the shipped client bundle.
 
-const COMPILE_ENDPOINT = "https://compiler-data-service.onrender.com/api/v1/compile";
+const COMPILE_ENDPOINT = "https://api.anobyt.in/api/v1/compile";
 const COMPILE_AUTH_TOKEN = "anVzdGZrb2Zm";
 
 const ALLOWED_LANGUAGES = new Set(["python", "javascript", "java", "c", "cpp"]);
