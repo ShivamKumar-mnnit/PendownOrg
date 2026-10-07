@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { usePageSEO } from "../lib/seo";
 import Hero from "../sections/Hero";
+import Roadmap from "../sections/Roadmap";
 import WhyAnobyt from "../sections/WhyAnobyt";
 import Offerings from "../sections/Offerings";
 import SessionStyle from "../sections/SessionStyle";
@@ -18,6 +19,7 @@ import IndustryReach from "../sections/IndustryReach";
 import ForColleges from "../sections/ForColleges";
 import ResourcesTeaser from "../sections/ResourcesTeaser";
 import CompanyPrep from "../sections/CompanyPrep";
+import Courses from "../sections/Courses";
 import FAQ from "../sections/FAQ";
 import CTA from "../sections/CTA";
 
@@ -39,6 +41,7 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <Roadmap />
       <WhyAnobyt />
       <Offerings />
       <SessionStyle />
@@ -55,6 +58,7 @@ export default function Home() {
       <ForColleges />
       <ResourcesTeaser />
       <CompanyPrep />
+      <Courses />
       <FAQ />
       <CTA />
     </>
