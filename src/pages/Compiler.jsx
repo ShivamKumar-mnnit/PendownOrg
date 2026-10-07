@@ -174,6 +174,27 @@ export default function Compiler() {
             Terminal
           </button>
 
+          <button
+            type="button"
+            onClick={interactive ? (sessionRunning ? stopSession : handleStartSession) : handleRun}
+            disabled={!interactive && running}
+            title={interactive ? (sessionRunning ? "Stop" : "Run") : running ? "Running..." : "Run"}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-60 ${
+              interactive && sessionRunning
+                ? "border-rose-500 text-rose-500 hover:bg-rose-500/10"
+                : "border-(--color-border) text-(--color-fg-muted) hover:text-(--color-fg) hover:border-(--color-border-strong)"
+            }`}
+          >
+            {interactive ? (
+              sessionRunning ? <Square className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />
+            ) : running ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Play className="h-3.5 w-3.5" />
+            )}
+            {interactive ? (sessionRunning ? "Stop" : "Run") : running ? "Running..." : "Run"}
+          </button>
+
           <div className="ml-auto flex items-center gap-2">
             <button
               type="button"
