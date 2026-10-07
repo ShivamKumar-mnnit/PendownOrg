@@ -42,11 +42,10 @@ export default defineConfig({
   server: {
     // Mirrors the /ws/execute redirect in netlify.toml, so `npm run dev` can
     // reach the interactive execution backend the same same-origin way the
-    // production build does. Points at the Render testing instance — swap
-    // to the prod host once it's deployed there.
+    // production build does.
     proxy: {
       '/ws/execute': {
-        target: 'wss://compiler-data-service.onrender.com',
+        target: 'wss://api.anobyt.in',
         ws: true,
         changeOrigin: true,
       },

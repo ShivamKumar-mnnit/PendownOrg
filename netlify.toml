@@ -20,11 +20,9 @@
 # the browser never connects directly to the backend host and never needs its
 # own copy of that host baked into the client bundle — mirrors /api/compile
 # above, just over a WebSocket instead of a Netlify function.
-# Currently pointed at the Render testing instance; swap to the prod host
-# (e.g. api.anobyt.in) once it's deployed there.
 [[redirects]]
   from = "/ws/execute"
-  to = "https://compiler-data-service.onrender.com/ws/execute"
+  to = "https://api.anobyt.in/ws/execute"
   status = 200
 
 # Client-side routing (React Router) — without this, refreshing or
