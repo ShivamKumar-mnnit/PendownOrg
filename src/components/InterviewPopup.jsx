@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { X, Sparkles, CheckCircle2 } from "lucide-react";
-import Select from "./Select";
-import { DOMAIN_LABELS } from "../lib/domains";
-import { buildAdminWaLink, openWhatsApp, normalizePhone } from "../lib/whatsapp";
+import { X, Sparkles, CheckCircle2, ArrowRight } from "lucide-react";
+import { buildAdminWaLink, openWhatsApp } from "../lib/whatsapp";
 
 const SESSION_KEY = "anobyt_demo_popup_seen";
 const DELAY_MS = 5000;
@@ -12,19 +10,22 @@ const DELAY_MS = 5000;
 // pages at all — a lead popup on top of either would just be noise.
 const SKIP_ROUTES = ["/book", "/admin", "/compiler"];
 
-const EMPTY_FORM = { name: "", phone: "", domain: "", college: "" };
+const STAGES = [
+  { id: "1st-year", title: "1st Year", subtitle: "Just starting out" },
+  { id: "2nd-year", title: "2nd Year", subtitle: "Building the base" },
+  { id: "3rd-year", title: "3rd Year", subtitle: "Getting serious" },
+  { id: "final-year", title: "Final Year", subtitle: "Placement season" },
+  { id: "already-preparing", title: "Already Preparing", subtitle: "Sharpening the edge" },
+];
 
-function buildMessage({ name, phone, domain, college }) {
-  const lines = [
-    "Hi Anobyt! I'd like to book a *Free 1:1 Mock Interview*.",
+function buildMessage(stage) {
+  return [
+    "Hi Anobyt! I'd like a placement roadmap.",
     "",
-    `Name: ${name}`,
-    `Phone: ${phone}`,
-    `Domain: ${domain}`,
-  ];
-  if (college.trim()) lines.push(`College: ${college.trim()}`);
-  lines.push("", "Please share the next available slot. Thank you!");
-  return lines.join("\n");
+    `Stage: ${stage.title} (${stage.subtitle})`,
+    "",
+    "Please recommend what I should focus on next. Thank you!",
+  ].join("\n");
 }
 
 /**
@@ -37,8 +38,8 @@ function buildMessage({ name, phone, domain, college }) {
 export default function InterviewPopup() {
   const { pathname } = useLocation();
   const [visible, setVisible] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [errors, setErrors] = useState({});
+  const [stageId, setStageId] = useState(null);
+  const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
@@ -56,20 +57,13 @@ export default function InterviewPopup() {
     sessionStorage.setItem(SESSION_KEY, "1");
   }
 
-  function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    const next = {};
-    if (!form.name.trim()) next.name = "Enter your name.";
-    if (normalizePhone(form.phone).length !== 12) next.phone = "Enter a valid 10-digit phone number.";
-    if (!form.domain) next.domain = "Select a domain.";
-    setErrors(next);
-    if (Object.keys(next).length > 0) return;
-
-    openWhatsApp(buildAdminWaLink(buildMessage(form)));
+  function handleSubmit() {
+    const stage = STAGES.find((s) => s.id === stageId);
+    if (!stage) {
+      setError("Pick a stage to continue.");
+      return;
+    }
+    openWhatsApp(buildAdminWaLink(buildMessage(stage)));
     sessionStorage.setItem(SESSION_KEY, "1");
     setSent(true);
   }
@@ -93,11 +87,6 @@ export default function InterviewPopup() {
             className="relative w-full max-w-lg rounded-2xl border border-(--color-border) bg-(--color-card) shadow-2xl"
             style={{ backdropFilter: "blur(20px)" }}
           >
-            {/* Rounded on itself, not clipped via a parent overflow-hidden —
-                that would also clip the Select dropdown's popup list, which
-                needs to render outside the card's bounds. */}
-            <div className="h-1.5 rounded-t-2xl bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-emerald-400" />
-
             <button
               type="button"
               onClick={dismiss}
@@ -108,96 +97,87 @@ export default function InterviewPopup() {
             </button>
 
             <div className="p-6 sm:p-8">
-            {sent ? (
-              <div className="py-6 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15">
-                  <CheckCircle2 className="h-6 w-6 text-(--color-accent-emerald)" />
-                </div>
-                <h2 className="mt-4 text-lg font-bold text-(--color-fg)">Almost there!</h2>
-                <p className="mt-2 text-sm text-(--color-fg-muted)">
-                  We opened WhatsApp with your details — tap <span className="font-medium text-(--color-fg)">Send</span> in
-                  that chat to confirm your free mock interview slot.
-                </p>
-              </div>
-            ) : (
-              <>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-(--color-accent)/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-(--color-accent)">
-                  <Sparkles className="h-3 w-3" />
-                  Free 1:1 Mock Interview
-                </span>
-                <h2 className="mt-3 text-xl font-bold text-(--color-fg)">Reserve your free mock interview slot</h2>
-                <p className="mt-1.5 text-sm text-(--color-fg-muted)">
-                  Tell us a bit about you — we'll match you with a mentor and confirm your slot on WhatsApp.
-                </p>
-
-                <form onSubmit={handleSubmit} noValidate className="mt-5 space-y-3.5">
-                  <div className="grid gap-3.5 sm:grid-cols-2">
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Full name"
-                        value={form.name}
-                        onChange={(e) => update("name", e.target.value)}
-                        className={inputClass(errors.name)}
-                      />
-                      {errors.name && <p className="mt-1 text-xs text-rose-400">{errors.name}</p>}
-                    </div>
-
-                    <div>
-                      <input
-                        type="tel"
-                        placeholder="WhatsApp phone number"
-                        value={form.phone}
-                        onChange={(e) => update("phone", e.target.value)}
-                        className={inputClass(errors.phone)}
-                      />
-                      {errors.phone && <p className="mt-1 text-xs text-rose-400">{errors.phone}</p>}
-                    </div>
+              {sent ? (
+                <div className="py-6 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15">
+                    <CheckCircle2 className="h-6 w-6 text-(--color-accent-emerald)" />
                   </div>
-
-                  <div className="grid gap-3.5 sm:grid-cols-2">
-                    <div>
-                      <Select
-                        value={form.domain}
-                        onChange={(v) => update("domain", v)}
-                        options={DOMAIN_LABELS}
-                        placeholder="Select a domain"
-                        error={errors.domain}
-                      />
-                      {errors.domain && <p className="mt-1 text-xs text-rose-400">{errors.domain}</p>}
-                    </div>
-
-                    <input
-                      type="text"
-                      placeholder="College / Institution (optional)"
-                      value={form.college}
-                      onChange={(e) => update("college", e.target.value)}
-                      className={inputClass()}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full rounded-full bg-gradient-to-r from-emerald-400 to-indigo-500 px-6 py-3.5 text-sm font-semibold text-zinc-950 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-shadow"
-                  >
-                    Confirm on WhatsApp
-                  </button>
-                  <p className="text-center text-[11px] text-(--color-fg-faint)">
-                    Opens WhatsApp with your details ready to send to our team.
+                  <h2 className="mt-4 text-lg font-bold text-(--color-fg)">Almost there!</h2>
+                  <p className="mt-2 text-sm text-(--color-fg-muted)">
+                    We opened WhatsApp with your stage — tap <span className="font-medium text-(--color-fg)">Send</span> in
+                    that chat and we'll recommend your roadmap.
                   </p>
-                </form>
-              </>
-            )}
+                </div>
+              ) : (
+                <>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-(--color-accent)">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Personalize Your Path
+                  </span>
+                  <h2 className="mt-3 text-xl font-bold text-(--color-fg) sm:text-2xl">
+                    Where are you in your placement journey?
+                  </h2>
+                  <p className="mt-2 text-sm text-(--color-fg-muted)">
+                    Pick your stage — we'll recommend a roadmap built for exactly where you are.
+                  </p>
+
+                  <div className="mt-5 space-y-2.5">
+                    {STAGES.map((stage) => {
+                      const selected = stageId === stage.id;
+                      return (
+                        <button
+                          key={stage.id}
+                          type="button"
+                          onClick={() => {
+                            setStageId(stage.id);
+                            setError("");
+                          }}
+                          className={`flex w-full items-center justify-between rounded-2xl border px-5 py-4 text-left transition-colors ${
+                            selected
+                              ? "border-(--color-accent) bg-(--color-accent)/5"
+                              : "border-(--color-border) bg-(--color-input) hover:border-(--color-border-strong)"
+                          }`}
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-(--color-fg)">{stage.title}</p>
+                            <p className="text-xs text-(--color-fg-muted)">{stage.subtitle}</p>
+                          </div>
+                          <span
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                              selected ? "border-(--color-accent)" : "border-(--color-border-strong)"
+                            }`}
+                          >
+                            {selected && <span className="h-2.5 w-2.5 rounded-full bg-(--color-accent)" />}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {error && <p className="mt-2 text-xs text-rose-400">{error}</p>}
+
+                  <div className="mt-6 flex items-center justify-between gap-4">
+                    <button
+                      type="button"
+                      onClick={dismiss}
+                      className="text-sm font-medium text-(--color-fg-muted) hover:text-(--color-fg) transition-colors"
+                    >
+                      Skip for now
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSubmit}
+                      className="inline-flex items-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-3 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors"
+                    >
+                      See my roadmap
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   );
-}
-
-function inputClass(error) {
-  return `w-full rounded-xl border bg-(--color-input) px-4 py-3 text-sm text-(--color-fg) placeholder-(--color-fg-faint) outline-none transition-[border-color,box-shadow] focus:border-(--color-accent) focus:shadow-[0_0_0_4px_rgba(79,70,229,0.15)] ${
-    error ? "border-rose-500/60" : "border-(--color-border)"
-  }`;
 }
