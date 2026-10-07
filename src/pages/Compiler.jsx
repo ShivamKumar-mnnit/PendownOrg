@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import CodeMirror from "@uiw/react-codemirror";
 import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
 import { motion } from "motion/react";
-import { Play, Loader2, Maximize2, Minimize2, ArrowLeft, RotateCcw, Terminal, SquareTerminal, Square } from "lucide-react";
+import { Play, Loader2, Maximize2, Minimize2, ArrowLeft, RotateCcw, Terminal, SquareTerminal, Square, Code2 } from "lucide-react";
 import Select from "../components/Select";
 import { LANGUAGES, getLanguage, runCode } from "../lib/compiler";
 import { createExecutionSession } from "../lib/interactiveCompiler";
@@ -126,8 +126,8 @@ export default function Compiler() {
     <div
       className={
         maximized
-          ? "fixed inset-0 z-50 flex flex-col bg-(--color-surface)"
-          : "flex flex-1 min-h-150 flex-col"
+          ? "fixed inset-0 z-50 flex flex-col overflow-y-auto bg-(--color-surface)"
+          : "flex flex-1 min-h-150 flex-col overflow-y-auto"
       }
     >
         {/* Toolbar */}
@@ -143,10 +143,6 @@ export default function Compiler() {
           <div className="flex items-center gap-2">
             <Terminal className="h-4 w-4 text-(--color-accent)" />
             <span className="text-sm font-semibold text-(--color-fg)">Online Compiler</span>
-          </div>
-
-          <div className="w-44">
-            <Select value={languageId} onChange={setLanguageId} options={LANGUAGE_OPTIONS} />
           </div>
 
           <button
@@ -207,145 +203,175 @@ export default function Compiler() {
           </div>
         </div>
 
-        {/* Editor + input/output */}
-        <div className="flex flex-1 flex-col lg:flex-row min-h-0">
-          <div className="flex-2 min-h-0 overflow-auto">
-            <CodeMirror
-              value={code}
-              onChange={setCode}
-              extensions={editorExtensions}
-              theme={isDark ? githubDark : githubLight}
-              height="100%"
-              className="h-full text-sm"
-            />
+        {/* Hero */}
+        {!maximized && (
+          <div className="border-b border-(--color-border) bg-(--color-surface-alt) px-4 py-10 text-center">
+            <p className="text-xs font-semibold uppercase tracking-widest text-(--color-accent)">Playground</p>
+            <h1 className="mt-2 text-3xl font-extrabold text-(--color-fg) sm:text-4xl">Write it. Run it. Fix it.</h1>
+            <p className="mx-auto mt-3 max-w-xl text-sm text-(--color-fg-muted)">
+              A free code runner for quick experiments — no judge, no limits, just output.
+            </p>
           </div>
+        )}
 
-          <div className="flex-1 flex flex-col min-h-0 border-t lg:border-t-0 lg:border-l border-(--color-border)">
-            {interactive ? (
-              <div className="flex-1 min-h-40 overflow-auto bg-black px-4 py-3 font-mono text-sm whitespace-pre-wrap wrap-break-word text-neutral-200">
-                {terminalLines.length === 0 && !sessionRunning && (
-                  <span className="text-neutral-500">Run your code to start an interactive session.</span>
-                )}
-                {terminalLines.map((line, i) => {
-                  if (line.type === "input") {
-                    return (
-                      <div key={i} className="text-emerald-400">
-                        {"> "}
-                        {line.text}
-                      </div>
-                    );
-                  }
-                  const className = line.type === "stderr" || line.type === "error" ? "text-rose-400" : line.type === "system" ? "text-neutral-500" : "";
-                  return (
-                    <span key={i} className={className}>
-                      {line.text}
-                    </span>
-                  );
-                })}
-                {sessionRunning && (
-                  <form onSubmit={handleSendLiveInput} className="flex items-center">
-                    <span className="text-emerald-400">{"> "}</span>
-                    <input
-                      type="text"
-                      autoFocus
-                      value={liveInput}
-                      onChange={(e) => setLiveInput(e.target.value)}
-                      spellCheck={false}
-                      className="flex-1 bg-transparent font-mono text-sm text-neutral-200 outline-none"
-                    />
-                  </form>
-                )}
-              </div>
-            ) : (
-              <>
-                <div className="flex flex-col min-h-30 border-b border-(--color-border)">
-                  <p className="px-4 pt-3 text-xs font-semibold uppercase tracking-wide text-(--color-fg-faint)">
-                    Input (stdin)
-                  </p>
-                  <textarea
-                    value={stdin}
-                    onChange={(e) => setStdin(e.target.value)}
-                    placeholder="Values your program reads from standard input, one per line..."
-                    spellCheck={false}
-                    className="flex-1 min-h-20 resize-none bg-transparent px-4 py-2 font-mono text-sm text-(--color-fg) placeholder-(--color-fg-faint) outline-none"
-                  />
+        {/* Editor + input/output */}
+        <div className="flex-1 px-4 py-8">
+          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
+            {/* Editor card */}
+            <div className="flex flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface) shadow-sm">
+              <div className="flex items-center justify-between gap-2 border-b border-(--color-border) px-4 py-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-(--color-fg)">
+                  <Code2 className="h-4 w-4 text-(--color-accent)" />
+                  Editor
                 </div>
+                <div className="w-40">
+                  <Select value={languageId} onChange={setLanguageId} options={LANGUAGE_OPTIONS} />
+                </div>
+              </div>
+              <CodeMirror
+                value={code}
+                onChange={setCode}
+                extensions={editorExtensions}
+                theme={isDark ? githubDark : githubLight}
+                height={maximized ? "calc(100vh - 160px)" : "520px"}
+                className="text-sm"
+              />
+            </div>
 
-                <div className="flex-1 flex flex-col min-h-40 overflow-hidden">
-                  <p className="px-4 pt-3 text-xs font-semibold uppercase tracking-wide text-(--color-fg-faint)">
-                    Output
-                  </p>
-                  <div className="flex-1 overflow-auto px-4 py-2 font-mono text-sm whitespace-pre-wrap wrap-break-word">
-                    {!result && !running && (
-                      <span className="text-(--color-fg-faint)">Run your code to see the output here.</span>
+            {/* Right column */}
+            <div className="flex flex-col gap-6">
+              {interactive ? (
+                <div className="flex flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface) shadow-sm">
+                  <div className="flex items-center justify-between gap-2 border-b border-(--color-border) px-4 py-3">
+                    <span className="text-sm font-semibold text-(--color-fg)">Terminal</span>
+                    <span className="text-xs text-(--color-fg-faint)">Runs line by line, like a real terminal</span>
+                  </div>
+                  <div className="h-80 overflow-auto bg-black px-4 py-3 font-mono text-sm whitespace-pre-wrap wrap-break-word text-neutral-200">
+                    {terminalLines.length === 0 && !sessionRunning && (
+                      <span className="text-neutral-500">Run your code to start an interactive session.</span>
                     )}
-                    {running && (
-                      <span className="inline-flex items-center gap-2 text-(--color-fg-muted)">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Running...
-                      </span>
-                    )}
-                    {result && !running && (
-                      <>
-                        {result.stdout && <span className="text-(--color-fg)">{result.stdout}</span>}
-                        {result.stderr && <span className="text-rose-500">{result.stderr}</span>}
-                        {!result.stdout && !result.stderr && (
-                          <span className="text-(--color-fg-faint)">Program produced no output.</span>
-                        )}
-                        <div className="mt-3 flex items-center gap-2 text-xs">
-                          <span
-                            className={`rounded-full px-2 py-0.5 font-semibold ${
-                              result.status === "SUCCESS"
-                                ? "bg-(--color-accent-emerald)/15 text-(--color-accent-emerald)"
-                                : "bg-rose-500/15 text-rose-500"
-                            }`}
-                          >
-                            {result.status === "SUCCESS" ? "Success" : "Error"}
-                          </span>
-                          <span className="text-(--color-fg-faint)">Exit code {result.exitCode}</span>
-                          {typeof result.executionTimeMs === "number" && (
-                            <span className="text-(--color-fg-faint)">{result.executionTimeMs} ms</span>
-                          )}
-                        </div>
-                      </>
+                    {terminalLines.map((line, i) => {
+                      if (line.type === "input") {
+                        return (
+                          <div key={i} className="text-emerald-400">
+                            {"> "}
+                            {line.text}
+                          </div>
+                        );
+                      }
+                      const className = line.type === "stderr" || line.type === "error" ? "text-rose-400" : line.type === "system" ? "text-neutral-500" : "";
+                      return (
+                        <span key={i} className={className}>
+                          {line.text}
+                        </span>
+                      );
+                    })}
+                    {sessionRunning && (
+                      <form onSubmit={handleSendLiveInput} className="flex items-center">
+                        <span className="text-emerald-400">{"> "}</span>
+                        <input
+                          type="text"
+                          autoFocus
+                          value={liveInput}
+                          onChange={(e) => setLiveInput(e.target.value)}
+                          spellCheck={false}
+                          className="flex-1 bg-transparent font-mono text-sm text-neutral-200 outline-none"
+                        />
+                      </form>
                     )}
                   </div>
+                  <div className="p-4">
+                    <motion.button
+                      type="button"
+                      onClick={sessionRunning ? stopSession : handleStartSession}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`flex w-full items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition-colors ${
+                        sessionRunning
+                          ? "bg-rose-500 hover:bg-rose-600"
+                          : "bg-(--color-accent-solid) hover:bg-(--color-accent-solid-hover)"
+                      }`}
+                    >
+                      {sessionRunning ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                      {sessionRunning ? "Stop" : "Run"}
+                    </motion.button>
+                  </div>
                 </div>
-              </>
-            )}
-          </div>
-        </div>
+              ) : (
+                <>
+                  <div className="flex flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface) shadow-sm">
+                    <div className="px-4 pt-4">
+                      <p className="text-sm font-semibold text-(--color-fg)">Custom input (stdin)</p>
+                      <p className="mt-1 text-xs text-(--color-fg-faint)">
+                        Fed to your program line by line, exactly like the judge does.
+                      </p>
+                    </div>
+                    <textarea
+                      value={stdin}
+                      onChange={(e) => setStdin(e.target.value)}
+                      placeholder={"e.g.\n5\n3 7 1 9 4"}
+                      spellCheck={false}
+                      className="m-4 h-28 resize-none rounded-lg border border-(--color-border) bg-(--color-surface-alt) px-3 py-2 font-mono text-sm text-(--color-fg) placeholder-(--color-fg-faint) outline-none"
+                    />
+                    <div className="px-4 pb-4">
+                      <motion.button
+                        type="button"
+                        onClick={handleRun}
+                        disabled={running}
+                        whileHover={{ scale: running ? 1 : 1.02 }}
+                        whileTap={{ scale: running ? 1 : 0.98 }}
+                        className="flex w-full items-center justify-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-2.5 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors disabled:opacity-60"
+                      >
+                        {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                        {running ? "Running..." : "Run code"}
+                      </motion.button>
+                    </div>
+                  </div>
 
-        {/* Run bar */}
-        <div className="border-t border-(--color-border) bg-(--color-surface-alt) px-4 py-3">
-          {interactive ? (
-            <motion.button
-              type="button"
-              onClick={sessionRunning ? stopSession : handleStartSession}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition-colors ${
-                sessionRunning
-                  ? "bg-rose-500 hover:bg-rose-600"
-                  : "bg-(--color-accent-solid) hover:bg-(--color-accent-solid-hover)"
-              }`}
-            >
-              {sessionRunning ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              {sessionRunning ? "Stop" : "Run"}
-            </motion.button>
-          ) : (
-            <motion.button
-              type="button"
-              onClick={handleRun}
-              disabled={running}
-              whileHover={{ scale: running ? 1 : 1.02 }}
-              whileTap={{ scale: running ? 1 : 0.98 }}
-              className="mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-2.5 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors disabled:opacity-60"
-            >
-              {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-              {running ? "Running..." : "Run"}
-            </motion.button>
-          )}
+                  <div className="flex flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface) shadow-sm">
+                    <p className="px-4 pt-4 text-sm font-semibold text-(--color-fg)">Output</p>
+                    <div className="m-4 min-h-45 flex-1 overflow-auto rounded-lg border border-(--color-border) bg-(--color-surface-alt) px-3 py-2 font-mono text-sm whitespace-pre-wrap wrap-break-word">
+                      {!result && !running && (
+                        <span className="text-(--color-fg-faint)">
+                          Run your code to see output here. Nothing is scored — experiment freely.
+                        </span>
+                      )}
+                      {running && (
+                        <span className="inline-flex items-center gap-2 text-(--color-fg-muted)">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Running...
+                        </span>
+                      )}
+                      {result && !running && (
+                        <>
+                          {result.stdout && <span className="text-(--color-fg)">{result.stdout}</span>}
+                          {result.stderr && <span className="text-rose-500">{result.stderr}</span>}
+                          {!result.stdout && !result.stderr && (
+                            <span className="text-(--color-fg-faint)">Program produced no output.</span>
+                          )}
+                          <div className="mt-3 flex items-center gap-2 text-xs">
+                            <span
+                              className={`rounded-full px-2 py-0.5 font-semibold ${
+                                result.status === "SUCCESS"
+                                  ? "bg-(--color-accent-emerald)/15 text-(--color-accent-emerald)"
+                                  : "bg-rose-500/15 text-rose-500"
+                              }`}
+                            >
+                              {result.status === "SUCCESS" ? "Success" : "Error"}
+                            </span>
+                            <span className="text-(--color-fg-faint)">Exit code {result.exitCode}</span>
+                            {typeof result.executionTimeMs === "number" && (
+                              <span className="text-(--color-fg-faint)">{result.executionTimeMs} ms</span>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
     </div>
   );
