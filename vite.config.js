@@ -39,16 +39,4 @@ function compileApiPlugin() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), compileApiPlugin()],
-  server: {
-    // Mirrors the /ws/execute redirect in netlify.toml, so `npm run dev` can
-    // reach the interactive execution backend the same same-origin way the
-    // production build does.
-    proxy: {
-      '/ws/execute': {
-        target: 'wss://api.anobyt.in',
-        ws: true,
-        changeOrigin: true,
-      },
-    },
-  },
 })

@@ -4,19 +4,22 @@
 // program can pause at a read, take input typed live, and keep printing
 // output — same shape as running it in a real terminal / VS Code.
 //
-// The browser connects to same-origin /ws/execute, which the Netlify
-// redirect (netlify.toml) and the Vite dev proxy (vite.config.js) both
-// forward to the real backend — same reasoning as the compile proxy: keeps
-// the backend host out of the client bundle. The apiKey is the same token
-// /api/compile uses (COMPILE_AUTH_TOKEN in compileHandler.js); browsers
-// can't set a custom Authorization header on a WebSocket handshake, so the
-// backend takes it as a query param on this endpoint instead.
+// Unlike the batch compile call, this connects straight to the backend
+// instead of going through a same-origin proxy: Netlify's redirect/proxy
+// feature doesn't forward the WebSocket upgrade handshake correctly to an
+// external origin (confirmed — it returns 400 "Can Upgrade only to
+// WebSocket" even though the backend itself accepts the exact same
+// handshake directly). Cross-origin WebSocket connections aren't blocked by
+// CORS the way fetch() is, so connecting directly is safe here. The apiKey
+// is the same token /api/compile uses (COMPILE_AUTH_TOKEN in
+// compileHandler.js); browsers can't set a custom Authorization header on a
+// WebSocket handshake, so the backend takes it as a query param instead.
 
+const WS_HOST = "api.anobyt.in";
 const WS_AUTH_TOKEN = "anVzdGZrb2Zm";
 
 function getWsUrl() {
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}/ws/execute?apiKey=${WS_AUTH_TOKEN}`;
+  return `wss://${WS_HOST}/ws/execute?apiKey=${WS_AUTH_TOKEN}`;
 }
 
 /**

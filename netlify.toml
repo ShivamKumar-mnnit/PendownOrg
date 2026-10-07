@@ -16,14 +16,11 @@
   to = "/.netlify/functions/compile"
   status = 200
 
-# Same-origin proxy for the interactive (line-by-line) execution backend, so
-# the browser never connects directly to the backend host and never needs its
-# own copy of that host baked into the client bundle — mirrors /api/compile
-# above, just over a WebSocket instead of a Netlify function.
-[[redirects]]
-  from = "/ws/execute"
-  to = "https://api.anobyt.in/ws/execute"
-  status = 200
+# Note: the interactive (line-by-line) execution backend is NOT proxied
+# through a redirect here — Netlify's redirect/proxy feature doesn't forward
+# the WebSocket upgrade handshake correctly to an external origin. The
+# frontend connects straight to wss://api.anobyt.in/ws/execute instead (see
+# src/lib/interactiveCompiler.js).
 
 # Client-side routing (React Router) — without this, refreshing or
 # directly linking to /book, /colleges, /admin returns a 404 since those
