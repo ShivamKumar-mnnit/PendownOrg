@@ -39,4 +39,17 @@ function compileApiPlugin() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), compileApiPlugin()],
+  server: {
+    // Mirrors the /ws/execute redirect in netlify.toml, so `npm run dev` can
+    // reach the interactive execution backend the same same-origin way the
+    // production build does. Points at the Render testing instance — swap
+    // to the prod host once it's deployed there.
+    proxy: {
+      '/ws/execute': {
+        target: 'wss://compiler-data-service.onrender.com',
+        ws: true,
+        changeOrigin: true,
+      },
+    },
+  },
 })

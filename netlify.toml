@@ -16,6 +16,17 @@
   to = "/.netlify/functions/compile"
   status = 200
 
+# Same-origin proxy for the interactive (line-by-line) execution backend, so
+# the browser never connects directly to the backend host and never needs its
+# own copy of that host baked into the client bundle — mirrors /api/compile
+# above, just over a WebSocket instead of a Netlify function.
+# Currently pointed at the Render testing instance; swap to the prod host
+# (e.g. api.anobyt.in) once it's deployed there.
+[[redirects]]
+  from = "/ws/execute"
+  to = "https://compiler-data-service.onrender.com/ws/execute"
+  status = 200
+
 # Client-side routing (React Router) — without this, refreshing or
 # directly linking to /book, /colleges, /admin returns a 404 since those
 # aren't real files on the server, only routes React handles in the browser.
