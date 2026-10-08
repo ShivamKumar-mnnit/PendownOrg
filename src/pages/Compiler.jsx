@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import CodeMirror from "@uiw/react-codemirror";
 import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
-import { motion } from "motion/react";
-import { Play, Loader2, Maximize2, Minimize2, ArrowLeft, RotateCcw, Terminal, SquareTerminal, Square, Code2 } from "lucide-react";
+import { Play, Loader2, Maximize2, Minimize2, RotateCcw, SquareTerminal, Square } from "lucide-react";
+import { Head, Page } from "../components/ui";
 import Select from "../components/Select";
 import { LANGUAGES, getLanguage, runCode } from "../lib/compiler";
 import { createExecutionSession } from "../lib/interactiveCompiler";
@@ -122,257 +122,161 @@ export default function Compiler() {
     setResult(null);
   }
 
-  return (
-    <div
-      className={
-        maximized
-          ? "fixed inset-0 z-50 flex flex-col overflow-y-auto bg-(--color-surface)"
-          : "flex flex-1 min-h-150 flex-col overflow-y-auto"
-      }
-    >
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-3 border-b border-(--color-border) bg-(--color-surface-alt) px-4 py-3">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-sm text-(--color-fg-muted) hover:text-(--color-fg) transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Home
-          </Link>
-
-          <div className="flex items-center gap-2">
-            <Terminal className="h-4 w-4 text-(--color-accent)" />
-            <span className="text-sm font-semibold text-(--color-fg)">Online Compiler</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleReset}
-            title="Reset to starter code"
-            className="inline-flex items-center gap-1.5 rounded-full border border-(--color-border) px-3 py-2 text-xs font-medium text-(--color-fg-muted) hover:text-(--color-fg) hover:border-(--color-border-strong) transition-colors"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
+  const panel = (
+    <div className="panel">
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 12 }}>
+        <div style={{ width: 240, maxWidth: "100%" }}>
+          <label className="l" style={{ marginTop: 0 }}>
+            Language
+          </label>
+          <Select value={languageId} onChange={setLanguageId} options={LANGUAGE_OPTIONS} />
+        </div>
+        <div className="row" style={{ marginLeft: "auto", gap: 8 }}>
+          <button type="button" className="btn ghost" onClick={handleReset} title="Reset to starter code">
+            <RotateCcw className="h-4 w-4" />
             Reset
           </button>
-
           <button
             type="button"
+            className="btn ghost"
             onClick={handleToggleInteractive}
-            title={interactive ? "Switch to single-run mode" : "Switch to interactive (line-by-line) mode"}
             aria-pressed={interactive}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
-              interactive
-                ? "border-(--color-accent) text-(--color-accent) bg-(--color-accent)/10"
-                : "border-(--color-border) text-(--color-fg-muted) hover:text-(--color-fg) hover:border-(--color-border-strong)"
-            }`}
+            title={interactive ? "Switch to single-run mode" : "Switch to interactive (line-by-line) mode"}
+            style={interactive ? { borderColor: "var(--color-accent)", color: "var(--color-accent)" } : undefined}
           >
-            <SquareTerminal className="h-3.5 w-3.5" />
+            <SquareTerminal className="h-4 w-4" />
             Terminal
           </button>
-
           <button
             type="button"
-            onClick={interactive ? (sessionRunning ? stopSession : handleStartSession) : handleRun}
-            disabled={!interactive && running}
-            title={interactive ? (sessionRunning ? "Stop" : "Run") : running ? "Running..." : "Run"}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-60 ${
-              interactive && sessionRunning
-                ? "border-rose-500 text-rose-500 hover:bg-rose-500/10"
-                : "border-(--color-border) text-(--color-fg-muted) hover:text-(--color-fg) hover:border-(--color-border-strong)"
-            }`}
+            className="btn ghost"
+            onClick={() => setMaximized((v) => !v)}
+            title={maximized ? "Exit fullscreen" : "Fullscreen"}
+            aria-label={maximized ? "Exit fullscreen" : "Fullscreen"}
           >
-            {interactive ? (
-              sessionRunning ? <Square className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />
-            ) : running ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Play className="h-3.5 w-3.5" />
-            )}
-            {interactive ? (sessionRunning ? "Stop" : "Run") : running ? "Running..." : "Run"}
+            {maximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </button>
+        </div>
+      </div>
 
-          <div className="ml-auto flex items-center gap-2">
+      <label className="l">Code</label>
+      <div style={{ border: "1px solid var(--color-border)", borderRadius: 10, overflow: "hidden" }}>
+        <CodeMirror
+          value={code}
+          onChange={setCode}
+          extensions={editorExtensions}
+          theme={isDark ? githubDark : githubLight}
+          height={maximized ? "calc(100vh - 420px)" : "360px"}
+          className="text-sm"
+        />
+      </div>
+
+      {interactive ? (
+        <>
+          <div className="row" style={{ marginTop: 14 }}>
             <button
               type="button"
-              onClick={() => setMaximized((v) => !v)}
-              title={maximized ? "Exit fullscreen" : "Fullscreen"}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-(--color-border) text-(--color-fg-muted) hover:text-(--color-fg) hover:border-(--color-border-strong) transition-colors"
+              className={`btn${sessionRunning ? " danger" : ""}`}
+              onClick={sessionRunning ? stopSession : handleStartSession}
             >
-              {maximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              {sessionRunning ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {sessionRunning ? "Stop" : "Run code"}
             </button>
           </div>
-        </div>
-
-        {/* Hero */}
-        {!maximized && (
-          <div className="border-b border-(--color-border) bg-(--color-surface-alt) px-4 py-10 text-center">
-            <p className="text-xs font-semibold uppercase tracking-widest text-(--color-accent)">Playground</p>
-            <h1 className="mt-2 text-3xl font-extrabold text-(--color-fg) sm:text-4xl">Write it. Run it. Fix it.</h1>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-(--color-fg-muted)">
-              A free code runner for quick experiments — no judge, no limits, just output.
-            </p>
+          <label className="l">Terminal</label>
+          <div className="h-80 overflow-auto rounded-xl bg-black px-4 py-3 font-mono text-sm whitespace-pre-wrap wrap-break-word text-neutral-200">
+            {terminalLines.length === 0 && !sessionRunning && (
+              <span className="text-neutral-500">Run your code to start an interactive session.</span>
+            )}
+            {terminalLines.map((line, i) => {
+              if (line.type === "input") {
+                return (
+                  <div key={i} className="text-emerald-400">
+                    {"> "}
+                    {line.text}
+                  </div>
+                );
+              }
+              const className = line.type === "stderr" || line.type === "error" ? "text-rose-400" : line.type === "system" ? "text-neutral-500" : "";
+              return (
+                <span key={i} className={className}>
+                  {line.text}
+                </span>
+              );
+            })}
+            {sessionRunning && (
+              <form onSubmit={handleSendLiveInput} className="flex items-center">
+                <span className="text-emerald-400">{"> "}</span>
+                <input
+                  type="text"
+                  autoFocus
+                  value={liveInput}
+                  onChange={(e) => setLiveInput(e.target.value)}
+                  spellCheck={false}
+                  className="flex-1 bg-transparent font-mono text-sm text-neutral-200 outline-none"
+                />
+              </form>
+            )}
           </div>
-        )}
-
-        {/* Editor + input/output */}
-        <div className="flex-1 px-4 py-8">
-          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
-            {/* Editor card */}
-            <div className="flex flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface) shadow-sm">
-              <div className="flex items-center justify-between gap-2 border-b border-(--color-border) px-4 py-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-(--color-fg)">
-                  <Code2 className="h-4 w-4 text-(--color-accent)" />
-                  Editor
-                </div>
-                <div className="w-40">
-                  <Select value={languageId} onChange={setLanguageId} options={LANGUAGE_OPTIONS} />
-                </div>
-              </div>
-              <CodeMirror
-                value={code}
-                onChange={setCode}
-                extensions={editorExtensions}
-                theme={isDark ? githubDark : githubLight}
-                height={maximized ? "calc(100vh - 160px)" : "520px"}
-                className="text-sm"
-              />
-            </div>
-
-            {/* Right column */}
-            <div className="flex flex-col gap-6">
-              {interactive ? (
-                <div className="flex flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface) shadow-sm">
-                  <div className="flex items-center justify-between gap-2 border-b border-(--color-border) px-4 py-3">
-                    <span className="text-sm font-semibold text-(--color-fg)">Terminal</span>
-                    <span className="text-xs text-(--color-fg-faint)">Runs line by line, like a real terminal</span>
-                  </div>
-                  <div className="h-80 overflow-auto bg-black px-4 py-3 font-mono text-sm whitespace-pre-wrap wrap-break-word text-neutral-200">
-                    {terminalLines.length === 0 && !sessionRunning && (
-                      <span className="text-neutral-500">Run your code to start an interactive session.</span>
-                    )}
-                    {terminalLines.map((line, i) => {
-                      if (line.type === "input") {
-                        return (
-                          <div key={i} className="text-emerald-400">
-                            {"> "}
-                            {line.text}
-                          </div>
-                        );
-                      }
-                      const className = line.type === "stderr" || line.type === "error" ? "text-rose-400" : line.type === "system" ? "text-neutral-500" : "";
-                      return (
-                        <span key={i} className={className}>
-                          {line.text}
-                        </span>
-                      );
-                    })}
-                    {sessionRunning && (
-                      <form onSubmit={handleSendLiveInput} className="flex items-center">
-                        <span className="text-emerald-400">{"> "}</span>
-                        <input
-                          type="text"
-                          autoFocus
-                          value={liveInput}
-                          onChange={(e) => setLiveInput(e.target.value)}
-                          spellCheck={false}
-                          className="flex-1 bg-transparent font-mono text-sm text-neutral-200 outline-none"
-                        />
-                      </form>
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <motion.button
-                      type="button"
-                      onClick={sessionRunning ? stopSession : handleStartSession}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`flex w-full items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition-colors ${
-                        sessionRunning
-                          ? "bg-rose-500 hover:bg-rose-600"
-                          : "bg-(--color-accent-solid) hover:bg-(--color-accent-solid-hover)"
-                      }`}
-                    >
-                      {sessionRunning ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      {sessionRunning ? "Stop" : "Run"}
-                    </motion.button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface) shadow-sm">
-                    <div className="px-4 pt-4">
-                      <p className="text-sm font-semibold text-(--color-fg)">Custom input (stdin)</p>
-                      <p className="mt-1 text-xs text-(--color-fg-faint)">
-                        Fed to your program line by line, exactly like the judge does.
-                      </p>
-                    </div>
-                    <textarea
-                      value={stdin}
-                      onChange={(e) => setStdin(e.target.value)}
-                      placeholder={"e.g.\n5\n3 7 1 9 4"}
-                      spellCheck={false}
-                      className="m-4 h-28 resize-none rounded-lg border border-(--color-border) bg-(--color-surface-alt) px-3 py-2 font-mono text-sm text-(--color-fg) placeholder-(--color-fg-faint) outline-none"
-                    />
-                    <div className="px-4 pb-4">
-                      <motion.button
-                        type="button"
-                        onClick={handleRun}
-                        disabled={running}
-                        whileHover={{ scale: running ? 1 : 1.02 }}
-                        whileTap={{ scale: running ? 1 : 0.98 }}
-                        className="flex w-full items-center justify-center gap-2 rounded-full bg-(--color-accent-solid) px-6 py-2.5 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors disabled:opacity-60"
-                      >
-                        {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                        {running ? "Running..." : "Run code"}
-                      </motion.button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface) shadow-sm">
-                    <p className="px-4 pt-4 text-sm font-semibold text-(--color-fg)">Output</p>
-                    <div className="m-4 min-h-45 flex-1 overflow-auto rounded-lg border border-(--color-border) bg-(--color-surface-alt) px-3 py-2 font-mono text-sm whitespace-pre-wrap wrap-break-word">
-                      {!result && !running && (
-                        <span className="text-(--color-fg-faint)">
-                          Run your code to see output here. Nothing is scored — experiment freely.
-                        </span>
-                      )}
-                      {running && (
-                        <span className="inline-flex items-center gap-2 text-(--color-fg-muted)">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Running...
-                        </span>
-                      )}
-                      {result && !running && (
-                        <>
-                          {result.stdout && <span className="text-(--color-fg)">{result.stdout}</span>}
-                          {result.stderr && <span className="text-rose-500">{result.stderr}</span>}
-                          {!result.stdout && !result.stderr && (
-                            <span className="text-(--color-fg-faint)">Program produced no output.</span>
-                          )}
-                          <div className="mt-3 flex items-center gap-2 text-xs">
-                            <span
-                              className={`rounded-full px-2 py-0.5 font-semibold ${
-                                result.status === "SUCCESS"
-                                  ? "bg-(--color-accent-emerald)/15 text-(--color-accent-emerald)"
-                                  : "bg-rose-500/15 text-rose-500"
-                              }`}
-                            >
-                              {result.status === "SUCCESS" ? "Success" : "Error"}
-                            </span>
-                            <span className="text-(--color-fg-faint)">Exit code {result.exitCode}</span>
-                            {typeof result.executionTimeMs === "number" && (
-                              <span className="text-(--color-fg-faint)">{result.executionTimeMs} ms</span>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+          <div className="note">Runs line by line, like a real terminal. Type input when your program asks for it.</div>
+        </>
+      ) : (
+        <>
+          <label className="l" htmlFor="stdin">
+            Custom input (stdin)
+          </label>
+          <textarea
+            id="stdin"
+            className="inp code"
+            style={{ minHeight: 90 }}
+            value={stdin}
+            onChange={(e) => setStdin(e.target.value)}
+            placeholder={"e.g.\n5\n3 7 1 9 4"}
+            spellCheck={false}
+          />
+          <div className="row" style={{ marginTop: 14 }}>
+            <button type="button" className="btn" onClick={handleRun} disabled={running}>
+              {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+              {running ? "Running..." : "Run code"}
+            </button>
           </div>
-        </div>
+          <label className="l">Output</label>
+          <pre className="out">
+            {!result && !running && <span style={{ color: "var(--color-fg-faint)" }}>Output appears here.</span>}
+            {running && "Running..."}
+            {result && !running && (
+              <>
+                {result.stdout && <span>{result.stdout}</span>}
+                {result.stderr && <span className="text-rose-500">{result.stderr}</span>}
+                {!result.stdout && !result.stderr && <span style={{ color: "var(--color-fg-faint)" }}>(no output)</span>}
+                {"\n"}
+                <span className={result.status === "SUCCESS" ? "ok" : "bad"}>{result.status === "SUCCESS" ? "Success" : "Error"}</span>
+                <span style={{ color: "var(--color-fg-faint)" }}>
+                  {" "}
+                  · Exit code {result.exitCode}
+                  {typeof result.executionTimeMs === "number" ? ` · ${result.executionTimeMs} ms` : ""}
+                </span>
+              </>
+            )}
+          </pre>
+        </>
+      )}
+      <div className="note">Runs on our code-execution server. Supports Python, JavaScript, Java, C and C++.</div>
     </div>
+  );
+
+  if (maximized) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-(--color-surface) p-4 sm:p-6">
+        {panel}
+      </div>
+    );
+  }
+
+  return (
+    <Page>
+      <Head title="Online compiler">Write code, run it and see the output. Pick a language to load a starter program.</Head>
+      {panel}
+    </Page>
   );
 }

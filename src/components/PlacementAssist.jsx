@@ -28,7 +28,7 @@ const SLIDES = [
     icon: Building2,
     title: "Company-Wise Prep",
     desc: "See hiring rounds for TCS, Google, Microsoft & more.",
-    cta: { label: "Explore", to: "/#company-prep" },
+    cta: { label: "Explore", to: "/companies" },
   },
   {
     icon: Users,
