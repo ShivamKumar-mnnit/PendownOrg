@@ -29,20 +29,23 @@ Every color in the app reads from CSS custom-property tokens defined in
 `--color-fg`, `--color-fg-muted`, `--color-accent`, etc.) via Tailwind v4's
 `bg-(--color-x)` syntax — when adding new UI, use these tokens rather than
 hardcoded `zinc-*`/`white` classes, or it'll only look right in one theme.
-One deliberate exception: the illustrative "sample question" mockup in
-`src/sections/SkillCheck.jsx` stays a fixed dark UI card in both themes,
-like a screenshot.
+One deliberate exception: the homepage hero sits on the fixed-dark vortex
+scene in both themes, so it uses the `.force-dark` token override.
 
 ## Pages
 
-- `/` — Homepage, ~20 sections deep (hero, offerings, session structure,
-  domains, mentor archetypes, FAQ, etc. — see `src/pages/Home.jsx` for the
-  full list, each section is its own file under `src/sections/`). Modeled
-  on madalgos.in's structure/density with original copy, not copied text.
-  Deliberately avoids fabricated specifics madalgos shows but Anobyt
-  doesn't have yet — no fake company logos/alumni claims, no named mentors
-  at real companies, no blog posts that don't exist (labeled "Coming
-  Soon" instead), no invented attendance numbers.
+- `/` — Homepage: hero with an interactive placement-pipeline card, year-by-year
+  roadmap, why Anobyt, offerings, how it works and links to every section.
+- `/mentors`, `/courses`, `/placement`, `/talks`, `/faq` — content pages.
+- `/companies` and `/companies/:id` — searchable list of company hiring
+  processes (data in `src/lib/companyPrep.js`), each with a "Book a mock
+  session" button that opens `/book` with the company prefilled.
+- `/problems`, `/problems/:book`, `/problem/:id` — practice problems grouped
+  into books by year, judged in the browser in JavaScript (`src/lib/problems.js`).
+- `/practice`, `/take`, `/tests` — ready-made practice tests, taking a test,
+  and a test builder whose share link carries the whole test (no server).
+- `/dashboard` — demo student login (this browser only, `src/lib/student.js`)
+  showing solved count, rank, rewards and a sample leaderboard.
 - `/book` — Student registration form (name, phone, session type, domain,
   optional resume link). Clicking **Confirm & Register** shows an
   immediate on-site success state *and* auto-opens WhatsApp addressed to
@@ -142,7 +145,5 @@ automatically, no manual redeploy):
 - Domains list (used in the booking form + homepage grid):
   `src/lib/domains.js`
 - Certificate design/copy: `src/lib/certificate.js`
-- Homepage copy/sections: `src/sections/*.jsx`, assembled in
-  `src/pages/Home.jsx`
-- Testimonials are placeholder content — swap in real quotes in
-  `src/sections/Testimonials.jsx` when you have them.
+- Page copy: `src/pages/*.jsx`; shared page styles: the "Page UI" block in
+  `src/index.css` (built on the theme tokens above)

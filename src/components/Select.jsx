@@ -36,7 +36,7 @@ export default function Select({ value, onChange, options, placeholder = "Select
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`w-full flex items-center justify-between gap-2 rounded-xl border bg-(--color-input) px-4 py-2.5 text-sm text-left outline-none transition-colors focus:border-(--color-accent) ${
+        className={`w-full flex items-center justify-between gap-2 rounded-[10px] border bg-(--color-input) px-3.5 py-[11px] text-left outline-none transition-colors focus:border-(--color-accent) ${
           error ? "border-rose-500/60" : "border-(--color-border)"
         } ${selected ? "text-(--color-fg)" : "text-(--color-fg-faint)"}`}
       >
