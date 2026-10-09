@@ -1,6 +1,9 @@
 import { handleCompile } from "../../src/lib/compileHandler.js";
 
 export default async function handler(request) {
+  if (request.method !== "POST") {
+    return Response.json({ error: "Use POST." }, { status: 405 });
+  }
   let body;
   try {
     body = await request.json();

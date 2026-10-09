@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
+import { useSettings } from "../lib/contentApi";
 
 // Top-level entries are either a direct link [path, label] or a dropdown
 // [label, [[path, title, description], ...]].
@@ -64,13 +65,30 @@ export default function Navbar() {
   }, []);
 
   const section = sectionFor(pathname);
+  const settings = useSettings();
+  const ann = settings.announcement;
 
   return (
     <>
+      {ann?.active && ann.text && (
+        <div className="announce">
+          <div className="wrap">
+            <span>{ann.text}</span>
+            {ann.link &&
+              (ann.link.startsWith("/") ? (
+                <Link to={ann.link}>{ann.linkLabel || "Learn more"} →</Link>
+              ) : (
+                <a href={ann.link} target="_blank" rel="noopener noreferrer">
+                  {ann.linkLabel || "Learn more"} →
+                </a>
+              ))}
+          </div>
+        </div>
+      )}
       <div className="topbar">
         <div className="wrap">
-          <span>Mock interviews, placement prep and tech talks for colleges</span>
-          <a href="mailto:anobyt@anobyt.in">anobyt@anobyt.in</a>
+          <span>{settings.topbar}</span>
+          {settings.contactEmail && <a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a>}
         </div>
       </div>
       <header className="site-header">

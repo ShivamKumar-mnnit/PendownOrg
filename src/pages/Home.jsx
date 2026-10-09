@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import HeroBackground from "../components/HeroBackground";
 import { Head, Cards } from "../components/ui";
 import { COMPANIES, ROUNDS_MAPPED } from "../lib/companyPrep";
 import { usePageSEO } from "../lib/seo";
@@ -25,6 +24,7 @@ const EXPLORE = [
   ["/companies", "Companies", "Typical hiring rounds"],
   ["/courses", "Courses", "Free and premium tracks"],
   ["/compiler", "Online compiler", "Run code in your browser"],
+  ["/practice", "Tests and assessments", "MCQ, coding and Olympiad tests"],
   ["/tests", "Create tests", "Build tests for your students"],
   ["/dashboard", "Student dashboard", "Track solves, rank and rewards"],
   ["/colleges", "For colleges", "Onboard a whole batch"],
@@ -117,47 +117,48 @@ export default function Home() {
 
   return (
     <>
-      <HeroBackground>
-        <section className="hero force-dark">
-          <div className="wrap grid">
+      <section className="hero">
+        <div className="wrap grid">
+          <div>
+            <span className="eyebrow rise">Mock interviews · Mentorship · Assessments</span>
+            <h1 className="rise">
+              Practice the interview <em>before</em> it counts.
+            </h1>
+            <p className="lead rise" style={{ animationDelay: ".12s" }}>
+              1:1 mock interviews and mentorship with working professionals, matched to your domain and confirmed on WhatsApp.
+            </p>
+            <div className="row rise" style={{ animationDelay: ".24s" }}>
+              <Link className="btn" to="/book">
+                Book a mock interview
+              </Link>
+              <Link className="btn ghost" to="/colleges">
+                For colleges
+              </Link>
+            </div>
+            <div className="chips rise" style={{ animationDelay: ".36s" }}>
+              {["SDE", "Data / AI", "Product", "Consulting"].map((c) => (
+                <span className="chip" key={c}>
+                  {c}
+                </span>
+              ))}
+            </div>
+          </div>
+          <Pipeline />
+        </div>
+        <div className="wrap">
+          <div className="mq" aria-label="Companies covered">
             <div>
-              <h1 className="rise">Practice the interview before it counts.</h1>
-              <p className="lead rise" style={{ animationDelay: ".12s" }}>
-                1:1 mock interviews and mentorship with working professionals, matched to your domain and confirmed on WhatsApp.
-              </p>
-              <div className="row rise" style={{ animationDelay: ".24s" }}>
-                <Link className="btn" to="/book">
-                  Book a mock interview
-                </Link>
-                <Link className="btn ghost" to="/colleges">
-                  For colleges
-                </Link>
-              </div>
-              <div className="chips rise" style={{ animationDelay: ".36s" }}>
-                {["SDE", "Data / AI", "Product", "Consulting"].map((c) => (
-                  <span className="chip" key={c}>
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <Pipeline />
-          </div>
-          <div className="wrap">
-            <div className="mq" aria-label="Companies covered">
-              <div>
-                {COMPANIES.concat(COMPANIES).map((c, i) => (
-                  <span key={i}>{c.name}</span>
-                ))}
-              </div>
+              {COMPANIES.concat(COMPANIES).map((c, i) => (
+                <span key={i}>{c.name}</span>
+              ))}
             </div>
           </div>
-        </section>
-      </HeroBackground>
+        </div>
+      </section>
 
       <section className="sec alt">
         <div className="wrap">
-          <Head title="A clear path from first year to placement">Know what to work on this year, and what comes next.</Head>
+          <Head eyebrow="Your roadmap" title="A clear path from first year to placement">Know what to work on this year, and what comes next.</Head>
           <div className="yrs">
             {YEARS.map(([year, title, items]) => (
               <div key={year}>
@@ -176,7 +177,7 @@ export default function Home() {
 
       <section className="sec">
         <div className="wrap">
-          <Head title="Why students choose Anobyt">Interview prep without the friction.</Head>
+          <Head eyebrow="Why Anobyt" title="Why students choose Anobyt">Interview prep without the friction.</Head>
           <Cards
             items={[
               ["👩‍💼", "Mentors from industry", "Matched with professionals who have sat on the other side of the table."],
@@ -190,7 +191,7 @@ export default function Home() {
 
       <section className="sec alt">
         <div className="wrap">
-          <Head title="Everything you need to walk in prepared">No subscriptions and no long onboarding.</Head>
+          <Head eyebrow="What we offer" title="Everything you need to walk in prepared">No subscriptions and no long onboarding.</Head>
           <Cards
             items={[
               ["🎥", "Mock interviews", "Company-style rounds with structured feedback."],
@@ -204,7 +205,7 @@ export default function Home() {
 
       <section className="sec">
         <div className="wrap">
-          <Head title="How it works">From booking form to feedback in four steps.</Head>
+          <Head eyebrow="How it works" title="From booking form to feedback in four steps">Book in a minute, meet your mentor, leave with a plan.</Head>
           <div className="steps">
             <div>
               <h3>Fill the booking form</h3>

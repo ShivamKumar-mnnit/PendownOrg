@@ -6,8 +6,11 @@ import Select from "../components/Select";
 import { DOMAIN_LABELS } from "../lib/domains";
 import { buildAdminWaLink, openWhatsApp, normalizePhone } from "../lib/whatsapp";
 import { usePageSEO } from "../lib/seo";
+import { sendLead } from "../lib/contentApi";
 
-const SESSION_TYPES = ["Mock Interview", "1:1 Mentorship"];
+const SESSION_TYPES = ["Mock Interview", "1:1 Mentorship", "Resume & Career Review"];
+// Short ids for links such as /book?type=mentorship from the Mentorship page.
+const TYPE_IDS = { mock: SESSION_TYPES[0], mentorship: SESSION_TYPES[1], review: SESSION_TYPES[2] };
 
 const EMPTY_FORM = { name: "", phone: "", sessionType: SESSION_TYPES[0], domain: "", company: "", resume: "" };
 
@@ -39,7 +42,9 @@ export default function Book() {
   const prefillCompany = searchParams.get("company") || "";
   const prefillDomain = DOMAIN_LABELS.includes(searchParams.get("domain")) ? searchParams.get("domain") : "";
 
-  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, company: prefillCompany, domain: prefillDomain }));
+  const prefillType = TYPE_IDS[searchParams.get("type")] || SESSION_TYPES[0];
+
+  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, sessionType: prefillType, company: prefillCompany, domain: prefillDomain }));
   const [errors, setErrors] = useState({});
   const [submittedLink, setSubmittedLink] = useState(null);
 
@@ -62,6 +67,14 @@ export default function Book() {
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
+    // Also lands in the admin Inbox, so a booking isn't lost if the WhatsApp
+    // message is never sent.
+    sendLead({
+      kind: "booking",
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      data: { sessionType: form.sessionType, domain: form.domain, company: form.company.trim(), resume: form.resume.trim() },
+    });
     const message = buildMessage(form);
     const link = buildAdminWaLink(message);
     // Auto-open WhatsApp (addressed to the admin) as part of registering, so
