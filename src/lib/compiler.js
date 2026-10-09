@@ -57,7 +57,12 @@ export async function runCode({ language, code, stdin }) {
     body: JSON.stringify({ language, code, stdin: stdin || "" }),
   });
 
-  const data = await res.json();
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`The code runner is unavailable right now (${res.status}). Please try again.`);
+  }
   if (!res.ok) {
     throw new Error(data.error || `Compile service returned ${res.status}`);
   }

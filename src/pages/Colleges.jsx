@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Head, Cards, Page } from "../components/ui";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import { buildAdminWaLink, openWhatsApp } from "../lib/whatsapp";
+import { sendLead } from "../lib/contentApi";
 import { usePageSEO } from "../lib/seo";
 
 // Headers only — no sample name/phone/etc. filled in, so nothing that looks
@@ -86,6 +87,12 @@ export default function Colleges() {
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
+    sendLead({
+      kind: "college",
+      name: form.contactName.trim(),
+      phone: form.contactPhone.trim(),
+      data: { college: form.college.trim(), students: form.studentCount, file: file?.name || "", rows: preview?.rowCount ?? "" },
+    });
     const message = buildMessage(form, file?.name, preview?.rowCount);
     openWhatsApp(buildAdminWaLink(message));
     setSent(true);

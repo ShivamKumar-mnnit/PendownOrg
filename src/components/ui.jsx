@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 
-/** Section heading: a title with an optional lead paragraph. */
-export function Head({ title, children, style }) {
+/** Section heading: an optional small eyebrow label, a title and an optional lead paragraph. */
+export function Head({ eyebrow, title, children, style }) {
   return (
     <div className="head" style={style}>
+      {eyebrow && <span className="eyebrow">{eyebrow}</span>}
       <h2>{title}</h2>
       {children && <p>{children}</p>}
     </div>

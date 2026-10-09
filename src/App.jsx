@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Layout from "./components/Layout";
 import ScrollToTop from "./components/ScrollToTop";
@@ -20,6 +21,11 @@ import Problem from "./pages/Problem";
 import Dashboard from "./pages/Dashboard";
 import Talks from "./pages/Talks";
 import Faq from "./pages/Faq";
+import CourseDetail from "./pages/CourseDetail";
+import EventDetail from "./pages/EventDetail";
+
+// Loaded on demand: only students taking a server-hosted test need it.
+const Assessment = lazy(() => import("./pages/Assessment"));
 
 function NotFound() {
   return (
@@ -47,15 +53,25 @@ export default function App() {
           <Route path="/companies" element={<Companies />} />
           <Route path="/companies/:id" element={<CompanyDetail />} />
           <Route path="/courses" element={<Courses />} />
+          <Route path="/courses/:id" element={<CourseDetail />} />
           <Route path="/placement" element={<Placement />} />
           <Route path="/practice" element={<PracticeTests />} />
           <Route path="/take" element={<TakeTest />} />
+          <Route
+            path="/assessment/:id"
+            element={
+              <Suspense fallback={<Page narrow={620}><p className="note">Loading the test…</p></Page>}>
+                <Assessment />
+              </Suspense>
+            }
+          />
           <Route path="/tests" element={<CreateTest />} />
           <Route path="/problems" element={<Problems />} />
           <Route path="/problems/:bookId" element={<Problems />} />
           <Route path="/problem/:id" element={<Problem />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/talks" element={<Talks />} />
+          <Route path="/talks/:id" element={<EventDetail />} />
           <Route path="/faq" element={<Faq />} />
           <Route path="*" element={<NotFound />} />
         </Route>
