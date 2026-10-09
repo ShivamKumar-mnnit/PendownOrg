@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import {
-  Lock, UploadCloud, Download, Plus, Trash2, Send, RotateCcw, CheckCircle2, Info, History, Award,
+  Lock, LogOut, UploadCloud, CalendarCheck, ClipboardList, Download, Plus, Trash2, Send, RotateCcw, CheckCircle2, Info, History, Award,
 } from "lucide-react";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import { buildWaLink, openWhatsApp, normalizePhone } from "../lib/whatsapp";
 import { ADMIN_PASSCODE } from "../lib/adminConfig";
 import { generateCertificate, downloadCertificate } from "../lib/certificate";
 import { usePageSEO } from "../lib/seo";
+import { adminLogin, getAdminKey, setAdminKey } from "../lib/testsApi";
+
+const TestsAdmin = lazy(() => import("./admin/TestsAdmin"));
 
 const SESSION_KEY = "algomate_admin_ok";
 const STORAGE_KEY = "algomate_admin_students";
@@ -63,10 +66,107 @@ export default function Admin() {
     noindex: true,
   });
 
-  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
+  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1" || !!getAdminKey());
   const [passInput, setPassInput] = useState("");
   const [passError, setPassError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState(() => sessionStorage.getItem("anobyt_admin_tab") || "sessions");
 
+  function chooseTab(next) {
+    setTab(next);
+    sessionStorage.setItem("anobyt_admin_tab", next);
+  }
+
+  // The server password (ADMIN_PASSWORD in Netlify) unlocks everything,
+  // including tests, which are stored on the server. The old built-in
+  // passcode still opens the Sessions tab, which only lives in this browser.
+  async function handleUnlock(e) {
+    e.preventDefault();
+    setBusy(true);
+    const server = await adminLogin(passInput);
+    setBusy(false);
+    if (server.ok) setAdminKey(passInput);
+    if (server.ok || passInput === ADMIN_PASSCODE) {
+      sessionStorage.setItem(SESSION_KEY, "1");
+      setUnlocked(true);
+      setPassError("");
+    } else {
+      setPassError("Incorrect password.");
+    }
+  }
+
+  function lock() {
+    sessionStorage.removeItem(SESSION_KEY);
+    setAdminKey("");
+    setPassInput("");
+    setUnlocked(false);
+  }
+
+  if (!unlocked) {
+    return (
+      <section className="page">
+        <div className="wrap" style={{ maxWidth: 420 }}>
+          <div className="panel" style={{ textAlign: "center" }}>
+            <div className="ic" style={{ margin: "0 auto" }}>
+              <Lock className="h-5 w-5" />
+            </div>
+            <h1 style={{ fontSize: 26, margin: "16px 0 6px" }}>Admin access</h1>
+            <p className="note" style={{ marginTop: 0 }}>Enter the admin password to manage sessions and tests.</p>
+            <form onSubmit={handleUnlock} style={{ marginTop: 18 }}>
+              <input
+                type="password"
+                value={passInput}
+                onChange={(e) => setPassInput(e.target.value)}
+                placeholder="Password"
+                aria-label="Admin password"
+                className="inp"
+                style={{ textAlign: "center" }}
+                autoFocus
+              />
+              {passError && <p className="note bad">{passError}</p>}
+              <button type="submit" className="btn" style={{ width: "100%", marginTop: 14 }} disabled={busy || !passInput}>
+                {busy ? "Checking…" : "Unlock"}
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="page">
+      <div className="wrap" style={{ maxWidth: 1200 }}>
+        <div className="admin-top">
+          <div>
+            <span className="eyebrow">Admin panel</span>
+            <h1 style={{ fontSize: "clamp(28px, 4vw, 38px)", marginTop: 6 }}>Manage Anobyt</h1>
+          </div>
+          <button type="button" className="btn ghost" onClick={lock}>
+            <LogOut className="h-4 w-4" /> Lock
+          </button>
+        </div>
+        <div className="seg" role="tablist" aria-label="Admin sections">
+          <button type="button" role="tab" aria-selected={tab === "sessions"} className={tab === "sessions" ? "on" : ""} onClick={() => chooseTab("sessions")}>
+            <CalendarCheck className="h-4 w-4" /> Sessions
+          </button>
+          <button type="button" role="tab" aria-selected={tab === "tests"} className={tab === "tests" ? "on" : ""} onClick={() => chooseTab("tests")}>
+            <ClipboardList className="h-4 w-4" /> Tests
+          </button>
+        </div>
+        {tab === "sessions" ? (
+          <Sessions />
+        ) : (
+          <Suspense fallback={<p className="note">Loading tests…</p>}>
+            <TestsAdmin />
+          </Suspense>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Sessions() {
   const [rows, setRows] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -103,17 +203,6 @@ export default function Admin() {
       { id: newId(), ts: Date.now(), name: row.name || "Unnamed", phone: row.phone, slot: row.slot },
       ...prev,
     ].slice(0, 100));
-  }
-
-  function handleUnlock(e) {
-    e.preventDefault();
-    if (passInput === ADMIN_PASSCODE) {
-      sessionStorage.setItem(SESSION_KEY, "1");
-      setUnlocked(true);
-      setPassError("");
-    } else {
-      setPassError("Incorrect passcode.");
-    }
   }
 
   async function handleFile(e) {
@@ -217,40 +306,11 @@ export default function Admin() {
     setRows([]);
   }
 
-  if (!unlocked) {
-    return (
-      <section className="mx-auto max-w-sm px-5 py-24 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-(--color-input)">
-          <Lock className="h-5 w-5 text-(--color-fg-muted)" />
-        </div>
-        <h1 className="mt-5 text-xl font-bold text-(--color-fg)">Admin Access</h1>
-        <p className="mt-2 text-sm text-(--color-fg-faint)">Enter the passcode to continue.</p>
-        <form onSubmit={handleUnlock} className="mt-6 space-y-3">
-          <input
-            type="password"
-            value={passInput}
-            onChange={(e) => setPassInput(e.target.value)}
-            placeholder="Passcode"
-            className="w-full rounded-xl border border-(--color-border) bg-(--color-input) px-4 py-2.5 text-center text-sm text-(--color-fg) outline-none focus:border-(--color-accent)"
-            autoFocus
-          />
-          {passError && <p className="text-xs text-rose-400">{passError}</p>}
-          <button
-            type="submit"
-            className="w-full rounded-full bg-(--color-accent-solid) px-6 py-2.5 text-sm font-semibold text-white hover:bg-(--color-accent-solid-hover) transition-colors"
-          >
-            Unlock
-          </button>
-        </form>
-      </section>
-    );
-  }
-
   return (
-    <section className="mx-auto max-w-6xl px-5 py-12">
+    <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-(--color-fg)">Admin — Student Sessions</h1>
+          <h2 className="text-2xl font-bold text-(--color-fg)">Student sessions</h2>
           <p className="mt-1 text-sm text-(--color-fg-faint)">
             Upload the Excel sheet you received on WhatsApp, assign slots, and send confirmations.
           </p>
@@ -478,6 +538,6 @@ export default function Admin() {
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }

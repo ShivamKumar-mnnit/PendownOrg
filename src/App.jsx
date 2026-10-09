@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Layout from "./components/Layout";
 import ScrollToTop from "./components/ScrollToTop";
@@ -20,6 +21,9 @@ import Problem from "./pages/Problem";
 import Dashboard from "./pages/Dashboard";
 import Talks from "./pages/Talks";
 import Faq from "./pages/Faq";
+
+// Loaded on demand: only students taking a server-hosted test need it.
+const Assessment = lazy(() => import("./pages/Assessment"));
 
 function NotFound() {
   return (
@@ -50,6 +54,14 @@ export default function App() {
           <Route path="/placement" element={<Placement />} />
           <Route path="/practice" element={<PracticeTests />} />
           <Route path="/take" element={<TakeTest />} />
+          <Route
+            path="/assessment/:id"
+            element={
+              <Suspense fallback={<Page narrow={620}><p className="note">Loading the test…</p></Page>}>
+                <Assessment />
+              </Suspense>
+            }
+          />
           <Route path="/tests" element={<CreateTest />} />
           <Route path="/problems" element={<Problems />} />
           <Route path="/problems/:bookId" element={<Problems />} />
