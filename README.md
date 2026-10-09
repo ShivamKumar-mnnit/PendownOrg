@@ -91,12 +91,31 @@ scene in both themes, so it uses the `.force-dark` token override.
 
 ## Admin access
 
-`/admin` is gated by a passcode in `src/lib/adminConfig.js`
-(`ADMIN_PASSCODE`, default `algomate123`). **This is not real security** —
-there's no backend to check credentials against, so it only stops casual
-visitors, not anyone who reads the site's JS. Change the passcode before
-you rely on it for anything, and don't put anything truly sensitive behind
-it.
+`/admin` has two tabs:
+
+- **Sessions**: the student booking sheet, WhatsApp confirmations and
+  certificates. Data stays in the admin's browser (`localStorage`).
+- **Tests**: create and manage MCQ tests, coding assessments and
+  Olympiad-style papers (single correct, multiple correct, numeric and
+  coding questions, marks, negative marking, time limits, samples and
+  hidden test cases), publish them, copy a student link and see results.
+
+Tests are stored on the server in Netlify Blobs (`netlify/functions/tests.js`,
+logic in `src/lib/server/testsApi.js`), so they need a real password:
+
+1. In Netlify, open **Site configuration → Environment variables** and add
+   `ADMIN_PASSWORD` with a strong password.
+2. Redeploy, then unlock `/admin` with that password.
+
+The old passcode in `src/lib/adminConfig.js` (`ADMIN_PASSCODE`) still opens
+the Sessions tab only. Students take published tests at
+`/assessment/<id>` (also listed on `/practice`); answers and hidden test
+cases never reach the browser, and grading (including running code
+against the hidden cases) happens on the server.
+
+Locally, `npm run dev` serves the same API from memory (data resets when
+the server restarts); the admin password is `ADMIN_PASSWORD` from your
+shell, or `admin` if unset.
 
 ## Known limitations (by design, given no backend)
 
@@ -118,8 +137,8 @@ it.
 ## Deploying
 
 It's a static site — `npm run build` produces `dist/`, deployable as-is to
-Vercel, Netlify, GitHub Pages, or any static host. No environment
-variables or server config needed.
+Netlify (it uses Netlify Functions for the compiler proxy and the tests
+API). Set `ADMIN_PASSWORD` in Netlify to use the admin Tests tab.
 
 **Auto-deploy from GitHub via Netlify** (so every `git push` goes live
 automatically, no manual redeploy):

@@ -7,7 +7,9 @@ import { DOMAIN_LABELS } from "../lib/domains";
 import { buildAdminWaLink, openWhatsApp, normalizePhone } from "../lib/whatsapp";
 import { usePageSEO } from "../lib/seo";
 
-const SESSION_TYPES = ["Mock Interview", "1:1 Mentorship"];
+const SESSION_TYPES = ["Mock Interview", "1:1 Mentorship", "Resume & Career Review"];
+// Short ids for links such as /book?type=mentorship from the Mentorship page.
+const TYPE_IDS = { mock: SESSION_TYPES[0], mentorship: SESSION_TYPES[1], review: SESSION_TYPES[2] };
 
 const EMPTY_FORM = { name: "", phone: "", sessionType: SESSION_TYPES[0], domain: "", company: "", resume: "" };
 
@@ -39,7 +41,9 @@ export default function Book() {
   const prefillCompany = searchParams.get("company") || "";
   const prefillDomain = DOMAIN_LABELS.includes(searchParams.get("domain")) ? searchParams.get("domain") : "";
 
-  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, company: prefillCompany, domain: prefillDomain }));
+  const prefillType = TYPE_IDS[searchParams.get("type")] || SESSION_TYPES[0];
+
+  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, sessionType: prefillType, company: prefillCompany, domain: prefillDomain }));
   const [errors, setErrors] = useState({});
   const [submittedLink, setSubmittedLink] = useState(null);
 
