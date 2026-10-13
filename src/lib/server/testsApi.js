@@ -10,7 +10,8 @@
 // cases; grading happens here.
 
 import { handleCompile } from "../compileHandler.js";
-import { adminState, fail, json, needAdmin as needAdminFor, newId, num, readBody, str } from "./http.js";
+import { adminState, fail, json, mapLimit, needAdmin as needAdminFor, newId, num, readBody, str } from "./http.js";
+import { hasFeature, readAccess, readRunner, readUser } from "./auth.js";
 export { memoryStore } from "./http.js";
 
 export const TEST_TYPES = ["mcq", "coding", "olympiad"];
@@ -19,6 +20,7 @@ const LANGS = ["python", "javascript", "java", "c", "cpp"];
 const MAX_TESTS = 500;
 const MAX_QUESTIONS = 200;
 const MAX_CASES = 15;
+const MAX_OWN_TESTS = 100;
 
 /** Cleans an incoming test from the admin editor into the stored shape. */
 export function sanitizeTest(input, id) {
@@ -108,19 +110,6 @@ export const normalizeOutput = (s) =>
     .join("\n")
     .replace(/\n+$/, "");
 
-async function mapLimit(items, limit, fn) {
-  const out = new Array(items.length);
-  let next = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (next < items.length) {
-      const i = next++;
-      out[i] = await fn(items[i], i);
-    }
-  });
-  await Promise.all(workers);
-  return out;
-}
-
 /**
  * Grades one submission. `answers[i]` is: an option index (single), an
  * array of indexes (multi), a number (numeric), or { language, code } (coding).
@@ -185,11 +174,18 @@ async function listTests(store) {
 
 /**
  * Routes /api/tests[...] and /api/admin/login.
+ *
+ * Besides the admin, signed-in users with the "Create tests" feature (or the
+ * College panel) can create tests. Their tests are shared by link only (not
+ * listed on the Practice page) and only they can edit them or see results.
+ *
  * @param {Request} request
  * @param {{ get(k): Promise<any>, set(k, v): Promise<void>, delete(k): Promise<void>, list(prefix): Promise<string[]> }} store
  * @param {Record<string, string|undefined>} env
+ * @param {Function} [compile]
+ * @param {object} [accounts] the store holding user accounts (anobyt-content)
  */
-export async function handleTestsApi(request, store, env, compile = handleCompile) {
+export async function handleTestsApi(request, store, env, compile = handleCompile, accounts = null) {
   const url = new URL(request.url);
   const parts = url.pathname.replace(/\/+$/, "").split("/").filter(Boolean); // ["api", "tests", id?, action?]
   const method = request.method;
@@ -200,6 +196,11 @@ export async function handleTestsApi(request, store, env, compile = handleCompil
   if (error) return error;
 
   try {
+    const user = accounts && request.headers.get("x-user-token") ? await readUser(request, accounts) : null;
+    const canCreate = user ? hasFeature(user, "createTests", await readAccess(accounts)) : false;
+    const mine = (t) => Boolean(user && t && t.owner === user.id);
+    const run = accounts ? async (b) => compile(b, await readRunner(accounts).catch(() => null)) : compile;
+
     if (parts[1] === "admin" && parts[2] === "login" && method === "POST") {
       return admin.ok ? json({ ok: true }) : needAdmin();
     }
@@ -214,12 +215,21 @@ export async function handleTestsApi(request, store, env, compile = handleCompil
           if (!admin.ok) return needAdmin();
           return json({ tests: all });
         }
-        return json({ tests: all.filter((t) => t.published).map(summary) });
+        if (url.searchParams.get("mine") === "1") {
+          if (!user) return fail(401, "Please sign in.");
+          return json({ tests: all.filter(mine), canCreate });
+        }
+        return json({ tests: all.filter((t) => t.published && !t.owner).map(summary) });
       }
       if (method === "POST") {
-        if (!admin.ok) return needAdmin();
+        if (!admin.ok && !canCreate) return user ? fail(403, "Creating tests is a premium feature.") : needAdmin();
         if ((await store.list("test:")).length >= MAX_TESTS) return fail(400, "Too many tests. Delete some first.");
         const test = sanitizeTest(body, newId());
+        if (!admin.ok) {
+          if ((await listTests(store)).filter(mine).length >= MAX_OWN_TESTS) return fail(400, `You can keep up to ${MAX_OWN_TESTS} tests. Delete old ones first.`);
+          test.owner = user.id;
+          test.ownerName = user.collegeName || user.name;
+        }
         await store.set("test:" + test.id, test);
         return json({ test }, 201);
       }
@@ -231,18 +241,20 @@ export async function handleTestsApi(request, store, env, compile = handleCompil
 
     if (!action) {
       if (method === "GET") {
-        if (!test || (!test.published && !admin.ok)) return fail(404, "Test not found.");
-        return json({ test: admin.ok && url.searchParams.get("full") === "1" ? test : publicTest(test) });
+        const full = admin.ok || mine(test);
+        if (!test || (!test.published && !full)) return fail(404, "Test not found.");
+        return json({ test: full && url.searchParams.get("full") === "1" ? test : publicTest(test) });
       }
       if (method === "PUT") {
-        if (!admin.ok) return needAdmin();
+        if (!admin.ok && !(mine(test) && canCreate)) return user ? fail(403, "You can only edit your own tests.") : needAdmin();
         if (!test) return fail(404, "Test not found.");
         const next = sanitizeTest(body, id);
+        if (test.owner) Object.assign(next, { owner: test.owner, ownerName: test.ownerName });
         await store.set("test:" + id, next);
         return json({ test: next });
       }
       if (method === "DELETE") {
-        if (!admin.ok) return needAdmin();
+        if (!admin.ok && !mine(test)) return user ? fail(403, "You can only delete your own tests.") : needAdmin();
         await store.delete("test:" + id);
         const subs = await store.list(`sub:${id}:`);
         await Promise.all(subs.map((k) => store.delete(k)));
@@ -256,7 +268,7 @@ export async function handleTestsApi(request, store, env, compile = handleCompil
       const name = str(body?.name, 120).trim();
       const email = str(body?.email, 200).trim();
       if (!name) return fail(400, "Enter your name before submitting.");
-      const graded = await gradeSubmission(test, body?.answers || {}, compile);
+      const graded = await gradeSubmission(test, body?.answers || {}, run);
       const record = {
         id: newId(),
         testId: id,
@@ -273,7 +285,7 @@ export async function handleTestsApi(request, store, env, compile = handleCompil
     }
 
     if (action === "results" && method === "GET") {
-      if (!admin.ok) return needAdmin();
+      if (!admin.ok && !mine(test)) return user ? fail(403, "You can only see results of your own tests.") : needAdmin();
       const keys = await store.list(`sub:${id}:`);
       const subs = (await Promise.all(keys.map((k) => store.get(k)))).filter(Boolean).sort((a, b) => b.submittedAt - a.submittedAt);
       return json({ submissions: subs });

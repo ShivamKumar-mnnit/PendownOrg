@@ -1,4 +1,6 @@
 import { handleCompile } from "../../src/lib/compileHandler.js";
+import { blobStore } from "../../src/lib/server/blobStore.js";
+import { readRunner } from "../../src/lib/server/auth.js";
 
 export default async function handler(request) {
   if (request.method !== "POST") {
@@ -11,7 +13,9 @@ export default async function handler(request) {
     return Response.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { statusCode, body: responseBody } = await handleCompile(body);
+  // The backup runner (admin → Compiler) is optional; a storage hiccup must not stop the main runner.
+  const runner = await readRunner(blobStore("anobyt-content")).catch(() => null);
+  const { statusCode, body: responseBody } = await handleCompile(body, runner);
   return Response.json(responseBody, { status: statusCode });
 }
 

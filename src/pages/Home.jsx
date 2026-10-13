@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Head, Cards } from "../components/ui";
+import { BookOpen, Building2, ClipboardCheck, Code2, SquareTerminal, Trophy } from "lucide-react";
+import { Head } from "../components/ui";
+import { PROBLEMS, BOOKS } from "../lib/problems";
 import { COMPANIES, ROUNDS_MAPPED } from "../lib/companyPrep";
 import { usePageSEO } from "../lib/seo";
 
@@ -19,6 +21,9 @@ const YEARS = [
   ["Final year", "Interview ready", ["Aptitude and mock tests", "Company-specific prep", "Mock interviews"]],
 ];
 
+const YEAR1_BOOKS = new Set(BOOKS.filter((b) => b[1] === 1).map((b) => b[0]));
+const YEAR1 = PROBLEMS.filter((p) => YEAR1_BOOKS.has(p.b)).length;
+
 const EXPLORE = [
   ["/mentors", "Mentors", "Who you will be matched with"],
   ["/companies", "Companies", "Typical hiring rounds"],
@@ -28,6 +33,26 @@ const EXPLORE = [
   ["/tests", "Create tests", "Build tests for your students"],
   ["/dashboard", "Student dashboard", "Track solves, rank and rewards"],
   ["/colleges", "For colleges", "Onboard a whole batch"],
+];
+
+const PLATFORM = [
+  ["/problems/year/1", Code2, "Year 1 practice", "Every first-year problem on one page. Solve and check without leaving it.", `${YEAR1} problems`],
+  ["/compiler", SquareTerminal, "Online compiler", "Python, Java, C, C++ and JavaScript with input, test cases and clear errors.", "Free"],
+  ["/courses", BookOpen, "Courses", "Structured tracks. Start with the free modules and unlock the rest.", null],
+  ["/practice", ClipboardCheck, "Tests and assessments", "MCQ, coding and Olympiad tests with instant scores.", null],
+  ["/workspace", Building2, "College panel", "Manage students, follow their progress and run your own tests.", "Premium"],
+  ["/problems", Trophy, "Problem library", "Easy to advanced problems for every year, auto-checked.", `${PROBLEMS.length}+ problems`],
+];
+
+const FEATURES = [
+  ["👩‍💼", "Mentors from industry", "Professionals who have sat on the other side of the table."],
+  ["📝", "Feedback you can use", "Detailed, honest notes after every session, not just pass or fail."],
+  ["🎥", "Mock interviews", "Company-style rounds with structured feedback."],
+  ["🤝", "1:1 mentorship", "Guidance on resumes, projects and strategy."],
+  ["🎯", "Domain-specific prep", "SDE, Data Science, Product, Consulting and more."],
+  ["📄", "Resume review", "Share your resume link and your mentor reviews it first."],
+  ["🗓️", "Slots that fit you", "Pick a time, confirm on WhatsApp, join on Google Meet."],
+  ["🔓", "No long commitments", "Pay per session. Nothing locks you in."],
 ];
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -145,7 +170,7 @@ export default function Home() {
           </div>
           <Pipeline />
         </div>
-        <div className="wrap">
+        <div>
           <div className="mq" aria-label="Companies covered">
             <div>
               {COMPANIES.concat(COMPANIES).map((c, i) => (
@@ -177,29 +202,55 @@ export default function Home() {
 
       <section className="sec">
         <div className="wrap">
-          <Head eyebrow="Why Anobyt" title="Why students choose Anobyt">Interview prep without the friction.</Head>
-          <Cards
-            items={[
-              ["👩‍💼", "Mentors from industry", "Matched with professionals who have sat on the other side of the table."],
-              ["📝", "Feedback you can use", "Detailed, honest notes after every session, not just pass or fail."],
-              ["🗓️", "Slots that fit you", "Pick a time, confirm on WhatsApp, join on Google Meet."],
-              ["🔓", "No long commitments", "Book one session or keep going. Nothing locks you in."],
-            ]}
-          />
+          <div className="split-head">
+            <Head eyebrow="Learn and practise" title="One place to learn, code and get tested">
+              Courses, problems, a compiler and real assessments, all connected to your account.
+            </Head>
+            <Link className="btn ghost" to="/premium">
+              See premium plans
+            </Link>
+          </div>
+          <div className="plat">
+            {PLATFORM.map(([to, Icon, title, text, tag]) => (
+              <Link key={to} to={to} className="plat-card">
+                <span className="ic">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span>
+                  <b>{title}</b>
+                  <span>{text}</span>
+                </span>
+                {tag && <em>{tag}</em>}
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
       <section className="sec alt">
-        <div className="wrap">
-          <Head eyebrow="What we offer" title="Everything you need to walk in prepared">No subscriptions and no long onboarding.</Head>
-          <Cards
-            items={[
-              ["🎥", "Mock interviews", "Company-style rounds with structured feedback."],
-              ["🤝", "1:1 mentorship", "Guidance on resumes, projects and strategy."],
-              ["🎯", "Domain-specific prep", "SDE, Data Science, Product, Consulting and more."],
-              ["📄", "Resume review", "Share your resume link and your mentor reviews it first."],
-            ]}
-          />
+        <div className="wrap split">
+          <div>
+            <Head eyebrow="Why Anobyt" title="Interview prep without the friction">
+              Real mentors, honest feedback and slots that fit around college. Book one session or keep going.
+            </Head>
+            <div className="row">
+              <Link className="btn" to="/book">
+                Book a session
+              </Link>
+              <Link className="btn ghost" to="/mentors">
+                Meet the mentors
+              </Link>
+            </div>
+          </div>
+          <div className="feat-grid">
+            {FEATURES.map(([icon, title, text]) => (
+              <div key={title}>
+                <span className="fi">{icon}</span>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

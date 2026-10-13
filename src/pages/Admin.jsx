@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import {
   Lock, LogOut, UploadCloud, CalendarCheck, ClipboardList, Inbox as Inbox_, BookOpen, Mic, KeyRound, Settings2, Download, Plus, Trash2, Send, RotateCcw, CheckCircle2, Info, History, Award,
+  CreditCard, BadgeIndianRupee, UsersRound, Code2, Cpu,
 } from "lucide-react";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import { buildWaLink, openWhatsApp, normalizePhone } from "../lib/whatsapp";
@@ -15,6 +16,11 @@ const CoursesAdmin = lazy(() => import("./admin/CoursesAdmin"));
 const EventsAdmin = lazy(() => import("./admin/EventsAdmin"));
 const AccessCodes = lazy(() => import("./admin/AccessCodes"));
 const SiteAdmin = lazy(() => import("./admin/SiteAdmin"));
+const PaymentsAdmin = lazy(() => import("./admin/PaymentsAdmin"));
+const AccessAdmin = lazy(() => import("./admin/AccessAdmin"));
+const UsersAdmin = lazy(() => import("./admin/UsersAdmin"));
+const ProblemsAdmin = lazy(() => import("./admin/ProblemsAdmin"));
+const RunnerAdmin = lazy(() => import("./admin/RunnerAdmin"));
 
 // Each tab: id, label, icon. Sessions lives in this file; the rest load on demand.
 const TABS = [
@@ -22,11 +28,28 @@ const TABS = [
   ["inbox", "Inbox", Inbox_],
   ["tests", "Tests", ClipboardList],
   ["courses", "Courses", BookOpen],
+  ["problems", "Problems", Code2],
   ["events", "Events", Mic],
-  ["access", "Premium access", KeyRound],
+  ["users", "Users and colleges", UsersRound],
+  ["payments", "Payments", CreditCard],
+  ["pricing", "Prices and features", BadgeIndianRupee],
+  ["access", "Access codes", KeyRound],
+  ["runner", "Compiler", Cpu],
   ["site", "Site and FAQ", Settings2],
 ];
-const PANELS = { inbox: Inbox, tests: TestsAdmin, courses: CoursesAdmin, events: EventsAdmin, access: AccessCodes, site: SiteAdmin };
+const PANELS = {
+  inbox: Inbox,
+  tests: TestsAdmin,
+  courses: CoursesAdmin,
+  problems: ProblemsAdmin,
+  events: EventsAdmin,
+  users: UsersAdmin,
+  payments: PaymentsAdmin,
+  pricing: AccessAdmin,
+  access: AccessCodes,
+  runner: RunnerAdmin,
+  site: SiteAdmin,
+};
 
 const SESSION_KEY = "algomate_admin_ok";
 const STORAGE_KEY = "algomate_admin_students";

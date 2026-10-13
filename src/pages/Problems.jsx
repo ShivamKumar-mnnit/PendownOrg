@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Head, Page } from "../components/ui";
-import { BOOKS, YEAR_TITLES, difficultyClass, problemsInBook } from "../lib/problems";
+import { BOOKS, YEAR_TITLES, difficultyClass } from "../lib/problems";
+import { groupByTopic, solvedSet, useProblems } from "../lib/problemBank";
 import { getStudent } from "../lib/student";
 import { usePageSEO } from "../lib/seo";
 
@@ -11,14 +12,14 @@ const PLATFORMS = [
   ["https://www.hackerearth.com/practice/", "HackerEarth", "Practice problems and hiring challenges"],
 ];
 
-function Book({ book, done }) {
+function Book({ book, done, problems }) {
   const [level, setLevel] = useState("All");
   const [query, setQuery] = useState("");
-  const list = problemsInBook(book[0]);
+  const list = problems.filter((p) => p.book === book[0]);
   const q = query.trim().toLowerCase();
   const shown = list
     .map((p, i) => ({ p, n: i + 1 }))
-    .filter(({ p }) => (level === "All" || p.d === level) && (p.t + " " + p.tp).toLowerCase().includes(q));
+    .filter(({ p }) => (level === "All" || p.difficulty === level) && (p.title + " " + p.topic).toLowerCase().includes(q));
 
   return (
     <Page>
@@ -47,9 +48,9 @@ function Book({ book, done }) {
           <Link key={p.id} className="prow" to={`/problem/${p.id}`}>
             <span className="st">{done[p.id] ? "✓" : ""}</span>
             <b>
-              Q{n}. {p.t}
+              Q{n}. {p.title}
             </b>
-            <span className={`tag ${difficultyClass(p.d)}`}>{p.d}</span>
+            <span className={`tag ${difficultyClass(p.difficulty)}`}>{p.difficulty}</span>
           </Link>
         ))}
       </div>
@@ -60,7 +61,9 @@ function Book({ book, done }) {
 export default function Problems() {
   const { bookId } = useParams();
   const book = BOOKS.find((b) => b[0] === bookId);
-  const done = getStudent()?.done || {};
+  const { problems } = useProblems();
+  const done = { ...(getStudent()?.done || {}) };
+  for (const id of solvedSet()) done[id] = 1;
 
   usePageSEO({
     title: book ? `${book[2]} problems` : "Practice problems",
@@ -68,40 +71,51 @@ export default function Problems() {
     path: book ? `/problems/${book[0]}` : "/problems",
   });
 
-  if (book) return <Book key={book[0]} book={book} done={done} />;
+  if (book) return <Book key={book[0]} book={book} done={done} problems={problems} />;
 
   return (
     <Page>
       <Head title="Practice problems">
-        Questions are grouped into books, year by year. Finish a book and you know that topic. Solved problems count on your dashboard.
+        Questions are grouped into books, year by year. Solve in JavaScript or Python, or in any language for input/output problems. Solved problems count on your dashboard.
       </Head>
-      {[1, 2, 3, 4].map((y) => (
-        <div key={y}>
-          <div className="head" style={{ margin: `${y > 1 ? "56px" : "0"} 0 20px` }}>
-            <h2 style={{ fontSize: 26 }}>{YEAR_TITLES[y]}</h2>
-          </div>
-          <div className="cards">
-            {BOOKS.filter((b) => b[1] === y).map((b, i) => {
-              const list = problemsInBook(b[0]);
-              const n = list.filter((p) => done[p.id]).length;
-              return (
-                <Link key={b[0]} className="card" to={`/problems/${b[0]}`}>
-                  <div className="meta">
-                    <span className="tag">{y === 1 ? `Book ${i + 1}` : "Book"}</span>
-                    <small>
-                      {n} of {list.length} solved
-                    </small>
-                  </div>
-                  <h3>{b[2]}</h3>
-                  <div className="bar2" style={{ margin: "12px 0 0" }}>
-                    <b style={{ width: `${list.length ? Math.round((n / list.length) * 100) : 0}%` }} />
-                  </div>
+      {[1, 2, 3, 4].map((y) => {
+        const groups = groupByTopic(problems.filter((p) => p.year === y));
+        const total = groups.reduce((n, g) => n + g.items.length, 0);
+        return (
+          <div key={y}>
+            <div className="split-head" style={{ margin: `${y > 1 ? "56px" : "0"} 0 20px` }}>
+              <div className="head" style={{ margin: 0 }}>
+                <h2 style={{ fontSize: 26 }}>{YEAR_TITLES[y]}</h2>
+              </div>
+              {total > 0 && (
+                <Link className="btn ghost" to={`/problems/year/${y}`}>
+                  All {total} on one page
                 </Link>
-              );
-            })}
+              )}
+            </div>
+            <div className="cards">
+              {groups.map((g, i) => {
+                const n = g.items.filter((p) => done[p.id]).length;
+                const isBook = BOOKS.some((b) => b[0] === g.key);
+                return (
+                  <Link key={g.key} className="card" to={isBook ? `/problems/${g.key}` : `/problems/year/${y}#${encodeURIComponent(g.key)}`}>
+                    <div className="meta">
+                      <span className="tag">{y === 1 ? `Book ${i + 1}` : "Book"}</span>
+                      <small>
+                        {n} of {g.items.length} solved
+                      </small>
+                    </div>
+                    <h3>{g.title}</h3>
+                    <div className="bar2" style={{ margin: "12px 0 0" }}>
+                      <b style={{ width: `${g.items.length ? Math.round((n / g.items.length) * 100) : 0}%` }} />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
       <Head title="Want more practice?" style={{ margin: "56px 0 20px" }}>
         For a wider library, keep practising on these platforms too.
       </Head>

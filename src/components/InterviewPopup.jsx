@@ -8,7 +8,9 @@ const SESSION_KEY = "anobyt_demo_popup_seen";
 const DELAY_MS = 5000;
 // Pages that are already the booking flow itself, or aren't marketing
 // pages at all — a lead popup on top of either would just be noise.
-const SKIP_ROUTES = ["/book", "/admin", "/compiler"];
+const SKIP_ROUTES = ["/book", "/admin", "/compiler", "/account", "/workspace"];
+// Pages where students are typing code or reading a lesson: never interrupt them.
+const SKIP_PREFIXES = ["/problem", "/problems/year/", "/assessment/", "/take"];
 
 const STAGES = [
   { id: "1st-year", title: "1st Year", subtitle: "Just starting out" },
@@ -43,7 +45,7 @@ export default function InterviewPopup() {
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    if (SKIP_ROUTES.includes(pathname)) return;
+    if (SKIP_ROUTES.includes(pathname) || SKIP_PREFIXES.some((x) => pathname.startsWith(x)) || /^\/courses\/[^/]+\/learn\//.test(pathname)) return;
     if (sessionStorage.getItem(SESSION_KEY)) return;
 
     const timer = setTimeout(() => {

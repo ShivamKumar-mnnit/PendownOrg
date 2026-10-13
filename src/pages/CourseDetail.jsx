@@ -1,56 +1,18 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, ExternalLink, FileText, Link2, Lock, PlayCircle, X } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, CheckCircle2, FileText, Link2, Lock, PlayCircle } from "lucide-react";
 import { Head, Page } from "../components/ui";
 import RichText from "../components/RichText";
+import Buy from "../components/Buy";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import { forgetPremium, getContent, lessonTotal, premiumStatus, redeemCode } from "../lib/contentApi";
-import { DEFAULT_COURSES, LESSON_TYPES } from "../lib/content/defaults";
+import { DEFAULT_COURSES } from "../lib/content/defaults";
+import { doneLessons } from "../lib/lessons";
+import { rupees, useAccount } from "../lib/account";
 import { buildAdminWaLink } from "../lib/whatsapp";
 import { usePageSEO } from "../lib/seo";
 
 const TYPE_ICON = { video: PlayCircle, article: FileText, link: Link2, pdf: FileText };
-
-/** YouTube / Vimeo / Google Drive links become an embeddable player URL. */
-function embedUrl(url) {
-  if (!url) return "";
-  let m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
-  if (m) return `https://www.youtube-nocookie.com/embed/${m[1]}`;
-  m = url.match(/vimeo\.com\/(\d+)/);
-  if (m) return `https://player.vimeo.com/video/${m[1]}`;
-  m = url.match(/drive\.google\.com\/file\/d\/([\w-]+)/);
-  if (m) return `https://drive.google.com/file/d/${m[1]}/preview`;
-  return "";
-}
-
-function LessonViewer({ lesson, onClose }) {
-  const embed = embedUrl(lesson.url);
-  return (
-    <div className="panel lesson-view" id="lesson">
-      <div className="lv-head">
-        <div>
-          <span className="eyebrow">{LESSON_TYPES[lesson.type]}</span>
-          <h2 style={{ fontSize: 26, marginTop: 6 }}>{lesson.title}</h2>
-        </div>
-        <button type="button" className="ib" onClick={onClose} title="Close lesson">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-      {embed && (
-        <div className="video">
-          <iframe src={embed} title={lesson.title} allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
-        </div>
-      )}
-      <RichText text={lesson.body} />
-      {lesson.url && !embed && (
-        <a className="btn" href={lesson.url} target="_blank" rel="noopener noreferrer" style={{ marginTop: 14 }}>
-          <ExternalLink className="h-4 w-4" /> Open {lesson.type === "pdf" ? "notes" : lesson.type === "video" ? "video" : "link"}
-        </a>
-      )}
-      {!lesson.url && !lesson.body && <p className="note">This lesson's content is being prepared.</p>}
-    </div>
-  );
-}
 
 function Unlock({ course, onUnlocked }) {
   const [code, setCode] = useState("");
@@ -74,12 +36,9 @@ function Unlock({ course, onUnlocked }) {
 
   return (
     <div className="panel unlock">
-      <div className="ic">
-        <Lock className="h-5 w-5" />
-      </div>
-      <h3>Unlock this course</h3>
+      <h3 style={{ fontSize: 18 }}>Have an access code?</h3>
       <p className="note" style={{ marginTop: 4 }}>
-        Premium lessons open with an access code. Ask us on WhatsApp to get yours, then enter it here once on each device.
+        Codes from us or your college unlock the course on this device.
       </p>
       <form onSubmit={submit} className="unlock-form">
         <input className="inp" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Access code, e.g. AB-7KQ2M9XP" aria-label="Access code" />
@@ -95,7 +54,7 @@ function Unlock({ course, onUnlocked }) {
         rel="noopener noreferrer"
         style={{ marginTop: 12, width: "100%" }}
       >
-        <WhatsAppIcon className="h-4 w-4" /> Request access on WhatsApp
+        <WhatsAppIcon className="h-4 w-4" /> Ask on WhatsApp
       </a>
     </div>
   );
@@ -103,12 +62,14 @@ function Unlock({ course, onUnlocked }) {
 
 export default function CourseDetail() {
   const { id } = useParams();
+  const nav = useNavigate();
   const fallback = DEFAULT_COURSES.find((c) => c.id === id);
   const [course, setCourse] = useState(fallback ? { ...fallback, unlocked: fallback.tier === "free" } : null);
   const [error, setError] = useState("");
-  const [open, setOpen] = useState(null);
   const [access, setAccess] = useState(null);
   const [reload, setReload] = useState(0);
+  const { user } = useAccount();
+  const [done] = useState(() => doneLessons(id));
 
   usePageSEO({
     title: course ? course.title : "Course",
@@ -126,7 +87,7 @@ export default function CourseDetail() {
     return () => {
       on = false;
     };
-  }, [id, reload, fallback]);
+  }, [id, reload, fallback, user?.id]);
 
   if (error)
     return (
@@ -139,14 +100,18 @@ export default function CourseDetail() {
 
   const lessons = course.modules.flatMap((m) => m.lessons);
   const premium = course.tier === "premium";
+  const freeCount = course.modules.filter((m) => m.free).length;
+  const lockedCount = course.modules.filter((m) => m.unlocked === false).length;
+  const firstOpen = lessons.find((l) => !l.locked);
+  const doneCount = lessons.filter((l) => done.has(l.id)).length;
+  const refresh = () => setReload((n) => n + 1);
 
   function openLesson(l) {
     if (l.locked) {
       document.getElementById("unlock")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    setOpen(l);
-    requestAnimationFrame(() => document.getElementById("lesson")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    nav(`/courses/${id}/learn/${l.id}`);
   }
 
   return (
@@ -169,17 +134,22 @@ export default function CourseDetail() {
             <span className="cicon-lg">{course.icon || "📘"}</span> {course.title}
           </h1>
           <p className="lead-p">{course.summary}</p>
-          <div className="kpis" style={{ maxWidth: 560 }}>
+          <div className="kpis" style={{ maxWidth: 640 }}>
             <div><b>{lessonTotal(course) || "—"}</b><span>Lessons</span></div>
             <div><b>{course.modules.length || course.outline.length}</b><span>Modules</span></div>
-            <div><b>{course.priceLabel || (premium ? "Premium" : "Free")}</b><span>Access</span></div>
+            <div><b>{premium && course.price > 0 ? rupees(course.price) : course.priceLabel || (premium ? "Premium" : "Free")}</b><span>{premium && freeCount ? `${freeCount} module${freeCount > 1 ? "s" : ""} free` : "Access"}</span></div>
+            {lessons.length > 0 && <div><b>{Math.round((doneCount * 100) / lessons.length)}%</b><span>Your progress</span></div>}
           </div>
+          {firstOpen && (
+            <button type="button" className="btn" style={{ marginTop: 22 }} onClick={() => openLesson(lessons.find((l) => !l.locked && !done.has(l.id)) || firstOpen)}>
+              <PlayCircle className="h-4 w-4" /> {doneCount ? "Continue learning" : "Start learning"}
+            </button>
+          )}
         </div>
       </div>
 
       <div className="course-grid">
         <div>
-          {open && <LessonViewer lesson={open} onClose={() => setOpen(null)} />}
           {course.description && (
             <div className="panel" style={{ marginBottom: 18 }}>
               <h3 style={{ fontSize: 20, marginBottom: 8 }}>About this course</h3>
@@ -189,21 +159,28 @@ export default function CourseDetail() {
           <h2 style={{ fontSize: 24, margin: "8px 0 14px" }}>Curriculum</h2>
           {course.modules.length > 0 ? (
             course.modules.map((m, i) => (
-              <details className="module" key={i} open={i === 0}>
+              <details className="module" key={m.id || i} open={i < 3}>
                 <summary>
                   <span className="mnum">{String(i + 1).padStart(2, "0")}</span>
                   <b>{m.title || `Module ${i + 1}`}</b>
+                  {premium && (m.free ? <span className="badge free">Free</span> : m.unlocked ? <span className="badge free">Unlocked</span> : <span className="badge lock"><Lock className="h-3 w-3" /> Paid</span>)}
                   <small>{m.lessons.length} lessons</small>
                 </summary>
+                {premium && m.unlocked === false && (
+                  <div className="lockbox" style={{ margin: "0 18px 8px" }}>
+                    <p>{m.price > 0 ? `Unlock just this module for ${rupees(m.price)}, or get the full course.` : "Included with the full course."}</p>
+                    {m.price > 0 && <Buy item={{ type: "module", courseId: course.id, moduleId: m.id }} price={m.price} label="Unlock module" className="btn ghost" onDone={refresh} />}
+                  </div>
+                )}
                 <ul>
                   {m.lessons.map((l) => {
-                    const Icon = l.locked ? Lock : TYPE_ICON[l.type] || FileText;
+                    const Icon = l.locked ? Lock : done.has(l.id) ? CheckCircle2 : TYPE_ICON[l.type] || FileText;
                     return (
                       <li key={l.id}>
-                        <button type="button" className={`lesson ${l.locked ? "locked" : ""} ${open?.id === l.id ? "on" : ""}`} onClick={() => openLesson(l)}>
+                        <button type="button" className={`lesson ${l.locked ? "locked" : ""} ${done.has(l.id) ? "done" : ""}`} onClick={() => openLesson(l)}>
                           <Icon className="h-4 w-4" />
                           <span>{l.title}</span>
-                          {l.preview && premium && !course.unlocked && <span className="tag free">Free preview</span>}
+                          {l.preview && premium && m.unlocked === false && <span className="tag free">Free preview</span>}
                           {l.duration && <small>{l.duration}</small>}
                         </button>
                       </li>
@@ -225,7 +202,29 @@ export default function CourseDetail() {
         </div>
         <aside id="unlock">
           {premium && !course.unlocked ? (
-            <Unlock course={course} onUnlocked={() => setReload((n) => n + 1)} />
+            <>
+              <div className="panel unlock">
+                <div className="ic">
+                  <Lock className="h-5 w-5" />
+                </div>
+                <h3>Unlock the full course</h3>
+                <p className="note" style={{ marginTop: 4 }}>
+                  {freeCount ? `The first ${freeCount === 1 ? "module is" : `${freeCount} modules are`} free. ` : ""}
+                  {lockedCount ? `Get all ${course.modules.length} modules, lifetime access.` : "Every module is open to you."}
+                </p>
+                {course.price > 0 ? (
+                  <div style={{ marginTop: 14 }}>
+                    <Buy item={{ type: "course", id: course.id }} price={course.price} label="Buy course" className="btn" onDone={refresh} />
+                  </div>
+                ) : (
+                  <p className="note">Ask us on WhatsApp for the price, or use an access code below.</p>
+                )}
+                {!user && <p className="note" style={{ fontSize: 13 }}>You'll sign in or create a free account first, so your purchase stays with you on every device.</p>}
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <Unlock course={course} onUnlocked={refresh} />
+              </div>
+            </>
           ) : (
             <div className="panel unlock">
               <div className="ic">
@@ -236,7 +235,7 @@ export default function CourseDetail() {
                 {lessons.length ? "Pick any lesson from the curriculum to start." : "Lessons will appear here as they are published."}
               </p>
               {premium && access?.active && (
-                <button type="button" className="linkish" style={{ marginTop: 10 }} onClick={() => { forgetPremium(); setReload((n) => n + 1); setAccess({ active: false }); }}>
+                <button type="button" className="linkish" style={{ marginTop: 10 }} onClick={() => { forgetPremium(); refresh(); setAccess({ active: false }); }}>
                   Remove access code from this device
                 </button>
               )}

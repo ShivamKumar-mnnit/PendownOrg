@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import CodeMirror from "@uiw/react-codemirror";
 import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
-import { Play, Loader2, Maximize2, Minimize2, RotateCcw, SquareTerminal, Square } from "lucide-react";
+import { Play, Loader2, Maximize2, Minimize2, RotateCcw, SquareTerminal, Square, Plus, Trash2, ListChecks, CheckCircle2, XCircle } from "lucide-react";
 import { Head, Page } from "../components/ui";
 import Select from "../components/Select";
-import { LANGUAGES, getLanguage, runCode } from "../lib/compiler";
+import { LANGUAGES, explainResult, getLanguage, normalizeOutput, runCode } from "../lib/compiler";
+import RunOutput from "../components/RunOutput";
 import { createExecutionSession } from "../lib/interactiveCompiler";
 import { usePageSEO } from "../lib/seo";
 import { useIsDark } from "../lib/useIsDark";
@@ -33,6 +34,9 @@ export default function Compiler() {
   const [result, setResult] = useState(null);
   const [running, setRunning] = useState(false);
   const [maximized, setMaximized] = useState(false);
+  const [cases, setCases] = useState([{ input: "", expected: "" }]);
+  const [caseResults, setCaseResults] = useState(null);
+  const [testing, setTesting] = useState(false);
 
   const [interactive, setInteractive] = useState(false);
   const [terminalLines, setTerminalLines] = useState([]);
@@ -113,6 +117,25 @@ export default function Compiler() {
     } finally {
       setRunning(false);
     }
+  }
+
+  async function runAllCases() {
+    const list = cases.filter((c) => c.input.trim() || c.expected.trim());
+    if (!list.length) return;
+    setTesting(true);
+    setCaseResults(null);
+    const out = [];
+    for (const c of list) {
+      try {
+        const r = await runCode({ language: languageId, code, stdin: c.input });
+        const v = explainResult(r, languageId);
+        out.push({ ...c, got: r.stdout || "", pass: v.kind === "ok" && normalizeOutput(r.stdout) === normalizeOutput(c.expected), verdict: v, ms: r.executionTimeMs });
+      } catch (e) {
+        out.push({ ...c, got: "", pass: false, verdict: { kind: "service", title: "Couldn't run", detail: e.message } });
+      }
+      setCaseResults([...out]);
+    }
+    setTesting(false);
   }
 
   function handleReset() {
@@ -241,27 +264,61 @@ export default function Compiler() {
             </button>
           </div>
           <label className="l">Output</label>
-          <pre className="out">
-            {!result && !running && <span style={{ color: "var(--color-fg-faint)" }}>Output appears here.</span>}
-            {running && "Running..."}
-            {result && !running && (
-              <>
-                {result.stdout && <span>{result.stdout}</span>}
-                {result.stderr && <span className="text-rose-500">{result.stderr}</span>}
-                {!result.stdout && !result.stderr && <span style={{ color: "var(--color-fg-faint)" }}>(no output)</span>}
-                {"\n"}
-                <span className={result.status === "SUCCESS" ? "ok" : "bad"}>{result.status === "SUCCESS" ? "Success" : "Error"}</span>
-                <span style={{ color: "var(--color-fg-faint)" }}>
-                  {" "}
-                  · Exit code {result.exitCode}
-                  {typeof result.executionTimeMs === "number" ? ` · ${result.executionTimeMs} ms` : ""}
-                </span>
-              </>
+          {running && <pre className="out">Running...</pre>}
+          {!result && !running && (
+            <pre className="out">
+              <span style={{ color: "var(--color-fg-faint)" }}>Output appears here.</span>
+            </pre>
+          )}
+          {result && !running && <RunOutput result={result} language={languageId} />}
+
+          <div className="tc-head">
+            <label className="l" style={{ margin: 0 }}>
+              <ListChecks className="h-4 w-4" style={{ display: "inline", verticalAlign: -3 }} /> Test cases
+            </label>
+            <small className="note" style={{ margin: 0 }}>Give an input and the output you expect, then run them all at once.</small>
+          </div>
+          <div className="tc-list">
+            {cases.map((c, i) => {
+              const r = caseResults?.[i];
+              return (
+                <div key={i} className={`tc${r ? (r.pass ? " pass" : " fail") : ""}`}>
+                  <div className="tc-top">
+                    <b>Test {i + 1}</b>
+                    {r && (r.pass ? <span className="ok"><CheckCircle2 className="h-4 w-4" style={{ display: "inline", verticalAlign: -3 }} /> Passed{r.ms ? ` · ${r.ms} ms` : ""}</span> : <span className="bad"><XCircle className="h-4 w-4" style={{ display: "inline", verticalAlign: -3 }} /> {r.verdict.kind === "ok" ? "Wrong answer" : r.verdict.title}</span>)}
+                    <button type="button" className="ib" title="Remove test" onClick={() => { setCases(cases.filter((_, j) => j !== i)); setCaseResults(null); }} disabled={cases.length === 1}>
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="two" style={{ gap: 10 }}>
+                    <textarea className="inp code" rows={3} placeholder="Input" value={c.input} spellCheck={false} onChange={(e) => setCases(cases.map((x, j) => (j === i ? { ...x, input: e.target.value } : x)))} />
+                    <textarea className="inp code" rows={3} placeholder="Expected output" value={c.expected} spellCheck={false} onChange={(e) => setCases(cases.map((x, j) => (j === i ? { ...x, expected: e.target.value } : x)))} />
+                  </div>
+                  {r && !r.pass && (
+                    <pre className="out" style={{ minHeight: 0, marginTop: 8 }}>
+                      {r.verdict.kind === "ok" ? `Your output:\n${r.got || "(nothing)"}` : r.verdict.detail}
+                    </pre>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="row" style={{ marginTop: 10 }}>
+            <button type="button" className="btn ghost" onClick={() => setCases([...cases, { input: "", expected: "" }])}>
+              <Plus className="h-4 w-4" /> Add test
+            </button>
+            <button type="button" className="btn" onClick={runAllCases} disabled={testing}>
+              {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ListChecks className="h-4 w-4" />} {testing ? "Running tests…" : "Run all tests"}
+            </button>
+            {caseResults && !testing && (
+              <b className={caseResults.every((r) => r.pass) ? "ok" : "bad"} style={{ alignSelf: "center" }}>
+                {caseResults.filter((r) => r.pass).length} of {caseResults.length} passed
+              </b>
             )}
-          </pre>
+          </div>
         </>
       )}
-      <div className="note">Runs on our code-execution server. Supports Python, JavaScript, Java, C and C++.</div>
+      <div className="note">Runs on our code-execution server. Supports Python, JavaScript, Java, C and C++. Errors show the line and what went wrong.</div>
     </div>
   );
 
