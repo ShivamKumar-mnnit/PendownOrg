@@ -114,8 +114,8 @@ function AccountsFields({ initial, onSaved }) {
                 <Field label="UPI ID">
                   <input className="inp mono" value={a.upiId} onChange={(e) => setAcc(i, { upiId: e.target.value.trim() })} placeholder="yourname@okaxis" />
                 </Field>
-                <Field label="Payee name">
-                  <input className="inp" value={a.payeeName} onChange={(e) => setAcc(i, { payeeName: e.target.value })} />
+                <Field label="Name shown to students">
+                  <input className="inp" value={a.payeeName} onChange={(e) => setAcc(i, { payeeName: e.target.value })} placeholder="Anobyt" />
                 </Field>
               </div>
               <Field label="Note for students (optional)">
