@@ -26,6 +26,13 @@ import EventDetail from "./pages/EventDetail";
 
 // Loaded on demand: only students taking a server-hosted test need it.
 const Assessment = lazy(() => import("./pages/Assessment"));
+const Account = lazy(() => import("./pages/Account"));
+const Premium = lazy(() => import("./pages/Premium"));
+const Lesson = lazy(() => import("./pages/Lesson"));
+const YearPractice = lazy(() => import("./pages/YearPractice"));
+const Workspace = lazy(() => import("./pages/Workspace"));
+
+const lazyPage = (el) => <Suspense fallback={<Page narrow={620}><p className="note">Loading…</p></Page>}>{el}</Suspense>;
 
 function NotFound() {
   return (
@@ -54,6 +61,10 @@ export default function App() {
           <Route path="/companies/:id" element={<CompanyDetail />} />
           <Route path="/courses" element={<Courses />} />
           <Route path="/courses/:id" element={<CourseDetail />} />
+          <Route path="/courses/:id/learn/:lessonId" element={lazyPage(<Lesson />)} />
+          <Route path="/account" element={lazyPage(<Account />)} />
+          <Route path="/premium" element={lazyPage(<Premium />)} />
+          <Route path="/workspace" element={lazyPage(<Workspace />)} />
           <Route path="/placement" element={<Placement />} />
           <Route path="/practice" element={<PracticeTests />} />
           <Route path="/take" element={<TakeTest />} />
@@ -68,6 +79,7 @@ export default function App() {
           <Route path="/tests" element={<CreateTest />} />
           <Route path="/problems" element={<Problems />} />
           <Route path="/problems/:bookId" element={<Problems />} />
+          <Route path="/problems/year/:year" element={lazyPage(<YearPractice />)} />
           <Route path="/problem/:id" element={<Problem />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/talks" element={<Talks />} />

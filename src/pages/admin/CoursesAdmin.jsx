@@ -13,11 +13,13 @@ const blankCourse = () => ({
   icon: "📘",
   cover: "",
   priceLabel: "",
+  price: 0,
+  freeModules: 1,
   lessonCount: 0,
   summary: "",
   description: "",
   outline: [],
-  modules: [{ title: "Module 1", lessons: [blankLesson()] }],
+  modules: [{ title: "Module 1", access: "auto", price: 0, lessons: [blankLesson()] }],
   published: false,
 });
 
@@ -52,7 +54,7 @@ export default function CoursesAdmin() {
 
   return (
     <div>
-      <SectionTop title="Courses and premium content" text="Free and premium tracks shown on the Courses page. Premium lessons open only with an access code (Premium access tab).">
+      <SectionTop title="Courses and premium content" text="Free and premium tracks shown on the Courses page. In a premium course, the first modules can be free; students buy the rest (whole course or single modules) or use an access code.">
         <button type="button" className="btn" onClick={() => setEditing(blankCourse())}>
           <Plus className="h-4 w-4" /> New course
         </button>
@@ -73,6 +75,7 @@ export default function CoursesAdmin() {
                 <small>
                   {c.modules.length} modules · {c.modules.reduce((n, m) => n + m.lessons.length, 0)} lessons added
                   {lessonTotal(c) ? ` · shows "${lessonTotal(c)} lessons"` : ""} · {c.level || "No level"}
+                  {c.tier === "premium" ? ` · ${c.price ? `₹${c.price}` : "no price"} · ${c.freeModules || 0} free module${c.freeModules === 1 ? "" : "s"}` : ""}
                 </small>
               </div>
               <div className="tact">
@@ -140,7 +143,7 @@ function CourseEditor({ initial, onCancel, onSaved }) {
           <Field label="Access">
             <select className="inp" value={c.tier} onChange={(e) => set({ tier: e.target.value })}>
               <option value="free">Free: everyone can open every lesson</option>
-              <option value="premium">Premium: lessons need an access code</option>
+              <option value="premium">Premium: some modules are paid</option>
             </select>
           </Field>
         </div>
@@ -152,9 +155,27 @@ function CourseEditor({ initial, onCancel, onSaved }) {
             <input className="inp" value={c.level} onChange={(e) => set({ level: e.target.value })} placeholder="e.g. 2nd to 3rd year" />
           </Field>
           <Field label="Price label (optional)">
-            <input className="inp" value={c.priceLabel} onChange={(e) => set({ priceLabel: e.target.value })} placeholder="e.g. ₹499" />
+            <input className="inp" value={c.priceLabel} onChange={(e) => set({ priceLabel: e.target.value })} placeholder={c.tier === "premium" ? "Set below" : "e.g. Free"} disabled={c.tier === "premium"} />
           </Field>
         </div>
+        {c.tier === "premium" && (
+          <div className="paybox">
+            <div className="three">
+              <Field label="Full course price (₹)" hint="0 = not sold online (access codes only).">
+                <input className="inp" type="number" min={0} value={c.price} onChange={(e) => set({ price: e.target.value })} />
+              </Field>
+              <Field label="Free modules" hint="How many modules, from the top, anyone can open.">
+                <input className="inp" type="number" min={0} max={c.modules.length} value={c.freeModules} onChange={(e) => set({ freeModules: e.target.value })} />
+              </Field>
+              <Field label="Price label on the card (optional)">
+                <input className="inp" value={c.priceLabel} onChange={(e) => set({ priceLabel: e.target.value })} placeholder="e.g. ₹499 one-time" />
+              </Field>
+            </div>
+            <p className="note" style={{ margin: "6px 0 0", fontSize: 13 }}>
+              Each module below can also be marked always free or always paid, and paid modules can have their own price so students can buy them one at a time.
+            </p>
+          </div>
+        )}
         <Field label="Short summary (shown on the course card)">
           <textarea className="inp" rows={2} value={c.summary} onChange={(e) => set({ summary: e.target.value })} />
         </Field>
@@ -176,6 +197,18 @@ function CourseEditor({ initial, onCancel, onSaved }) {
           <div className="qhead">
             <b>Module {i + 1}</b>
             <input className="inp" style={{ flex: 1, minWidth: 200 }} value={m.title} onChange={(e) => setModule(i, { title: e.target.value })} placeholder="Module title" />
+            {c.tier === "premium" && (
+              <>
+                <select className="inp" style={{ width: "auto" }} value={m.access || "auto"} onChange={(e) => setModule(i, { access: e.target.value })} aria-label="Module access">
+                  <option value="auto">{i < Number(c.freeModules || 0) ? "Free (within free count)" : "Paid (after free count)"}</option>
+                  <option value="free">Always free</option>
+                  <option value="paid">Always paid</option>
+                </select>
+                {(m.access === "paid" || (m.access !== "free" && i >= Number(c.freeModules || 0))) && (
+                  <input className="inp" style={{ width: 130 }} type="number" min={0} value={m.price ?? 0} onChange={(e) => setModule(i, { price: e.target.value })} title="Price of this module alone (0 = only with the full course)" placeholder="Module ₹" aria-label="Module price" />
+                )}
+              </>
+            )}
             <MoveButtons i={i} count={c.modules.length} onMove={(i, d) => set({ modules: move(c.modules, i, d) })} />
             <button type="button" className="ib danger" title="Remove module" onClick={() => confirm("Remove this module and its lessons?") && set({ modules: c.modules.filter((_, j) => j !== i) })}>
               <Trash2 className="h-4 w-4" />
@@ -216,7 +249,7 @@ function CourseEditor({ initial, onCancel, onSaved }) {
         </div>
       ))}
       <div className="addq">
-        <button type="button" className="chip" onClick={() => set({ modules: [...c.modules, { title: `Module ${c.modules.length + 1}`, lessons: [blankLesson()] }] })}>
+        <button type="button" className="chip" onClick={() => set({ modules: [...c.modules, { title: `Module ${c.modules.length + 1}`, access: "auto", price: 0, lessons: [blankLesson()] }] })}>
           <Plus className="h-3.5 w-3.5" style={{ display: "inline", verticalAlign: -2 }} /> Add module
         </button>
       </div>

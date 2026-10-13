@@ -9,7 +9,7 @@ import { useReveal } from "../lib/useReveal";
 
 // Tool pages where the floating promo/chat buttons would sit on top of the
 // editor and its output.
-const NO_FLOATERS = ["/compiler", "/problem", "/assessment", "/admin"];
+const NO_FLOATERS = ["/compiler", "/problem", "/problems/year", "/assessment", "/admin", "/workspace"];
 
 export default function Layout() {
   const { pathname } = useLocation();

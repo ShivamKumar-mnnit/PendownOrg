@@ -11,7 +11,9 @@
 // ADMIN_PASSWORD and re-checked against the code on every request, so
 // deactivating or deleting a code locks content again straight away.
 
-import { adminState, fail, json, needAdmin, newId, num, readBody, str } from "./http.js";
+import { adminState, bool, fail, json, mapLimit, needAdmin, newId, num, readBody, str } from "./http.js";
+import { courseUnlocks, moduleIsFree, readAccess, readRunner, readUser } from "./auth.js";
+import { handleCompile } from "../compileHandler.js";
 import { COURSE_TIERS, DEFAULTS, DEFAULT_SETTINGS, EVENT_CATEGORIES, EVENT_MODES, LESSON_TYPES } from "../content/defaults.js";
 
 const COLLECTIONS = ["courses", "events", "faqs"];
@@ -20,7 +22,6 @@ const MAX_LEADS = 5000;
 const MAX_REGS = 5000;
 const LEAD_KINDS = ["booking", "college", "premium", "contact"];
 
-const bool = (v) => v === true || v === "true";
 const slug = (s) =>
   String(s || "")
     .toLowerCase()
@@ -46,10 +47,16 @@ function cleanCourse(c, id) {
     icon: str(c.icon, 8),
     cover: safeUrl(c.cover),
     priceLabel: str(c.priceLabel, 60),
+    // Paid access: the whole course for `price`, or single modules at their own price.
+    price: Math.max(0, Math.round(num(c.price, 0) * 100) / 100),
+    freeModules: Math.max(0, Math.trunc(num(c.freeModules, 0))),
     lessonCount: Math.max(0, Math.trunc(num(c.lessonCount, 0))),
     outline: list(c.outline, 40).map((x) => str(x, 200)).filter(Boolean),
     modules: list(c.modules, 40).map((m) => ({
+      id: typeof m?.id === "string" && /^[a-z0-9-]{1,40}$/.test(m.id) ? m.id : "m-" + newId(),
       title: str(m?.title, 200),
+      access: ["free", "paid"].includes(m?.access) ? m.access : "auto",
+      price: Math.max(0, Math.round(num(m?.price, 0) * 100) / 100),
       lessons: list(m?.lessons, 100).map((l) => ({
         id: typeof l?.id === "string" && /^[a-z0-9-]{1,40}$/.test(l.id) ? l.id : newId(),
         title: str(l?.title, 200),
@@ -116,18 +123,97 @@ async function readCol(store, col) {
 }
 const writeCol = (store, col, items) => store.set("col:" + col, items);
 
-/** Strips premium lesson content unless the course is free, the lesson is a preview, or access is granted. */
-function publicCourse(c, unlocked) {
-  const open = c.tier === "free" || unlocked;
+/**
+ * Strips paid lesson content the viewer can't open. A module is open when it
+ * is free (free course, marked free, or within the free-module count), when
+ * the viewer bought the course or that module, or holds an access code for
+ * the course. Preview lessons are always open.
+ */
+function publicCourse(c, unlocks) {
+  const all = c.tier === "free" || unlocks.all;
   return {
     ...c,
-    unlocked: open,
-    modules: c.modules.map((m) => ({
-      ...m,
-      lessons: m.lessons.map((l) => (open || l.preview ? l : { id: l.id, title: l.title, type: l.type, duration: l.duration, preview: false, locked: true })),
-    })),
+    unlocked: all,
+    modules: c.modules.map((m, i) => {
+      const free = moduleIsFree(c, i);
+      const open = all || free || unlocks.modules.has(m.id);
+      return {
+        ...m,
+        free,
+        unlocked: open,
+        lessons: m.lessons.map((l) => (open || l.preview ? l : { id: l.id, title: l.title, type: l.type, duration: l.duration, preview: false, locked: true })),
+      };
+    }),
   };
 }
+
+// ---- Practice problems ----
+// The built-in problems ship with the site (src/lib/problems.js). This
+// collection holds what the admin adds, plus edited copies of built-in
+// problems (same id) and "hidden" markers, merged in the browser.
+
+const DIFFICULTIES = ["Easy", "Medium", "Hard", "Advanced"];
+const LANGS = ["python", "javascript", "java", "c", "cpp"];
+const ident = (v) => (/^[A-Za-z_$][\w$]{0,40}$/.test(String(v || "")) ? String(v) : "solve");
+const small = (v) => {
+  try {
+    const t = JSON.stringify(v);
+    return t !== undefined && t.length <= 20000;
+  } catch {
+    return false;
+  }
+};
+const ioCases = (v) => list(v, 20).map((c) => ({ input: str(c?.input, 20000), output: str(c?.output, 20000) }));
+
+function cleanProblem(p, id) {
+  const kind = p?.kind === "stdio" ? "stdio" : "function";
+  const base = {
+    id,
+    title: str(p?.title, 200).trim() || "Untitled problem",
+    difficulty: DIFFICULTIES.includes(p?.difficulty) ? p.difficulty : "Easy",
+    topic: str(p?.topic, 80).trim() || "General",
+    book: str(p?.book, 40).trim(),
+    year: Math.min(4, Math.max(1, Math.trunc(num(p?.year, 1)))),
+    kind,
+    description: str(p?.description, 20000),
+    builtIn: bool(p?.builtIn),
+    hidden: bool(p?.hidden),
+    published: p?.published !== false,
+    order: num(p?.order, 0),
+    updatedAt: Date.now(),
+  };
+  if (kind === "function") {
+    return {
+      ...base,
+      fn: ident(p?.fn),
+      params: str(p?.params, 200).replace(/[^\w$, ]/g, ""),
+      tests: list(p?.tests, 30)
+        .filter((t) => Array.isArray(t?.args) && small(t.args) && small(t.expected ?? null))
+        .map((t) => ({ args: t.args, expected: t.expected ?? null })),
+      ll: list(p?.ll, 4).map((x) => Math.trunc(num(x, -1))).filter((x) => x >= 0),
+      out: bool(p?.out),
+    };
+  }
+  const starter = {};
+  for (const l of LANGS) if (typeof p?.starter?.[l] === "string" && p.starter[l].trim()) starter[l] = str(p.starter[l], 20000);
+  const languages = list(p?.languages, 5).filter((l) => LANGS.includes(l));
+  return { ...base, samples: ioCases(p?.samples), cases: ioCases(p?.cases), languages: languages.length ? languages : LANGS, starter };
+}
+
+/** The problem as students see it: hidden test cases removed. */
+function publicProblem(p) {
+  if (p.kind !== "stdio") return p;
+  const { cases, ...rest } = p;
+  return { ...rest, caseCount: cases.length };
+}
+
+const normOut = (s) =>
+  String(s ?? "")
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((l) => l.replace(/\s+$/, ""))
+    .join("\n")
+    .replace(/\n+$/, "");
 
 function courseSummary(c) {
   const lessons = c.modules.reduce((n, m) => n + m.lessons.length, 0);
@@ -200,9 +286,9 @@ function randomCode() {
 // ---- Router ----
 
 /**
- * Routes /api/content/*, /api/events/*, /api/leads*, /api/codes* and /api/premium/*.
+ * Routes /api/content/*, /api/events/*, /api/leads*, /api/codes*, /api/problems* and /api/premium/*.
  */
-export async function handleContentApi(request, store, env) {
+export async function handleContentApi(request, store, env, compile = handleCompile) {
   const url = new URL(request.url);
   const parts = url.pathname.replace(/\/+$/, "").split("/").filter(Boolean).slice(1); // drop "api"
   const method = request.method;
@@ -266,8 +352,10 @@ export async function handleContentApi(request, store, env) {
         if (!item || (!item.published && !admin.ok)) return fail(404, "Not found.");
         if (admin.ok && url.searchParams.get("full") === "1") return json({ item });
         if (a === "courses") {
-          const rec = await readToken(request, store, env);
-          return json({ item: publicCourse(item, Boolean(rec && codeCovers(rec, item.id))) });
+          const [rec, user, access] = await Promise.all([readToken(request, store, env), readUser(request, store), readAccess(store)]);
+          const unlocks = courseUnlocks(user, item.id, access);
+          if (rec && codeCovers(rec, item.id)) unlocks.all = true;
+          return json({ item: publicCourse(item, unlocks), signedIn: Boolean(user) });
         }
         if (a === "events") return json({ item: await eventView(store, item, false) });
         return json({ item });
@@ -401,6 +489,72 @@ export async function handleContentApi(request, store, env) {
       }
       if (method === "DELETE") {
         await store.delete(key);
+        return json({ ok: true });
+      }
+      return fail(405, "Method not allowed.");
+    }
+
+    // ---------- /api/problems ----------
+    if (area === "problems") {
+      const saved = await store.get("col:problems");
+      const items = Array.isArray(saved) ? saved : [];
+      if (!a) {
+        if (method === "GET") {
+          if (url.searchParams.get("all") === "1") {
+            if (!admin.ok) return deny();
+            return json({ items });
+          }
+          return json({ items: items.filter((p) => p.published && !p.hidden).map(publicProblem), hidden: items.filter((p) => p.hidden || !p.published).map((p) => p.id) });
+        }
+        if (method === "POST") {
+          if (!admin.ok) return deny();
+          if (items.length >= 2000) return fail(400, "Too many problems. Delete some first.");
+          let id = slug(body?.title) || newId();
+          if (items.some((x) => x.id === id)) id = `${id}-${newId().slice(-4)}`;
+          const item = cleanProblem(body || {}, id);
+          await store.set("col:problems", [...items, item]);
+          return json({ item }, 201);
+        }
+        return fail(405, "Method not allowed.");
+      }
+      if (!/^[a-z0-9-]{1,60}$/.test(a)) return fail(404, "Problem not found.");
+      const idx = items.findIndex((x) => x.id === a);
+      if (b === "judge" && method === "POST") {
+        const p = items[idx];
+        if (!p || p.kind !== "stdio" || !p.published || p.hidden) return fail(404, "Problem not found.");
+        if (!p.languages.includes(body?.language)) return fail(400, "That language isn't allowed for this problem.");
+        const code = str(body?.code, 100000);
+        if (!code.trim()) return fail(400, "Write some code first.");
+        const runner = await readRunner(store);
+        const all = [...p.samples.map((t) => ({ ...t, sample: true })), ...p.cases.map((t) => ({ ...t, sample: false }))];
+        const ran = await mapLimit(all, 6, async (t) => {
+          const r = await compile({ language: body.language, code, stdin: t.input }, runner);
+          const out = r.body || {};
+          const pass = r.statusCode < 400 && !out.error && out.status !== "ERROR" && normOut(out.stdout) === normOut(t.output);
+          const error = out.error || (pass ? "" : String(out.stderr || "").slice(0, 1500));
+          return t.sample ? { sample: true, input: t.input, expected: t.output, got: String(out.stdout ?? "").slice(0, 5000), pass, error } : { sample: false, pass, error: error ? error.slice(0, 300) : "" };
+        });
+        return json({ results: ran, passed: ran.filter((r) => r.pass).length, total: ran.length });
+      }
+      if (b) return fail(404, "Not found.");
+      if (method === "GET") {
+        const p = items[idx];
+        if (admin.ok && url.searchParams.get("full") === "1") return p ? json({ item: p }) : fail(404, "Problem not found.");
+        if (!p || !p.published || p.hidden) return fail(404, "Problem not found.");
+        return json({ item: publicProblem(p) });
+      }
+      if (!admin.ok) return deny();
+      if (method === "PUT") {
+        // Upsert, so editing a built-in problem saves a copy that replaces it.
+        const next = cleanProblem(body || {}, a);
+        const copy = [...items];
+        if (idx >= 0) copy[idx] = next;
+        else copy.push(next);
+        await store.set("col:problems", copy);
+        return json({ item: next });
+      }
+      if (method === "DELETE") {
+        await store.set("col:problems", items.filter((x) => x.id !== a));
         return json({ ok: true });
       }
       return fail(405, "Method not allowed.");

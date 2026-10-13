@@ -125,6 +125,38 @@ The other server-backed admin tabs (same password):
 - **Site and FAQ**: the top strip text, contact email, an announcement
   banner, and the FAQ.
 
+### Accounts, payments and premium features
+
+Students and colleges create accounts at `/account` (passwords are stored
+as PBKDF2 hashes; logic in `src/lib/server/accountsApi.js`, served by
+`netlify/functions/accounts.js`). Admin tabs for this:
+
+- **Payments**: add a Razorpay account (Key ID, Key secret, optional webhook
+  secret; webhook URL `https://<your-site>/api/pay/webhook`, event
+  `order.paid`) and/or a UPI ID for manual payments. Keys can also come from
+  Netlify environment variables `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and
+  `RAZORPAY_WEBHOOK_SECRET`, which take priority. The payments log lets you
+  approve UPI payments after checking the transaction ID.
+- **Prices and features**: turn each premium feature on or off, make it
+  free or paid, and set its price and how long it lasts: Create tests,
+  Student records, College panel (includes the other two) and All premium
+  courses.
+- **Courses**: a premium course has a full-course price and a number of
+  free modules; each module can be forced free or paid and can have its
+  own price. Paid lesson content is only sent to students who bought it
+  (or hold an access code).
+- **Users and colleges**: every account, college accounts you create, and
+  manual grants or removal of access.
+- **Problems**: edit, replace or hide built-in practice problems and add
+  new ones: function problems (JavaScript in the browser, Python on the
+  runner) or input/output problems in any language with hidden test cases.
+- **Compiler**: check each language on the code runner and add an optional
+  backup Judge0 runner.
+
+Student pages: `/premium` (plans), `/workspace` (college panel: student
+records, own tests and results), `/problems/year/1` (every Year 1 problem on
+one page) and `/courses/<id>/learn/<lesson>` (lesson reader).
+
 Content lives in Netlify Blobs (`netlify/functions/content.js`, logic in
 `src/lib/server/contentApi.js`). Until something is saved, the site shows the
 starting content in `src/lib/content/defaults.js`, and pages fall back to it

@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { call } from "./testsApi";
+import { userHeaders } from "./account";
 import { DEFAULTS, DEFAULT_SETTINGS } from "./content/defaults";
 
 const enc = encodeURIComponent;
@@ -24,7 +25,7 @@ function setPremiumToken(t) {
     /* storage blocked */
   }
 }
-const premiumHeaders = () => (getPremiumToken() ? { "x-premium-token": getPremiumToken() } : {});
+const premiumHeaders = () => ({ ...(getPremiumToken() ? { "x-premium-token": getPremiumToken() } : {}), ...userHeaders() });
 
 // Public
 export const listContent = (col) => call(`/api/content/${col}`).then((d) => d.items);

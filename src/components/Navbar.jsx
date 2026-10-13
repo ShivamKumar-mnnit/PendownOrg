@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { UserRound } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import { useSettings } from "../lib/contentApi";
+import { useAccount } from "../lib/account";
 
 // Top-level entries are either a direct link [path, label] or a dropdown
 // [label, [[path, title, description], ...]].
@@ -14,30 +16,33 @@ const MENU = [
       ["/companies", "Companies", "Hiring rounds by company"],
       ["/mentors", "Mentors", "Industry mentors by domain"],
       ["/courses", "Courses", "Free and premium tracks"],
+      ["/premium", "Premium plans", "Unlock courses and tools"],
     ],
   ],
   [
     "Practice",
     [
+      ["/problems/year/1", "Year 1 practice", "Every first-year problem on one page"],
       ["/problems", "Practice problems", "Easy to advanced, auto-checked"],
       ["/practice", "Practice tests", "Ready-made tests for students"],
       ["/tests", "Create tests", "Build a test for your class"],
       ["/compiler", "Online compiler", "Run code in the browser"],
     ],
   ],
-  ["/dashboard", "Dashboard"],
   [
     "Colleges",
     [
       ["/colleges", "For colleges", "Onboard a whole batch"],
+      ["/workspace", "College panel", "Students, tests and results"],
       ["/talks", "Tech talks and events", "Mock sessions for campuses"],
       ["/faq", "FAQ", "Common questions"],
     ],
   ],
+  ["/dashboard", "Dashboard"],
 ];
 
 // Detail pages light up the dropdown their list page lives in.
-const SECTION_OF = { "/companies": "Prepare", "/take": "Practice", "/problems": "Practice", "/problem": "Practice" };
+const SECTION_OF = { "/companies": "Prepare", "/courses": "Prepare", "/take": "Practice", "/problems": "Practice", "/problem": "Practice", "/workspace": "Colleges" };
 
 function sectionFor(pathname) {
   const root = "/" + (pathname.split("/")[1] || "");
@@ -67,6 +72,7 @@ export default function Navbar() {
   const section = sectionFor(pathname);
   const settings = useSettings();
   const ann = settings.announcement;
+  const { user } = useAccount();
 
   return (
     <>
@@ -139,8 +145,12 @@ export default function Navbar() {
             })}
           </nav>
           <ThemeToggle className="tog" />
+          <Link className={`acct${pathname === "/account" ? " on" : ""}`} to="/account" title={user ? "Your account" : "Sign in"}>
+            <UserRound className="h-4 w-4" />
+            <span>{user ? user.name.split(" ")[0] : "Sign in"}</span>
+          </Link>
           <Link className="btn" to="/book">
-            Book a session
+            Book<span className="hide-sm">a session</span>
           </Link>
         </div>
       </header>

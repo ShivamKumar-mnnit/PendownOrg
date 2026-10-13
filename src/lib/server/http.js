@@ -56,3 +56,25 @@ export function memoryStore() {
     },
   };
 }
+
+export const bool = (v) => v === true || v === "true";
+
+/** Runs `fn` over `items`, at most `limit` at a time, keeping the order. */
+export async function mapLimit(items, limit, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
+/** Reads every value under a key prefix. */
+export async function readAll(store, prefix) {
+  const keys = await store.list(prefix);
+  return (await mapLimit(keys, 16, (k) => store.get(k))).filter(Boolean);
+}

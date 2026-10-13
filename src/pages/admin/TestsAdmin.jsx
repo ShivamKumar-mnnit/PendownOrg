@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Copy, Download, Eye, EyeOff, Link2, Pencil, Plus, Trash2, Users } from "lucide-react";
 import {
   KIND_LABELS,
@@ -15,6 +15,11 @@ import {
 } from "../../lib/testsApi";
 
 const ALL_LANGS = Object.keys(LANG_LABELS);
+
+// Where tests are loaded and saved. The admin panel uses the admin API; the
+// college panel passes the signed-in user's own-tests API instead.
+const ADMIN_API = { list: listAllTests, getFull: getFullTest, create: createTest, update: updateTest, remove: deleteTest, results: getResults };
+const Api = createContext(ADMIN_API);
 
 function blankQuestion(kind, type) {
   const negative = type === "olympiad" ? 1 : 0;
@@ -63,7 +68,15 @@ const fmtDate = (ts) => new Date(ts).toLocaleString("en-IN", { dateStyle: "mediu
 const fmtDur = (s) => `${Math.floor(s / 60)}m ${s % 60}s`;
 const testLink = (id) => `${window.location.origin}/assessment/${id}`;
 
-export default function TestsAdmin() {
+export default function TestsAdmin({ api = ADMIN_API, title = "Tests and assessments", intro }) {
+  return (
+    <Api.Provider value={api}>
+      <TestsList title={title} intro={intro} api={api} />
+    </Api.Provider>
+  );
+}
+
+function TestsList({ title, intro, api }) {
   const [tests, setTests] = useState(null);
   const [error, setError] = useState("");
   const [needLogin, setNeedLogin] = useState(0); // 0 ok, 401 wrong key, 503 not configured
@@ -73,7 +86,7 @@ export default function TestsAdmin() {
 
   const load = useCallback(
     () =>
-      listAllTests().then(
+      api.list().then(
         (list) => {
           setTests(list);
           setNeedLogin(0);
@@ -85,7 +98,7 @@ export default function TestsAdmin() {
           setTests([]);
         },
       ),
-    [],
+    [api],
   );
 
   useEffect(() => {
@@ -95,7 +108,7 @@ export default function TestsAdmin() {
   async function openEditor(t) {
     setError("");
     try {
-      setEditing(await getFullTest(t.id));
+      setEditing(await api.getFull(t.id));
     } catch (e) {
       setError(e.message);
     }
@@ -103,8 +116,8 @@ export default function TestsAdmin() {
 
   async function togglePublish(t) {
     try {
-      const full = await getFullTest(t.id);
-      await updateTest(t.id, { ...full, published: !full.published });
+      const full = await api.getFull(t.id);
+      await api.update(t.id, { ...full, published: !full.published });
       load();
     } catch (e) {
       setError(e.message);
@@ -114,7 +127,7 @@ export default function TestsAdmin() {
   async function remove(t) {
     if (!confirm(`Delete "${t.title}" and all its submissions? This can't be undone.`)) return;
     try {
-      await deleteTest(t.id);
+      await api.remove(t.id);
       load();
     } catch (e) {
       setError(e.message);
@@ -123,8 +136,8 @@ export default function TestsAdmin() {
 
   async function duplicate(t) {
     try {
-      const full = await getFullTest(t.id);
-      await createTest({ ...full, title: `${full.title} (copy)`, published: false });
+      const full = await api.getFull(t.id);
+      await api.create({ ...full, title: `${full.title} (copy)`, published: false });
       load();
     } catch (e) {
       setError(e.message);
@@ -159,9 +172,9 @@ export default function TestsAdmin() {
     <div>
       <div className="admin-top" style={{ marginTop: 8 }}>
         <div>
-          <h2 style={{ fontSize: 24 }}>Tests and assessments</h2>
+          <h2 style={{ fontSize: 24 }}>{title}</h2>
           <p className="note" style={{ marginTop: 4 }}>
-            Create MCQ tests, coding assessments and Olympiad-style papers. Published tests appear on the Practice page and can be shared by link.
+            {intro || "Create MCQ tests, coding assessments and Olympiad-style papers. Published tests appear on the Practice page and can be shared by link."}
           </p>
         </div>
         <div className="row">
@@ -266,6 +279,7 @@ function ServerLogin({ status, onDone }) {
 }
 
 function TestEditor({ initial, onCancel, onSaved }) {
+  const api = useContext(Api);
   const [t, setT] = useState(initial);
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
@@ -291,8 +305,8 @@ function TestEditor({ initial, onCancel, onSaved }) {
     setErr("");
     setSaving(true);
     try {
-      if (next.id) await updateTest(next.id, next);
-      else await createTest(next);
+      if (next.id) await api.update(next.id, next);
+      else await api.create(next);
       onSaved();
     } catch (e) {
       setErr(e.message);
@@ -533,15 +547,16 @@ function CaseList({ title, list, onChange }) {
 }
 
 function Results({ test, onBack }) {
+  const api = useContext(Api);
   const [subs, setSubs] = useState(null);
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    getResults(test.id).then(setSubs, (e) => {
+    api.results(test.id).then(setSubs, (e) => {
       setErr(e.message);
       setSubs([]);
     });
-  }, [test.id]);
+  }, [test.id, api]);
 
   const total = test.questions.reduce((n, q) => n + q.marks, 0);
   const avg = subs?.length ? subs.reduce((n, s) => n + s.score, 0) / subs.length : 0;
