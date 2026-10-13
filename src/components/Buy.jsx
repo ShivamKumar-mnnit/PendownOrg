@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Loader2, Lock, X } from "lucide-react";
 import { payManually, payWithRazorpay, rupees, useAccount, usePayConfig } from "../lib/account";
+import { qrMatrix, qrPath } from "../lib/qr";
 
 /**
  * "Buy" button for anything sold on the site. Signed-out visitors are sent
@@ -56,7 +57,9 @@ export default function Buy({ item, price, label, className = "btn", onDone }) {
 function UpiDialog({ upi, item, price, title, onClose, onSent }) {
   const [utr, setUtr] = useState("");
   const [state, setState] = useState({ busy: false, err: "", done: false });
-  const link = `upi://pay?pa=${encodeURIComponent(upi.upiId)}&pn=${encodeURIComponent(upi.payeeName || "Anobyt")}&am=${price}&cu=INR&tn=${encodeURIComponent((title || "Anobyt").slice(0, 40))}`;
+  const name = upi.payeeName || "Anobyt";
+  const link = `upi://pay?pa=${upi.upiId}&pn=${encodeURIComponent(name)}&am=${price}&cu=INR&tn=${encodeURIComponent((title || name).slice(0, 40))}`;
+  const qr = useMemo(() => qrPath(qrMatrix(link)), [link]);
 
   async function send(e) {
     e.preventDefault();
@@ -86,14 +89,19 @@ function UpiDialog({ upi, item, price, title, onClose, onSent }) {
           </>
         ) : (
           <form onSubmit={send}>
+            <div className="upi-pay">
+              <svg className="upi-qr" viewBox={`0 0 ${qr.size} ${qr.size}`} role="img" aria-label={`UPI QR code to pay ${name}`} shapeRendering="crispEdges">
+                <rect width={qr.size} height={qr.size} fill="#fff" />
+                <path d={qr.d} fill="#000" />
+              </svg>
+              <p>
+                Scan with any UPI app to pay <b>{rupees(price)}</b> to <b>{name}</b>.
+              </p>
+              <a href={link} className="btn ghost upi-open">
+                Open UPI app on this phone
+              </a>
+            </div>
             <ol className="upi-steps">
-              <li>
-                Pay <b>{rupees(price)}</b> to <b className="mono">{upi.upiId}</b>
-                {upi.payeeName ? ` (${upi.payeeName})` : ""} from any UPI app.{" "}
-                <a href={link} className="linkish">
-                  Open UPI app
-                </a>
-              </li>
               <li>Copy the 12-digit UPI transaction ID (UTR) from the payment receipt.</li>
               <li>Paste it below and send.</li>
             </ol>
