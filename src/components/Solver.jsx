@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import CodeMirror from "@uiw/react-codemirror";
 import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
-import { CheckCircle2, Loader2, Play, RotateCcw, SquareTerminal, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, Play, RotateCcw, Send, SquareTerminal, XCircle } from "lucide-react";
 import { getLanguage, runCode } from "../lib/compiler";
 import { LANG_NAMES, judgeAnswer, languagesFor, starterFor } from "../lib/problemBank";
 import { useIsDark } from "../lib/useIsDark";
@@ -45,7 +45,7 @@ export default function Solver({ p, compact = false, onSolved }) {
   const [codes, setCodes] = useState({});
   const code = codes[lang] ?? readDraft(p.id, lang) ?? starterFor(p, lang);
   const [result, setResult] = useState(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState("");
   const [custom, setCustom] = useState(false);
   const [stdin, setStdin] = useState(() => p.samples?.[0]?.input || "");
   const [runOut, setRunOut] = useState(null);
@@ -66,24 +66,24 @@ export default function Solver({ p, compact = false, onSolved }) {
     }
   }
 
-  async function runTests() {
-    setBusy(true);
+  async function runTests(mode) {
+    setBusy(mode);
     setResult(null);
-    const r = await judgeAnswer(p, lang, code);
+    const r = await judgeAnswer(p, lang, code, mode);
     setResult(r);
-    setBusy(false);
-    if (r.ok) onSolved?.(p.id);
+    setBusy("");
+    if (r.ok && mode === "submit") onSolved?.(p.id);
   }
 
   async function runCustom() {
-    setBusy(true);
+    setBusy("custom");
     setRunOut(null);
     try {
       setRunOut(await runCode({ language: lang, code, stdin }));
     } catch (e) {
       setRunOut({ status: "ERROR", stdout: "", stderr: "", error: e.message, exitCode: 1 });
     }
-    setBusy(false);
+    setBusy("");
   }
 
   const passed = result?.res?.filter((x) => x.pass).length || 0;
@@ -114,23 +114,26 @@ export default function Solver({ p, compact = false, onSolved }) {
         <CodeMirror value={code} onChange={setCode} extensions={extensions} theme={isDark ? githubDark : githubLight} height={compact ? "240px" : "340px"} basicSetup={{ tabSize: 4 }} />
       </div>
       <div className="row" style={{ marginTop: 12, alignItems: "center" }}>
-        <button type="button" className="btn" onClick={runTests} disabled={busy}>
-          {busy && !custom ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Run tests
+        <button type="button" className="btn ghost" onClick={() => runTests("run")} disabled={Boolean(busy)} title="Check the sample test cases">
+          {busy === "run" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Run code
+        </button>
+        <button type="button" className="btn" onClick={() => runTests("submit")} disabled={Boolean(busy)} title="Check every test case and save your progress">
+          {busy === "submit" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Submit solution
         </button>
         <button type="button" className={`btn ghost${custom ? " on" : ""}`} onClick={() => setCustom(!custom)}>
           <SquareTerminal className="h-4 w-4" /> Custom input
         </button>
-        <small className="note" style={{ margin: 0 }}>
-          {p.kind === "stdio" ? "Read from standard input and print the answer." : lang === "javascript" ? "Checked instantly in your browser." : "Runs on our code runner."}
-        </small>
+      </div>
+      <div className="solver-hint">
+        {p.kind === "stdio" ? "Read from standard input and print the answer." : lang === "javascript" ? "Run code checks the samples instantly in your browser. Submit checks every test case." : "Your code runs on our code runner. Submit checks every test case."}
       </div>
 
       {custom && (
         <div className="custom-run">
           <label className="l">Input (stdin)</label>
           <textarea className="inp code" rows={3} value={stdin} onChange={(e) => setStdin(e.target.value)} spellCheck={false} placeholder="Type the input your program reads" />
-          <button type="button" className="btn ghost" style={{ marginTop: 8 }} onClick={runCustom} disabled={busy}>
-            {busy && custom ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Run with this input
+          <button type="button" className="btn ghost" style={{ marginTop: 8 }} onClick={runCustom} disabled={Boolean(busy)}>
+            {busy === "custom" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Run with this input
           </button>
           {p.kind !== "stdio" && <p className="note" style={{ fontSize: 13 }}>This runs your file as a program. Call your function and print the result to see it.</p>}
           {runOut && <RunOutput result={runOut} language={lang} />}
@@ -152,8 +155,16 @@ export default function Solver({ p, compact = false, onSolved }) {
               <div className={`verdict ${result.ok ? "good" : "bad"}`}>
                 {result.ok ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
                 <div>
-                  <b>{result.ok ? "All tests passed" : `${passed} of ${result.res.length} tests passed`}</b>
-                  {result.ok && (
+                  <b>
+                    {result.mode === "run"
+                      ? result.ok
+                        ? "Sample tests passed. Now submit your solution."
+                        : `${passed} of ${result.res.length} sample tests passed`
+                      : result.ok
+                        ? "Accepted: all tests passed"
+                        : `${passed} of ${result.res.length} tests passed`}
+                  </b>
+                  {result.ok && result.mode !== "run" && (
                     <span>
                       {result.solved === "new" ? " Added to your dashboard." : result.solved === "already" ? " Already counted on your dashboard." : " Marked as solved."}{" "}
                       {result.solved === null && (
@@ -175,7 +186,7 @@ export default function Solver({ p, compact = false, onSolved }) {
                   ) : (
                     <details key={i} className={`case ${x.pass ? "pass" : "fail"}`} open={!x.pass && i === result.res.findIndex((y) => !y.pass)}>
                       <summary>
-                        <b>Test {i + 1}</b> {x.pass ? "passed" : "failed"}
+                        <b>{x.sample ? "Sample test" : "Test case"} {i + 1}</b> {x.pass ? "passed" : "failed"}
                       </summary>
                       <dl>
                         <dt>Input</dt>

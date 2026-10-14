@@ -36,6 +36,7 @@ function blankTest(type) {
     title: "",
     description: "",
     durationMin: type === "coding" ? 60 : type === "olympiad" ? 90 : 30,
+    difficulty: "Mixed",
     published: false,
     shuffle: false,
     showAnswers: true,
@@ -283,6 +284,7 @@ function TestEditor({ initial, onCancel, onSaved }) {
   const [t, setT] = useState(initial);
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
+  const [preview, setPreview] = useState(false);
 
   const set = (patch) => setT((prev) => ({ ...prev, ...patch }));
   const setQ = (i, patch) => setT((prev) => ({ ...prev, questions: prev.questions.map((q, j) => (j === i ? { ...q, ...patch } : q)) }));
@@ -316,6 +318,8 @@ function TestEditor({ initial, onCancel, onSaved }) {
   }
 
   const total = t.questions.reduce((n, q) => n + (Number(q.marks) || 0), 0);
+
+  if (preview) return <TestPreview t={t} total={total} onBack={() => setPreview(false)} />;
 
   return (
     <div className="editor">
@@ -352,6 +356,12 @@ function TestEditor({ initial, onCancel, onSaved }) {
           <div>
             <label className="l" htmlFor="t-dur">Time limit (minutes, 0 for none)</label>
             <input id="t-dur" className="inp" type="number" min={0} max={600} value={t.durationMin} onChange={(e) => set({ durationMin: e.target.value })} />
+            <label className="l" htmlFor="t-lvl">Difficulty</label>
+            <select id="t-lvl" className="inp" value={t.difficulty || "Mixed"} onChange={(e) => set({ difficulty: e.target.value })}>
+              {["Mixed", "Easy", "Medium", "Hard"].map((d) => (
+                <option key={d}>{d}</option>
+              ))}
+            </select>
           </div>
           <div className="checks">
             <label><input type="checkbox" checked={t.shuffle} onChange={(e) => set({ shuffle: e.target.checked })} /> Shuffle question order</label>
@@ -388,6 +398,9 @@ function TestEditor({ initial, onCancel, onSaved }) {
         <button type="button" className="btn ghost" onClick={onCancel} disabled={saving}>
           Cancel
         </button>
+        <button type="button" className="btn ghost" onClick={() => setPreview(true)} disabled={saving}>
+          <Eye className="h-4 w-4" /> Preview
+        </button>
         <button type="button" className="btn ghost" onClick={() => save(false)} disabled={saving}>
           Save as draft
         </button>
@@ -395,6 +408,53 @@ function TestEditor({ initial, onCancel, onSaved }) {
           {saving ? "Saving…" : "Save and publish"}
         </button>
       </div>
+    </div>
+  );
+}
+
+/** The test as students will see it, before saving. */
+function TestPreview({ t, total, onBack }) {
+  return (
+    <div className="editor">
+      <button type="button" className="linkish" onClick={onBack}>
+        ← Back to editing
+      </button>
+      <div className="panel" style={{ marginTop: 10 }}>
+        <span className="tag">Preview: this is what students see</span>
+        <h2 style={{ fontSize: 26, margin: "10px 0 6px" }}>{t.title || "Untitled test"}</h2>
+        <p className="note" style={{ margin: 0 }}>
+          {TEST_TYPE_LABELS[t.type]} · {t.questions.length} questions · {total} marks · {Number(t.durationMin) ? `${t.durationMin} minutes` : "No time limit"} · {t.difficulty || "Mixed"} difficulty
+        </p>
+        {t.description && <p style={{ whiteSpace: "pre-wrap", marginTop: 12 }}>{t.description}</p>}
+      </div>
+      {t.questions.map((q, i) => (
+        <div key={i} className="panel" style={{ marginTop: 12 }}>
+          <div className="meta" style={{ justifyContent: "flex-start", gap: 10 }}>
+            <b>Question {i + 1}</b>
+            <small>
+              {KIND_LABELS[q.kind]} · {q.marks} mark{Number(q.marks) === 1 ? "" : "s"}
+              {Number(q.negative) ? ` · −${q.negative} if wrong` : ""}
+              {q.difficulty ? ` · ${q.difficulty}` : ""}
+            </small>
+          </div>
+          <p style={{ whiteSpace: "pre-wrap", margin: "10px 0" }}>{q.text || <span className="note">No question text yet.</span>}</p>
+          {(q.kind === "single" || q.kind === "multi") && (
+            <ul className="ck">
+              {q.options.map((o, j) => (
+                <li key={j}>
+                  {String.fromCharCode(65 + j)}. {o || <span className="note">Empty option</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+          {q.kind === "numeric" && <input className="inp" disabled placeholder="Students type a number here" style={{ maxWidth: 260 }} />}
+          {q.kind === "coding" && (
+            <p className="note">
+              Students get a code editor with {q.languages.map((l) => LANG_LABELS[l]).join(", ")}, {q.samples.length} sample and {q.cases.length} hidden test case{q.cases.length === 1 ? "" : "s"}.
+            </p>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -412,6 +472,15 @@ function QuestionEditor({ q, i, count, onChange, onKind, onMove, onRemove }) {
         </select>
         <label className="mini">
           Marks <input className="inp" type="number" min={0} value={q.marks} onChange={(e) => onChange({ marks: e.target.value })} />
+        </label>
+        <label className="mini">
+          Level{" "}
+          <select className="inp" value={q.difficulty || ""} onChange={(e) => onChange({ difficulty: e.target.value })} style={{ width: "auto" }}>
+            <option value="">Any</option>
+            {["Easy", "Medium", "Hard"].map((d) => (
+              <option key={d}>{d}</option>
+            ))}
+          </select>
         </label>
         {q.kind !== "coding" && (
           <label className="mini">

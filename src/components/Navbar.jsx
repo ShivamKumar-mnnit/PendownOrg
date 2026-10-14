@@ -16,16 +16,14 @@ const MENU = [
       ["/companies", "Companies", "Hiring rounds by company"],
       ["/mentors", "Mentors", "Industry mentors by domain"],
       ["/courses", "Courses", "Free and premium tracks"],
-      ["/premium", "Premium plans", "Unlock courses and tools"],
     ],
   ],
   [
     "Practice",
     [
-      ["/problems/year/1", "Year 1 practice", "Every first-year problem on one page"],
-      ["/problems", "Practice problems", "Easy to advanced, auto-checked"],
+      ["/problems", "Coding practice", "1st to 4th year, free and premium"],
       ["/practice", "Practice tests", "Ready-made tests for students"],
-      ["/tests", "Create tests", "Build a test for your class"],
+      ["/tests", "Create tests", "Premium: build tests for your class"],
       ["/compiler", "Online compiler", "Run code in the browser"],
     ],
   ],
@@ -38,11 +36,12 @@ const MENU = [
       ["/faq", "FAQ", "Common questions"],
     ],
   ],
+  ["/premium", "Premium"],
   ["/dashboard", "Dashboard"],
 ];
 
 // Detail pages light up the dropdown their list page lives in.
-const SECTION_OF = { "/companies": "Prepare", "/courses": "Prepare", "/take": "Practice", "/problems": "Practice", "/problem": "Practice", "/workspace": "Colleges" };
+const SECTION_OF = { "/companies": "Prepare", "/courses": "Prepare", "/take": "Practice", "/problems": "Practice", "/problem": "Practice", "/tests": "Practice", "/workspace": "Colleges" };
 
 function sectionFor(pathname) {
   const root = "/" + (pathname.split("/")[1] || "");

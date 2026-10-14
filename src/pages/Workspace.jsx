@@ -5,41 +5,20 @@ import Buy from "../components/Buy";
 import { Head, Page } from "../components/ui";
 import {
   addStudent,
-  createMyTest,
-  deleteMyTest,
   importStudents,
   listStudents,
-  myTest,
-  myTestResults,
   myTests,
   removeStudent,
   saveStudent,
-  updateMyTest,
   useAccount,
   validity,
   rupees,
 } from "../lib/account";
 import { downloadCsv, fmtDate } from "./admin/adminUtils";
 import { usePageSEO } from "../lib/seo";
+import { USER_TESTS } from "../lib/myTests";
 
 const TestsAdmin = lazy(() => import("./admin/TestsAdmin"));
-
-// The test builder from the admin panel, pointed at the user's own tests.
-// A 401 here means the sign-in expired, which the builder must not mistake
-// for a wrong admin password.
-const relabel = (p) =>
-  p.catch((e) => {
-    if (e.status === 401) e.status = 0;
-    throw e;
-  });
-const USER_TESTS = {
-  list: () => relabel(myTests().then((d) => d.tests)),
-  getFull: (id) => relabel(myTest(id)),
-  create: (t) => relabel(createMyTest(t)),
-  update: (id, t) => relabel(updateMyTest(id, t)),
-  remove: (id) => relabel(deleteMyTest(id)),
-  results: (id) => relabel(myTestResults(id)),
-};
 
 const TABS = [
   ["overview", "Overview", LayoutDashboard],
@@ -144,7 +123,7 @@ function Overview({ features, go }) {
   const st = stats?.students;
   const active = st ? st.filter((s) => s.lastActive && now - s.lastActive < 7 * 864e5).length : 0;
   const solved = st ? st.reduce((n, s) => n + (s.solved || 0), 0) : 0;
-  const tools = Object.entries(features || {}).filter(([id]) => id !== "allCourses");
+  const tools = Object.entries(features || {}).filter(([id]) => !["allCourses", "practice", "allAccess"].includes(id));
 
   return (
     <div>

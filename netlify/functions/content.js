@@ -9,5 +9,5 @@ export default async function handler(request) {
 }
 
 export const config = {
-  path: ["/api/content/*", "/api/events/*", "/api/leads", "/api/leads/*", "/api/codes", "/api/codes/*", "/api/premium/*", "/api/problems", "/api/problems/*"],
+  path: ["/api/content/*", "/api/events/*", "/api/leads", "/api/leads/*", "/api/codes", "/api/codes/*", "/api/premium/*", "/api/problems", "/api/problems/*", "/api/practice", "/api/practice/*"],
 };

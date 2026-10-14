@@ -13,6 +13,7 @@
 
 import { adminState, bool, fail, json, mapLimit, needAdmin, newId, num, readBody, str } from "./http.js";
 import { courseUnlocks, moduleIsFree, readAccess, readRunner, readUser } from "./auth.js";
+import { ALL_BOOKS, SOLUTION_LABELS, YEARS, accessForYear, accessMap, cleanPractice, listRow, loadBank, practiceUnlocked, readPractice, visibility, yearInfo } from "./practice.js";
 import { handleCompile } from "../compileHandler.js";
 import { COURSE_TIERS, DEFAULTS, DEFAULT_SETTINGS, EVENT_CATEGORIES, EVENT_MODES, LESSON_TYPES } from "../content/defaults.js";
 
@@ -148,9 +149,10 @@ function publicCourse(c, unlocks) {
 }
 
 // ---- Practice problems ----
-// The built-in problems ship with the site (src/lib/problems.js). This
-// collection holds what the admin adds, plus edited copies of built-in
-// problems (same id) and "hidden" markers, merged in the browser.
+// The built-in problems live on the server (src/lib/server/practice.js).
+// "col:problems" holds what the admin adds, plus edited copies of built-in
+// problems (same id) and "hidden" markers. Premium problems are only sent
+// to accounts that unlocked practice.
 
 const DIFFICULTIES = ["Easy", "Medium", "Hard", "Advanced"];
 const LANGS = ["python", "javascript", "java", "c", "cpp"];
@@ -179,7 +181,13 @@ function cleanProblem(p, id) {
     builtIn: bool(p?.builtIn),
     hidden: bool(p?.hidden),
     published: p?.published !== false,
-    order: num(p?.order, 0),
+    access: ["free", "premium"].includes(p?.access) ? p.access : "auto",
+    hints: list(p?.hints, 10).map((h) => str(h, 1000).trim()).filter(Boolean),
+    solution: { code: str(p?.solution?.code, 20000), explanation: str(p?.solution?.explanation, 5000) },
+    solutionMode: ["show", "solved", "premium", "hide"].includes(p?.solutionMode) ? p.solutionMode : "default",
+    inputFormat: str(p?.inputFormat, 3000),
+    outputFormat: str(p?.outputFormat, 3000),
+    constraints: str(p?.constraints, 3000),
     updatedAt: Date.now(),
   };
   if (kind === "function") {
@@ -200,11 +208,18 @@ function cleanProblem(p, id) {
   return { ...base, samples: ioCases(p?.samples), cases: ioCases(p?.cases), languages: languages.length ? languages : LANGS, starter };
 }
 
-/** The problem as students see it: hidden test cases removed. */
-function publicProblem(p) {
-  if (p.kind !== "stdio") return p;
-  const { cases, ...rest } = p;
-  return { ...rest, caseCount: cases.length };
+/** The problem as students see it: hidden test cases removed, solution and hints only when allowed. */
+function publicProblem(p, vis) {
+  const { cases, solution, hints, seq: _s, ...rest } = p;
+  const out = { ...rest, hints: vis.hints ? hints || [] : [], hintCount: (hints || []).length, solution: vis.solution && solution?.code ? solution : null, hasSolution: Boolean(solution?.code), solutionMode: vis.solutionMode, hintMode: vis.hintMode };
+  if (p.kind === "stdio") out.caseCount = (cases || []).length;
+  return out;
+}
+
+async function practicePlan(store, request) {
+  const [user, access] = await Promise.all([readUser(request, store), readAccess(store)]);
+  const pick = (id) => ({ enabled: access[id].enabled, paid: access[id].paid, price: access[id].price, days: access[id].days });
+  return { user, access, plan: { practice: pick("practice"), allAccess: pick("allAccess") }, unlocked: practiceUnlocked(user, access), signedIn: Boolean(user) };
 }
 
 const normOut = (s) =>
@@ -286,7 +301,7 @@ function randomCode() {
 // ---- Router ----
 
 /**
- * Routes /api/content/*, /api/events/*, /api/leads*, /api/codes*, /api/problems* and /api/premium/*.
+ * Routes /api/content/*, /api/events/*, /api/leads*, /api/codes*, /api/problems*, /api/practice* and /api/premium/*.
  */
 export async function handleContentApi(request, store, env, compile = handleCompile) {
   const url = new URL(request.url);
@@ -494,6 +509,56 @@ export async function handleContentApi(request, store, env, compile = handleComp
       return fail(405, "Method not allowed.");
     }
 
+    // ---------- /api/practice ----------
+    if (area === "practice") {
+      if (a === "settings") {
+        if (!admin.ok) return deny();
+        if (method === "GET") return json({ practice: await readPractice(store) });
+        if (method === "PUT") {
+          const practice = cleanPractice(body);
+          await store.set("practice", practice);
+          return json({ practice });
+        }
+        return fail(405, "Method not allowed.");
+      }
+      if (a === "order") {
+        if (!admin.ok) return deny();
+        if (method !== "PUT") return fail(405, "Method not allowed.");
+        const year = Math.trunc(num(body?.year, 0));
+        if (!YEARS.includes(year)) return fail(400, "Pick a year from 1 to 4.");
+        const ids = list(body?.ids, 5000).map((x) => str(x, 80)).filter(Boolean);
+        const order = (await store.get("practice:order")) || {};
+        await store.set("practice:order", { ...order, [year]: ids });
+        return json({ ok: true });
+      }
+      if (method !== "GET") return fail(405, "Method not allowed.");
+      const [bank, practice, ctx] = await Promise.all([loadBank(store), readPractice(store), practicePlan(store, request)]);
+      const { plan, unlocked, signedIn } = ctx;
+      if (!a) {
+        const access = accessMap(bank, practice);
+        const years = YEARS.map((y) => {
+          const l = bank.filter((p) => p.year === y);
+          return { ...yearInfo(y, practice), total: l.length, free: l.filter((p) => access.get(p.id) === "free").length, topics: new Set(l.map((p) => p.topic)).size, solutions: SOLUTION_LABELS[practice.years[y].solutions] };
+        });
+        const out = { years, plan, unlocked, signedIn, freePercent: practice.freePercent };
+        if (url.searchParams.get("index") === "1") out.index = bank.map((p) => ({ id: p.id, title: p.title, difficulty: p.difficulty, year: p.year, topic: p.topic }));
+        return json(out);
+      }
+      const year = Number(a);
+      if (!YEARS.includes(year)) return fail(404, "Not found.");
+      const l = bank.filter((p) => p.year === year);
+      const access = accessForYear(l, practice, year);
+      const cfg = practice.years[year];
+      return json({
+        ...yearInfo(year, practice),
+        rules: { solutions: cfg.solutions, hints: cfg.hints, solutionsLabel: SOLUTION_LABELS[cfg.solutions] },
+        problems: l.map((p) => listRow(p, access.get(p.id), access.get(p.id) === "premium" && !unlocked)),
+        plan,
+        unlocked,
+        signedIn,
+      });
+    }
+
     // ---------- /api/problems ----------
     if (area === "problems") {
       const saved = await store.get("col:problems");
@@ -502,15 +567,19 @@ export async function handleContentApi(request, store, env, compile = handleComp
         if (method === "GET") {
           if (url.searchParams.get("all") === "1") {
             if (!admin.ok) return deny();
-            return json({ items });
+            const [bank, practice, order] = await Promise.all([loadBank(store, { includeHidden: true }), readPractice(store), store.get("practice:order")]);
+            const access = accessMap(bank.filter((p) => p.published !== false && !p.hidden), practice);
+            return json({ items: bank.map((p) => ({ ...p, computedAccess: access.get(p.id) || "hidden" })), practice, order: order || {}, books: ALL_BOOKS });
           }
-          return json({ items: items.filter((p) => p.published && !p.hidden).map(publicProblem), hidden: items.filter((p) => p.hidden || !p.published).map((p) => p.id) });
+          const bank = await loadBank(store);
+          return json({ items: bank.map((p) => listRow(p, "", false)) });
         }
         if (method === "POST") {
           if (!admin.ok) return deny();
           if (items.length >= 2000) return fail(400, "Too many problems. Delete some first.");
           let id = slug(body?.title) || newId();
-          if (items.some((x) => x.id === id)) id = `${id}-${newId().slice(-4)}`;
+          const bank = await loadBank(store, { includeHidden: true });
+          if (bank.some((x) => x.id === id)) id = `${id}-${newId().slice(-4)}`;
           const item = cleanProblem(body || {}, id);
           await store.set("col:problems", [...items, item]);
           return json({ item }, 201);
@@ -519,14 +588,38 @@ export async function handleContentApi(request, store, env, compile = handleComp
       }
       if (!/^[a-z0-9-]{1,60}$/.test(a)) return fail(404, "Problem not found.");
       const idx = items.findIndex((x) => x.id === a);
-      if (b === "judge" && method === "POST") {
-        const p = items[idx];
-        if (!p || p.kind !== "stdio" || !p.published || p.hidden) return fail(404, "Problem not found.");
+
+      // Students: the problem (or a locked notice) and the stdio judge.
+      if (method === "GET" || (b === "judge" && method === "POST")) {
+        if (method === "GET" && b) return fail(404, "Not found.");
+        if (method === "GET" && admin.ok && url.searchParams.get("full") === "1") {
+          const p = (await loadBank(store, { includeHidden: true })).find((x) => x.id === a);
+          return p ? json({ item: p }) : fail(404, "Problem not found.");
+        }
+        const [bank, practice, ctx] = await Promise.all([loadBank(store), readPractice(store), practicePlan(store, request)]);
+        const p = bank.find((x) => x.id === a);
+        if (!p) return fail(404, "Problem not found.");
+        const yearList = bank.filter((x) => x.year === p.year);
+        const access = accessForYear(yearList, practice, p.year).get(p.id);
+        const locked = access === "premium" && !ctx.unlocked;
+        if (locked) {
+          if (method === "POST") return fail(403, "This is a premium problem. Unlock premium practice to solve it.");
+          return json({ locked: true, item: { ...listRow(p, access, true), teaser: String(p.description || "").slice(0, 220) }, plan: ctx.plan, signedIn: ctx.signedIn, yearFree: yearList.length ? [...accessForYear(yearList, practice, p.year).values()].filter((v) => v === "free").length : 0 });
+        }
+        if (method === "GET") {
+          const solved = Boolean(ctx.user?.progress?.solved?.includes(p.id));
+          const premium = ctx.unlocked && ctx.access.practice?.enabled !== false && ctx.signedIn;
+          const vis = visibility(p, practice, { premium, solved });
+          const pos = yearList.findIndex((x) => x.id === p.id);
+          const near = (i) => (yearList[i] ? { id: yearList[i].id, title: yearList[i].title } : null);
+          return json({ locked: false, item: { ...publicProblem(p, vis), access }, prev: near(pos - 1), next: near(pos + 1), signedIn: ctx.signedIn, unlocked: ctx.unlocked, plan: ctx.plan });
+        }
+        if (p.kind !== "stdio") return fail(400, "This problem is checked in your browser.");
         if (!p.languages.includes(body?.language)) return fail(400, "That language isn't allowed for this problem.");
         const code = str(body?.code, 100000);
         if (!code.trim()) return fail(400, "Write some code first.");
         const runner = await readRunner(store);
-        const all = [...p.samples.map((t) => ({ ...t, sample: true })), ...p.cases.map((t) => ({ ...t, sample: false }))];
+        const all = [...p.samples.map((t) => ({ ...t, sample: true })), ...(body?.samplesOnly ? [] : p.cases.map((t) => ({ ...t, sample: false })))];
         const ran = await mapLimit(all, 6, async (t) => {
           const r = await compile({ language: body.language, code, stdin: t.input }, runner);
           const out = r.body || {};
@@ -537,12 +630,6 @@ export async function handleContentApi(request, store, env, compile = handleComp
         return json({ results: ran, passed: ran.filter((r) => r.pass).length, total: ran.length });
       }
       if (b) return fail(404, "Not found.");
-      if (method === "GET") {
-        const p = items[idx];
-        if (admin.ok && url.searchParams.get("full") === "1") return p ? json({ item: p }) : fail(404, "Problem not found.");
-        if (!p || !p.published || p.hidden) return fail(404, "Problem not found.");
-        return json({ item: publicProblem(p) });
-      }
       if (!admin.ok) return deny();
       if (method === "PUT") {
         // Upsert, so editing a built-in problem saves a copy that replaces it.

@@ -10,15 +10,20 @@
 import { bool, num, str } from "./http.js";
 
 export const FEATURES = {
+  allAccess: { title: "Premium membership", text: "Everything for students: every premium practice problem, every premium course and the test builder." },
+  practice: { title: "Premium practice", text: "Every premium coding problem in all four years, with the solutions and hints each year allows." },
   createTests: { title: "Create tests", text: "Build your own MCQ and coding tests, share a link and see every student's score." },
   studentData: { title: "Student records", text: "Add, update, import and export student records in one place." },
   collegePanel: { title: "College panel", text: "A dashboard for colleges: manage your students, follow their practice progress, create tests and see results." },
   allCourses: { title: "All premium courses", text: "Every paid module of every course, unlocked." },
 };
 // The college panel includes the two smaller tools.
-const INCLUDED = { createTests: ["collegePanel"], studentData: ["collegePanel"] };
+// Premium membership includes practice, courses and the test builder.
+const INCLUDED = { createTests: ["collegePanel", "allAccess"], studentData: ["collegePanel"], practice: ["allAccess"], allCourses: ["allAccess"] };
 
 export const DEFAULT_ACCESS = {
+  allAccess: { enabled: true, paid: true, price: 1499, days: 365 },
+  practice: { enabled: true, paid: true, price: 499, days: 365 },
   createTests: { enabled: true, paid: true, price: 499, days: 365 },
   studentData: { enabled: true, paid: true, price: 299, days: 365 },
   collegePanel: { enabled: true, paid: true, price: 4999, days: 365 },
@@ -39,6 +44,9 @@ export function cleanAccess(input) {
   }
   return out;
 }
+
+/** The features a user's grants include through a bundle (for showing "included in your membership"). */
+export const includedIn = (id) => INCLUDED[id] || [];
 
 export const readAccess = async (store) => cleanAccess((await store.get("access")) || {});
 

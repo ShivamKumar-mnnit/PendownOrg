@@ -2,7 +2,7 @@
 // (netlify/functions/accounts.js). The sign-in token lives in localStorage;
 // every page that needs the account reads it through useAccount().
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { call } from "./testsApi";
 
 const TOKEN_KEY = "anobyt_user_token";
@@ -50,14 +50,15 @@ export function refreshAccount() {
   return loading.then(() => state);
 }
 
+const subscribe = (f) => {
+  subs.add(f);
+  if (!state.loaded && !loading) refreshAccount();
+  return () => subs.delete(f);
+};
+const snapshot = () => state;
+
 export function useAccount() {
-  const [s, set] = useState(state);
-  useEffect(() => {
-    subs.add(set);
-    if (!state.loaded && !loading) refreshAccount();
-    return () => subs.delete(set);
-  }, []);
-  return s;
+  return useSyncExternalStore(subscribe, snapshot);
 }
 
 function signedIn(d) {

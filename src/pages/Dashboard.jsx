@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Head, Cards, Page } from "../components/ui";
-import { PROBLEMS, BOOK_NAMES, difficultyClass } from "../lib/problems";
+import { YEAR_NAMES, usePractice, useSolved } from "../lib/problemBank";
 import { LEADERBOARD, REWARDS, getStudent, saveStudent, logOutStudent } from "../lib/student";
 import { usePageSEO } from "../lib/seo";
 
@@ -49,9 +49,13 @@ function Login({ onLogin }) {
 }
 
 function PracticeProgress({ user }) {
+  const { data } = usePractice(true);
+  const solved = useSolved();
   const done = user.done || {};
-  const recent = Object.keys(done)
-    .map((id) => PROBLEMS.find((p) => p.id === id))
+  const index = data?.index || [];
+  const byId = new Map(index.map((p) => [p.id, p]));
+  const recent = [...new Set([...Object.keys(done), ...solved])]
+    .map((id) => byId.get(id))
     .filter(Boolean)
     .slice(-8)
     .reverse();
@@ -60,21 +64,21 @@ function PracticeProgress({ user }) {
     <>
       <Head title="Practice problems" style={{ margin: "56px 0 24px" }} />
       <div className="cards">
-        {["Easy", "Medium", "Advanced"].map((d) => {
-          const all = PROBLEMS.filter((p) => p.d === d);
-          const n = all.filter((p) => done[p.id]).length;
+        {[1, 2, 3, 4].map((y) => {
+          const all = index.filter((p) => p.year === y);
+          const n = all.filter((p) => done[p.id] || solved.has(p.id)).length;
           return (
-            <div className="card" key={d}>
+            <Link className="card" key={y} to={`/problems/year/${y}`}>
               <div className="meta">
-                <span className={`tag ${difficultyClass(d)}`}>{d}</span>
+                <span className="tag">{YEAR_NAMES[y]}</span>
                 <small>
                   {n} of {all.length} solved
                 </small>
               </div>
               <div className="bar2" style={{ margin: "14px 0 0" }}>
-                <b style={{ width: `${Math.round((n / all.length) * 100)}%` }} />
+                <b style={{ width: `${all.length ? Math.round((n / all.length) * 100) : 0}%` }} />
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -85,9 +89,9 @@ function PracticeProgress({ user }) {
             {recent.map((p) => (
               <li key={p.id}>
                 <Link to={`/problem/${p.id}`} style={{ color: "var(--color-fg)" }}>
-                  {p.t}
+                  {p.title}
                 </Link>{" "}
-                ({BOOK_NAMES[p.b]}, {p.d})
+                ({p.topic}, {p.difficulty})
               </li>
             ))}
           </ul>
