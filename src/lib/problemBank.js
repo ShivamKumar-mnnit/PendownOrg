@@ -1,101 +1,63 @@
-// Practice problems as the site shows them: the built-in problems from
-// problems.js merged with what the admin adds, edits or hides in the admin
-// panel (/api/problems). Also judges answers:
+// Practice problems in the browser. The problem bank lives on the server
+// (/api/practice and /api/problems), which decides what is free or premium
+// and only sends premium problems, solutions and hints to accounts allowed
+// to see them. This file loads them and judges answers:
 //   - "function" problems: JavaScript runs in the browser; Python runs on the
 //     code runner with a small harness that calls the student's function.
 //   - "stdio" problems: any language, judged on the server against the
 //     sample and hidden test cases.
 
 import { useEffect, useState } from "react";
-import { BOOKS, BOOK_NAMES, PROBLEMS } from "./problems";
 import { call } from "./testsApi";
 import { runCode } from "./compiler";
-import { syncSolved } from "./account";
-import { markProblemSolved } from "./student";
+import { syncSolved, useAccount, userHeaders } from "./account";
+import { getStudent, markProblemSolved } from "./student";
 
 const clone = (x) => JSON.parse(JSON.stringify(x));
-const YEAR_OF = Object.fromEntries(BOOKS.map((b) => [b[0], b[1]]));
+const enc = encodeURIComponent;
 export const LANG_NAMES = { javascript: "JavaScript", python: "Python", java: "Java", c: "C", cpp: "C++" };
+export const YEAR_NAMES = { 1: "1st Year", 2: "2nd Year", 3: "3rd Year", 4: "4th Year" };
 
-/** Converts a built-in problem (with a reference function) to the stored JSON shape. */
-export function fromBuiltIn(p) {
-  return {
-    id: p.id,
-    title: p.t,
-    difficulty: p.d,
-    topic: p.tp || BOOK_NAMES[p.b],
-    book: p.b,
-    year: YEAR_OF[p.b] || 1,
-    kind: "function",
-    description: p.desc,
-    fn: p.fn,
-    params: p.pa,
-    tests: p.in.map((args) => ({ args, expected: p.ref(...clone(args)) })),
-    ll: p.ll || [],
-    out: Boolean(p.out),
-    builtIn: true,
-    published: true,
-  };
-}
+export const difficultyClass = (d) => (d === "Easy" ? "free" : d === "Medium" ? "med" : "adv");
 
-let builtCache = null;
-export function builtInProblems() {
-  if (!builtCache) builtCache = PROBLEMS.map(fromBuiltIn);
-  return builtCache;
-}
+const get = (path) => call(path, { headers: userHeaders() });
 
-function merge(remote) {
-  const hidden = new Set(remote?.hidden || []);
-  const byId = new Map((remote?.items || []).map((p) => [p.id, p]));
-  const out = builtInProblems()
-    .filter((p) => !hidden.has(p.id))
-    .map((p) => (byId.has(p.id) ? { ...byId.get(p.id), builtIn: true } : p));
-  const builtIds = new Set(out.map((p) => p.id));
-  for (const p of remote?.items || []) if (!builtIds.has(p.id) && !hidden.has(p.id)) out.push(p);
-  return out;
-}
-
-let remoteCache = null;
-let remotePromise = null;
-function loadRemote() {
-  if (!remotePromise)
-    remotePromise = call("/api/problems").then(
-      (d) => (remoteCache = d),
-      () => (remoteCache = { items: [], hidden: [] }),
-    );
-  return remotePromise;
-}
-
-/** All problems: built-ins straight away, then with the admin's changes once loaded. */
-export function useProblems() {
-  const [list, setList] = useState(() => merge(remoteCache));
-  const [loaded, setLoaded] = useState(Boolean(remoteCache));
+/** Loads an API path again whenever the signed-in account or its premium access changes. */
+function useApi(path, bump = 0) {
+  const { user, features, loaded } = useAccount();
+  const key = `${path}|${user?.id || ""}|${features?.practice?.has ? 1 : 0}|${loaded ? 1 : 0}|${bump}`;
+  const [state, setState] = useState({ key: "", data: null, error: "" });
   useEffect(() => {
+    if (!loaded) return;
     let on = true;
-    loadRemote().then(() => {
-      if (!on) return;
-      setList(merge(remoteCache));
-      setLoaded(true);
-    });
+    get(path).then(
+      (data) => on && setState({ key, data, error: "" }),
+      (e) => on && setState({ key, data: null, error: e.message || "Couldn't load. Please refresh." }),
+    );
     return () => {
       on = false;
     };
-  }, []);
-  return { problems: list, loaded };
+  }, [key, path, loaded]);
+  const fresh = state.key === key;
+  return { data: fresh ? state.data : null, error: fresh ? state.error : "", loading: !fresh };
 }
 
-export const problemsForYear = (list, year) => list.filter((p) => p.year === year);
+/** The four years with problem counts, plus the practice plan. `index` adds a light list of every problem. */
+export const usePractice = (index = false) => useApi(`/api/practice${index ? "?index=1" : ""}`);
+/** One year's problem list, each marked free or premium (and locked for this account). */
+export const useYear = (year) => useApi(`/api/practice/${enc(year)}`);
+/** One problem, or { locked: true } with a short teaser when it needs premium access. */
+export const useProblem = (id, bump = 0) => useApi(`/api/problems/${enc(id)}`, bump);
 
-/** Groups problems by book / topic, keeping first-seen order (books in BOOKS order first). */
+/** Groups problems by topic, keeping first-seen order. */
 export function groupByTopic(list) {
   const groups = new Map();
-  for (const b of BOOKS) groups.set(b[0], { key: b[0], title: b[2], items: [] });
   for (const p of list) {
-    const key = p.book && groups.has(p.book) ? p.book : "t:" + p.topic;
+    const key = p.book || "t:" + p.topic;
     if (!groups.has(key)) groups.set(key, { key, title: p.topic || "More problems", items: [] });
     groups.get(key).items.push(p);
   }
-  return [...groups.values()].filter((g) => g.items.length);
+  return [...groups.values()];
 }
 
 export function languagesFor(p) {
@@ -130,6 +92,33 @@ export function fullDescription(p) {
     (p.ll?.length ? " The list is given by its head node. Each node has val and next (null at the end). Examples show lists as arrays." : "") +
     (p.out ? " Return the head node of the result (null for an empty list)." : "")
   );
+}
+
+const show = (v) => (v === undefined ? "undefined" : JSON.stringify(v));
+const paramNames = (p) => String(p.params || "").split(",").map((x) => x.trim()).filter(Boolean);
+
+/** The first two tests, shown as sample test cases on the problem page. */
+export function samplesOf(p) {
+  if (p.kind === "stdio") return (p.samples || []).map((s) => ({ input: s.input, output: s.output }));
+  const names = paramNames(p);
+  return (p.tests || []).slice(0, 2).map((t) => ({
+    input: t.args.map((a, i) => `${names[i] || "arg" + (i + 1)} = ${show(a)}`).join("\n"),
+    output: show(t.expected),
+  }));
+}
+
+/** Input format, output format and constraints, written for function problems when the admin left them empty. */
+export function formatsOf(p) {
+  if (p.kind === "stdio") return { input: p.inputFormat || "", output: p.outputFormat || "", constraints: p.constraints || "" };
+  const names = paramNames(p);
+  const ll = new Set(p.ll || []);
+  const input =
+    p.inputFormat ||
+    `Write a function \`${p.fn}(${names.join(", ")})\`. It receives:\n` +
+      names.map((n, i) => `- \`${n}\`${ll.has(i) ? ": the head node of a linked list (each node has val and next)" : ""}`).join("\n");
+  const output = p.outputFormat || (p.out ? "Return the head node of the resulting linked list (null for an empty list)." : "Return the answer from the function. Don't print it.");
+  const constraints = p.constraints || "Your function is called once per test case. Each test must finish within 2 seconds.";
+  return { input, output, constraints };
 }
 
 // ---- Judging ----
@@ -233,8 +222,8 @@ async function judgePython(p, code) {
   return { res, ok: res.every((x) => x.pass), printed };
 }
 
-async function judgeStdio(p, lang, code) {
-  const d = await call(`/api/problems/${encodeURIComponent(p.id)}/judge`, { method: "POST", body: { language: lang, code } });
+async function judgeStdio(p, lang, code, samplesOnly) {
+  const d = await call(`/api/problems/${encodeURIComponent(p.id)}/judge`, { method: "POST", body: { language: lang, code, samplesOnly }, headers: userHeaders() });
   return {
     stdio: true,
     res: d.results.map((r) => ({ ...r, a: r.input, exp: r.expected })),
@@ -242,15 +231,22 @@ async function judgeStdio(p, lang, code) {
   };
 }
 
-/** Judges an answer and records it as solved when every test passes. */
-export async function judgeAnswer(p, lang, code) {
+/**
+ * Judges an answer. "run" checks the sample tests only; "submit" checks
+ * every test and records the problem as solved when all of them pass.
+ */
+export async function judgeAnswer(p, lang, code, mode = "submit") {
+  const run = mode === "run";
+  const q = p.kind === "stdio" ? p : { ...p, tests: run ? (p.tests || []).slice(0, 2) : p.tests || [] };
   let r;
   try {
-    r = p.kind === "stdio" ? await judgeStdio(p, lang, code) : lang === "python" ? await judgePython(p, code) : judgeJs(p, code);
+    r = p.kind === "stdio" ? await judgeStdio(q, lang, code, run) : lang === "python" ? await judgePython(q, code) : judgeJs(q, code);
   } catch (e) {
     return { err: e.message || "Couldn't check your answer. Please try again." };
   }
-  if (r.ok) r.solved = recordSolved(p.id);
+  r.mode = mode;
+  if (r.res && p.kind !== "stdio") r.res = r.res.map((x, i) => ({ ...x, sample: i < 2 ? true : undefined }));
+  if (r.ok && !run) r.solved = recordSolved(p.id);
   return r;
 }
 
@@ -274,4 +270,15 @@ export function recordSolved(id) {
   }
   syncSolved([id]);
   return markProblemSolved(id);
+}
+
+/** Problems solved in this browser plus those saved to the account. */
+export function useSolved() {
+  const { user } = useAccount();
+  const [local] = useState(() => {
+    const s = solvedSet();
+    Object.keys(getStudent()?.done || {}).forEach((id) => s.add(id));
+    return s;
+  });
+  return new Set([...local, ...(user?.progress?.solved || [])]);
 }

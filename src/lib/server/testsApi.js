@@ -21,6 +21,7 @@ const MAX_TESTS = 500;
 const MAX_QUESTIONS = 200;
 const MAX_CASES = 15;
 const MAX_OWN_TESTS = 100;
+const LEVELS = ["Easy", "Medium", "Hard"];
 
 /** Cleans an incoming test from the admin editor into the stored shape. */
 export function sanitizeTest(input, id) {
@@ -33,6 +34,7 @@ export function sanitizeTest(input, id) {
       marks: Math.max(0, num(q.marks, 1)),
       negative: Math.max(0, num(q.negative, 0)),
       explanation: str(q.explanation, 5000),
+      difficulty: LEVELS.includes(q?.difficulty) ? q.difficulty : "",
     };
     if (kind === "single" || kind === "multi") {
       const options = (Array.isArray(q.options) ? q.options : []).slice(0, 8).map((o) => str(o, 2000));
@@ -61,6 +63,7 @@ export function sanitizeTest(input, id) {
     title: str(input?.title, 200).trim() || "Untitled test",
     description: str(input?.description, 5000),
     durationMin: Math.max(0, Math.min(600, Math.trunc(num(input?.durationMin, 30)))),
+    difficulty: [...LEVELS, "Mixed"].includes(input?.difficulty) ? input.difficulty : "Mixed",
     published: Boolean(input?.published),
     shuffle: Boolean(input?.shuffle),
     showAnswers: input?.showAnswers !== false,
@@ -78,6 +81,7 @@ function summary(t) {
     title: t.title,
     description: t.description,
     durationMin: t.durationMin,
+    difficulty: t.difficulty || "Mixed",
     published: t.published,
     questionCount: t.questions.length,
     totalMarks: totalMarks(t),
@@ -90,7 +94,7 @@ export function publicTest(t) {
   return {
     ...summary(t),
     questions: t.questions.map((q) => {
-      const out = { kind: q.kind, text: q.text, marks: q.marks, negative: q.negative };
+      const out = { kind: q.kind, text: q.text, marks: q.marks, negative: q.negative, difficulty: q.difficulty || "" };
       if (q.kind === "single" || q.kind === "multi") out.options = q.options;
       if (q.kind === "coding") {
         out.languages = q.languages;

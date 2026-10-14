@@ -1,13 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
-import { ExternalLink, Eye, EyeOff, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, Eye, EyeOff, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { call } from "../../lib/testsApi";
-import { BOOKS } from "../../lib/problems";
-import { LANG_NAMES, builtInProblems, judgeJs } from "../../lib/problemBank";
+import { LANG_NAMES, judgeJs } from "../../lib/problemBank";
 import { Field, Gate, SectionTop } from "./shared";
 import { useAdminData } from "./adminUtils";
 
 const enc = encodeURIComponent;
-const listSaved = () => call("/api/problems?all=1", { admin: true }).then((d) => d.items);
+const listAll = () => call("/api/problems?all=1", { admin: true });
+const savePractice = (p) => call("/api/practice/settings", { method: "PUT", body: p, admin: true }).then((d) => d.practice);
+const saveOrder = (year, ids) => call("/api/practice/order", { method: "PUT", body: { year, ids }, admin: true });
 const putProblem = (id, p) => call(`/api/problems/${enc(id)}`, { method: "PUT", body: p, admin: true });
 const postProblem = (p) => call("/api/problems", { method: "POST", body: p, admin: true });
 const deleteProblem = (id) => call(`/api/problems/${enc(id)}`, { method: "DELETE", admin: true });
@@ -32,11 +33,122 @@ const blank = (kind, year = 1) => ({
   languages: ALL_LANGS,
   starter: {},
   published: true,
+  access: "auto",
+  hints: [],
+  solution: { code: "", explanation: "" },
+  solutionMode: "default",
+  inputFormat: "",
+  outputFormat: "",
+  constraints: "",
 });
+
+const SOLUTION_MODES = [
+  ["show", "Show full solutions"],
+  ["solved", "Show after the student solves it"],
+  ["premium", "Premium members only"],
+  ["hide", "Hide (students write their own)"],
+];
+const HINT_MODES = [
+  ["show", "Show hints"],
+  ["premium", "Premium members only"],
+  ["hide", "Hide hints"],
+];
+
+/** Free share per year, and who sees solutions and hints. */
+function PracticeRules({ initial, counts, onSaved }) {
+  const [p, setP] = useState(initial);
+  const [msg, setMsg] = useState("");
+  const setYear = (y, patch) => setP({ ...p, years: { ...p.years, [y]: { ...p.years[y], ...patch } } });
+  async function save() {
+    setMsg("");
+    try {
+      setP(await savePractice(p));
+      setMsg("Saved. The site uses the new rules straight away.");
+      onSaved();
+    } catch (e) {
+      setMsg(e.message);
+    }
+  }
+  return (
+    <details className="panel" style={{ marginBottom: 18 }} open>
+      <summary style={{ cursor: "pointer" }}>
+        <b style={{ fontSize: 18 }}>Free and premium rules</b>
+        <span className="note" style={{ margin: "0 0 0 10px" }}>
+          {p.freePercent}% of each year is free
+        </span>
+      </summary>
+      <p className="note">
+        Problems set to <b>Auto</b> are free up to this share, spread over every topic (the first problems of each topic are free). You can still force a problem to Free or Premium in its row. Premium problems open for students who buy Premium practice or Premium membership (prices are in the Prices and features tab).
+      </p>
+      <Field label="Free share of each year (%)">
+        <input className="inp" type="number" min={0} max={100} value={p.freePercent} onChange={(e) => setP({ ...p, freePercent: e.target.value })} style={{ maxWidth: 140 }} />
+      </Field>
+      <div className="tablewrap" style={{ marginTop: 10 }}>
+        <table className="dtable">
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Free problems</th>
+              <th>Solutions</th>
+              <th>Hints</th>
+              <th>Description on the Practice page</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[1, 2, 3, 4].map((y) => {
+              const c = p.years[y];
+              return (
+                <tr key={y}>
+                  <td>
+                    <b>Year {y}</b>
+                    <small style={{ display: "block", color: "var(--color-fg-muted)" }}>
+                      {counts[y]?.free || 0} free of {counts[y]?.total || 0}
+                    </small>
+                  </td>
+                  <td>
+                    <input className="inp" type="number" min={0} placeholder={`${p.freePercent}%`} value={c.freeCount ?? ""} onChange={(e) => setYear(y, { freeCount: e.target.value === "" ? null : e.target.value })} style={{ width: 110 }} title="Leave empty to use the percentage" />
+                  </td>
+                  <td>
+                    <select className="inp" value={c.solutions} onChange={(e) => setYear(y, { solutions: e.target.value })}>
+                      {SOLUTION_MODES.map(([k, l]) => (
+                        <option key={k} value={k}>
+                          {l}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <select className="inp" value={c.hints} onChange={(e) => setYear(y, { hints: e.target.value })}>
+                      {HINT_MODES.map(([k, l]) => (
+                        <option key={k} value={k}>
+                          {l}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <input className="inp" value={c.blurb} onChange={(e) => setYear(y, { blurb: e.target.value })} placeholder="Default description" />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="note">Free problems: leave empty to use the percentage, or type an exact number for that year.</p>
+      <div className="row" style={{ marginTop: 10, alignItems: "center" }}>
+        <button type="button" className="btn" onClick={save}>
+          Save rules
+        </button>
+        {msg && <span className="note" style={{ margin: 0 }}>{msg}</span>}
+      </div>
+    </details>
+  );
+}
 
 /** Practice problems: the built-in ones plus any you add. Edit a built-in problem to replace it; hide any problem to take it off the site. */
 export default function ProblemsAdmin() {
-  const load = useCallback(() => listSaved(), []);
+  const load = useCallback(() => listAll(), []);
   const state = useAdminData(load);
   const [year, setYear] = useState(1);
   const [q, setQ] = useState("");
@@ -45,20 +157,29 @@ export default function ProblemsAdmin() {
   const [editing, setEditing] = useState(null);
   const [err, setErr] = useState("");
 
-  const rows = useMemo(() => {
-    const saved = new Map((state.data || []).map((p) => [p.id, p]));
-    const out = builtInProblems().map((b) => {
-      const s = saved.get(b.id);
-      if (!s) return { ...b, status: "builtin" };
-      const edited = s.kind !== b.kind || s.title !== b.title || s.description !== b.description || JSON.stringify(s.tests) !== JSON.stringify(b.tests);
-      return { ...s, builtIn: true, edited, status: s.hidden ? "hidden" : edited ? "edited" : "builtin" };
-    });
-    for (const p of state.data || []) if (!out.some((x) => x.id === p.id)) out.push({ ...p, status: p.hidden ? "hidden" : "added" });
-    return out;
-  }, [state.data]);
+  const rows = useMemo(
+    () =>
+      (state.data?.items || []).map((p) => ({
+        ...p,
+        status: p.hidden || p.published === false ? "hidden" : !p.builtIn ? "added" : p.edited ? "edited" : "builtin",
+      })),
+    [state.data],
+  );
+  const books = state.data?.books || [];
+  const counts = useMemo(() => {
+    const c = {};
+    for (const p of rows) {
+      if (p.status === "hidden") continue;
+      c[p.year] = c[p.year] || { total: 0, free: 0 };
+      c[p.year].total++;
+      if (p.computedAccess === "free") c[p.year].free++;
+    }
+    return c;
+  }, [rows]);
 
   const s = q.trim().toLowerCase();
-  const shown = rows.filter((p) => p.year === year && (show === "all" || p.status === show) && (!s || `${p.title} ${p.topic} ${p.id}`.toLowerCase().includes(s)));
+  const yearRows = rows.filter((p) => p.year === year);
+  const shown = yearRows.filter((p) => (show === "all" || p.status === show || p.computedAccess === show) && (!s || `${p.title} ${p.topic} ${p.id}`.toLowerCase().includes(s)));
 
   async function act(fn) {
     setErr("");
@@ -69,14 +190,25 @@ export default function ProblemsAdmin() {
       setErr(e.message);
     }
   }
+  const strip = ({ status: _s, computedAccess: _c, edited: _e, seq: _q, ...rest }) => rest;
   // Showing an unedited built-in problem again just removes the saved copy.
-  const toggleHidden = (p) =>
-    act(() => (p.status === "hidden" && p.builtIn && !p.edited ? deleteProblem(p.id) : putProblem(p.id, { ...p, hidden: p.status !== "hidden", builtIn: Boolean(p.builtIn) })));
+  const toggleHidden = (p) => act(() => (p.status === "hidden" && p.builtIn && !p.edited ? deleteProblem(p.id) : putProblem(p.id, { ...strip(p), hidden: p.status !== "hidden", builtIn: Boolean(p.builtIn) })));
+  const setAccess = (p, access) => act(() => putProblem(p.id, { ...strip(p), access, builtIn: Boolean(p.builtIn) }));
+  // Moving a problem saves the whole year's order.
+  function move(p, dir) {
+    const ids = yearRows.map((x) => x.id);
+    const i = ids.indexOf(p.id);
+    const j = i + dir;
+    if (j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    act(() => saveOrder(year, ids));
+  }
 
   if (editing)
     return (
       <ProblemEditor
         initial={editing}
+        books={books}
         onCancel={() => setEditing(null)}
         onSaved={() => {
           setEditing(null);
@@ -87,7 +219,7 @@ export default function ProblemsAdmin() {
 
   return (
     <div>
-      <SectionTop title="Practice problems" text="Every problem on the Problems and Year pages. Edit a built-in problem to replace it, hide problems you don't want, or add your own: function problems (JavaScript and Python) or input/output problems in any language.">
+      <SectionTop title="Practice problems" text="Every problem on the Practice pages. Set what is free or premium, change the order, edit statements, hints and solutions, hide problems, or add your own: function problems (JavaScript and Python) or input/output problems in any language.">
         <button type="button" className="btn" onClick={() => setEditing(blank("function", year))}>
           <Plus className="h-4 w-4" /> Function problem
         </button>
@@ -97,13 +229,20 @@ export default function ProblemsAdmin() {
       </SectionTop>
       {err && <p className="note bad">{err}</p>}
       <Gate state={state}>
+        {state.data && <PracticeRules initial={state.data.practice} counts={counts} onSaved={state.reload} />}
         <div className="year-tabs">
           {[1, 2, 3, 4].map((y) => (
-            <button key={y} type="button" className={`linkish${y === year ? " on" : ""}`} onClick={() => {
+            <button
+              key={y}
+              type="button"
+              className={`linkish${y === year ? " on" : ""}`}
+              onClick={() => {
                 setYear(y);
                 setLimit(PAGE);
-              }} style={{ padding: "10px 16px" }}>
-              Year {y} ({rows.filter((p) => p.year === y).length})
+              }}
+              style={{ padding: "10px 16px" }}
+            >
+              Year {y} ({counts[y]?.total || 0})
             </button>
           ))}
         </div>
@@ -111,6 +250,8 @@ export default function ProblemsAdmin() {
           <input className="inp" placeholder="Search problems" value={q} onChange={(e) => setQ(e.target.value)} style={{ maxWidth: 300 }} />
           {[
             ["all", "All"],
+            ["free", "Free"],
+            ["premium", "Premium"],
             ["added", "Added by you"],
             ["edited", "Edited"],
             ["hidden", "Hidden"],
@@ -126,6 +267,8 @@ export default function ProblemsAdmin() {
             <div className="trow" key={p.id}>
               <div className="tinfo">
                 <div className="row" style={{ gap: 8 }}>
+                  {p.computedAccess === "free" && <span className="badge free">FREE</span>}
+                  {p.computedAccess === "premium" && <span className="badge prem">PREMIUM</span>}
                   <span className="tag">{p.topic}</span>
                   <span className={`tag ${p.difficulty === "Easy" ? "free" : "t-olympiad"}`}>{p.difficulty}</span>
                   {p.kind === "stdio" && <span className="tag t-mcq">Any language</span>}
@@ -136,9 +279,22 @@ export default function ProblemsAdmin() {
                 <b style={{ fontSize: 16 }}>{p.title}</b>
                 <small>
                   {p.kind === "function" ? `${p.fn}(${p.params}) · ${p.tests?.length || 0} tests` : `${p.samples?.length || 0} sample + ${p.cases?.length || 0} hidden tests`}
+                  {p.solution?.code ? " · has solution" : ""}
+                  {p.hints?.length ? ` · ${p.hints.length} hint${p.hints.length > 1 ? "s" : ""}` : ""}
                 </small>
               </div>
               <div className="tact">
+                <select className="inp" value={p.access || "auto"} onChange={(e) => setAccess(p, e.target.value)} title="Free or premium" style={{ width: 120, padding: "6px 8px" }}>
+                  <option value="auto">Auto</option>
+                  <option value="free">Free</option>
+                  <option value="premium">Premium</option>
+                </select>
+                <button type="button" className="ib" title="Move up" onClick={() => move(p, -1)} disabled={Boolean(s) || show !== "all"}>
+                  <ArrowUp className="h-4 w-4" />
+                </button>
+                <button type="button" className="ib" title="Move down" onClick={() => move(p, 1)} disabled={Boolean(s) || show !== "all"}>
+                  <ArrowDown className="h-4 w-4" />
+                </button>
                 <button type="button" className="ib" title="Edit" onClick={() => setEditing(p)}>
                   <Pencil className="h-4 w-4" />
                 </button>
@@ -181,15 +337,18 @@ function parse(text, what) {
   }
 }
 
-function ProblemEditor({ initial, onCancel, onSaved }) {
-  const [p, setP] = useState(() => ({ ...blank(initial.kind, initial.year), ...initial }));
+function ProblemEditor({ initial, books: allBooks, onCancel, onSaved }) {
+  const [p, setP] = useState(() => {
+    const { status: _s, computedAccess: _c, edited: _e, seq: _q, ...rest } = initial;
+    return { ...blank(initial.kind, initial.year), ...rest, solution: { code: "", explanation: "", ...(initial.solution || {}) } };
+  });
   // Function tests are edited as JSON text so admins can type arrays and strings freely.
   const [rows, setRows] = useState(() => (initial.tests || []).map((t) => ({ args: t.args.map(json).join(", "), expected: json(t.expected) })));
   const [ref, setRef] = useState("");
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
   const set = (patch) => setP((x) => ({ ...x, ...patch }));
-  const books = BOOKS.filter((b) => b[1] === Number(p.year));
+  const books = allBooks.filter((b) => b[1] === Number(p.year));
 
   function buildTests() {
     const out = [];
@@ -218,7 +377,7 @@ function ProblemEditor({ initial, onCancel, onSaved }) {
     setErr("");
     if (!p.title.trim()) return setErr("Give the problem a title.");
     if (!p.description.trim()) return setErr("Describe the problem.");
-    let body = { ...p, year: Number(p.year), topic: p.topic || BOOKS.find((b) => b[0] === p.book)?.[2] || "General" };
+    let body = { ...p, year: Number(p.year), topic: p.topic || allBooks.find((b) => b[0] === p.book)?.[2] || "General", hints: (p.hints || []).map((h) => h.trim()).filter(Boolean) };
     if (p.kind === "function") {
       const t = buildTests();
       if (t.err) return setErr(t.err);
@@ -292,7 +451,7 @@ function ProblemEditor({ initial, onCancel, onSaved }) {
               </select>
             </Field>
             <Field label="Book / topic">
-              <select className="inp" value={p.book || "custom"} onChange={(e) => set(e.target.value === "custom" ? { book: "" } : { book: e.target.value, topic: BOOKS.find((b) => b[0] === e.target.value)[2] })}>
+              <select className="inp" value={p.book || "custom"} onChange={(e) => set(e.target.value === "custom" ? { book: "" } : { book: e.target.value, topic: allBooks.find((b) => b[0] === e.target.value)[2] })}>
                 {books.map((b) => (
                   <option key={b[0]} value={b[0]}>
                     {b[2]}
@@ -372,6 +531,63 @@ function ProblemEditor({ initial, onCancel, onSaved }) {
           </details>
         </div>
       )}
+
+      <div className="panel" style={{ marginTop: 16 }}>
+        <h3 style={{ fontSize: 19 }}>Format and constraints</h3>
+        <p className="note">Shown under the statement. For function problems, leave these empty to use the automatic text (function name, parameters and what to return).</p>
+        <div className="three">
+          <Field label="Input format">
+            <textarea className="inp" rows={3} value={p.inputFormat} onChange={(e) => set({ inputFormat: e.target.value })} />
+          </Field>
+          <Field label="Output format">
+            <textarea className="inp" rows={3} value={p.outputFormat} onChange={(e) => set({ outputFormat: e.target.value })} />
+          </Field>
+          <Field label="Constraints">
+            <textarea className="inp" rows={3} value={p.constraints} onChange={(e) => set({ constraints: e.target.value })} placeholder="e.g. 1 <= n <= 10^5" />
+          </Field>
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginTop: 16 }}>
+        <h3 style={{ fontSize: 19 }}>Access, hints and solution</h3>
+        <div className="two">
+          <Field label="Free or premium">
+            <select className="inp" value={p.access || "auto"} onChange={(e) => set({ access: e.target.value })}>
+              <option value="auto">Auto (follow the year's free share)</option>
+              <option value="free">Always free</option>
+              <option value="premium">Always premium</option>
+            </select>
+          </Field>
+          <Field label="Who sees the solution">
+            <select className="inp" value={p.solutionMode || "default"} onChange={(e) => set({ solutionMode: e.target.value })}>
+              <option value="default">Same as the year's rule</option>
+              {SOLUTION_MODES.map(([k, l]) => (
+                <option key={k} value={k}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <label className="l">Hints (shown one at a time)</label>
+        {(p.hints || []).map((h, i) => (
+          <div key={i} style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+            <input className="inp" value={h} onChange={(e) => set({ hints: p.hints.map((x, j) => (j === i ? e.target.value : x)) })} placeholder={`Hint ${i + 1}`} />
+            <button type="button" className="ib danger" title="Remove" onClick={() => set({ hints: p.hints.filter((_, j) => j !== i) })}>
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ))}
+        <button type="button" className="linkish" onClick={() => set({ hints: [...(p.hints || []), ""] })}>
+          + Add hint
+        </button>
+        <Field label="Solution code">
+          <textarea className="inp code" rows={8} value={p.solution.code} onChange={(e) => set({ solution: { ...p.solution, code: e.target.value } })} placeholder="The full solution students see when the rule allows it" />
+        </Field>
+        <Field label="Explanation">
+          <textarea className="inp" rows={4} value={p.solution.explanation} onChange={(e) => set({ solution: { ...p.solution, explanation: e.target.value } })} placeholder="Explain the idea in simple words" />
+        </Field>
+      </div>
 
       <div className="savebar">
         {err && <span className="bad">{err}</span>}

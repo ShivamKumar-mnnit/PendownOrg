@@ -55,6 +55,8 @@ function AccessFields({ initial }) {
                     <b>{f.title}</b>
                     <small style={{ display: "block", color: "var(--color-fg-muted)" }}>{f.text}</small>
                     {id === "collegePanel" && <small style={{ display: "block", color: "var(--color-accent)" }}>Includes Create tests and Student records.</small>}
+                    {id === "allAccess" && <small style={{ display: "block", color: "var(--color-accent)" }}>Includes Premium practice, All premium courses and Create tests.</small>}
+                    {id === "practice" && <small style={{ display: "block", color: "var(--color-accent)" }}>Switch it off to make every practice problem free. Free share and solution rules are in the Problems tab.</small>}
                   </td>
                   <td>
                     <label className="mini">
