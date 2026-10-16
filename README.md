@@ -1,9 +1,52 @@
 # Anobyt
 
-A frontend-only React site for 1:1 mock interviews & mentorship for college
-students. No backend — WhatsApp notifications
-are done via `wa.me` deep links that a human (student, college coordinator,
-or admin) sends manually; certificates are generated client-side.
+A React site for 1:1 mock interviews & mentorship for college students.
+Sign-in, college batches, tests, interviews and scorecards run on the Anobyt
+data service (`https://dataservice.anobyt.in`, see below). Site content,
+purchases and coding tests run on Netlify functions.
+
+## Data service (logins, batches, tests, interviews)
+
+All calls go through `src/lib/dataService.js`: every request sends
+`X-Secret-Key`, plus `Authorization: Bearer <token>` once signed in. Errors come
+back as `{ status, message, details }` and the message is shown as is.
+
+- **Sign-in** (`/login`): email + password, college code + reg no (students a
+  college onboarded), Google (only when `VITE_GOOGLE_CLIENT_ID` is set), sign-up,
+  forgot password. Email links land on `/verify-email?token=…` and
+  `/reset-password?token=…`. Accounts with a temporary password must set their
+  own before any page opens. Profile, password and "sign out everywhere" are on
+  `/account`.
+- **Students** (`/dashboard`): their tests, interview slots with join links and
+  feedback, scorecard, announcements and past attempts. Tests run at
+  `/exam/<testId>` or from a share link `/t/<slug>`: answers autosave, the timer
+  follows the server clock, and proctored tests report tab switches, leaving full
+  screen, copy / paste and right-click. Results at `/results/<attemptId>`.
+- **Colleges** (`/colleges`): the onboarding form uploads the student sheet to
+  the data service.
+- **Admins** (`/admin`, ADMIN or SUPERADMIN accounts): Batches (students with
+  bulk upload and one-time temporary passwords, tests with rules / results /
+  leaderboard / analytics, interviews with Zoom and email / WhatsApp
+  confirmations, announcements, scorecard), and the Question bank. Super admins
+  also get Overview, College requests (convert one into a batch), Accounts and
+  Colleges, plus the Netlify site-content tabs, which still ask for Netlify's
+  `ADMIN_PASSWORD`.
+- **Purchases bridge**: the data-service token is also sent to the Netlify
+  functions as `x-user-token`; `src/lib/server/auth.js` checks it with the data
+  service and links it to the purchases record with the same email (older
+  records only once that email is confirmed).
+
+Settings:
+
+- Server `.env.prod`: `CORS_ALLOWED_ORIGINS` must list the site's origin
+  (today only `https://anobyt.in` is allowed, so `www.anobyt.in` and Netlify
+  preview URLs are blocked), `FRONTEND_URL=https://anobyt.in` for the email
+  links, and `API_SECRET_KEYS` must include the key the site sends.
+- Site (optional): `VITE_DATA_API_URL`, `VITE_DATA_API_KEY` (defaults are built
+  in) and `VITE_GOOGLE_CLIENT_ID`. Netlify functions: `DATA_SERVICE_URL`,
+  `DATA_SERVICE_KEY` (same defaults).
+- `npm run dev` proxies `/ds/*` to the data service without the Origin header
+  (`vite.config.js`), so local development works despite CORS.
 
 ## Stack
 
@@ -44,8 +87,8 @@ scene in both themes, so it uses the `.force-dark` token override.
   into books by year, judged in the browser in JavaScript (`src/lib/problems.js`).
 - `/practice`, `/take`, `/tests` — ready-made practice tests, taking a test,
   and a test builder whose share link carries the whole test (no server).
-- `/dashboard` — demo student login (this browser only, `src/lib/student.js`)
-  showing solved count, rank, rewards and a sample leaderboard.
+- `/dashboard` — signed-in student dashboard (data service): tests,
+  interviews, scorecard, announcements, attempts and practice progress.
 - `/book` — Student registration form (name, phone, session type, domain,
   optional resume link). Clicking **Confirm & Register** shows an
   immediate on-site success state *and* auto-opens WhatsApp addressed to
@@ -53,64 +96,31 @@ scene in both themes, so it uses the `.force-dark` token override.
   student sees also lands on the admin's own WhatsApp once they tap Send
   in the chat that opens (WhatsApp itself always requires that tap — no
   website can skip it).
-- `/colleges` — Bulk-onboarding page for placement cells. Coordinator fills
-  college/contact details and picks an Excel/CSV file (parsed client-side
-  just for a row-count preview — nothing is uploaded anywhere), plus a
-  downloadable blank Excel template (headers only, no sample data).
-  Clicking **Confirm & Register** auto-opens WhatsApp with a summary; the
-  actual file still has to be attached by hand inside that chat, since a
-  website cannot auto-attach files to a wa.me chat — a hard platform
-  limitation, not a bug.
-- `/admin` — Where you (the admin) process everything:
-  1. Save the Excel file a college sent you, then upload it here (or add
-     students manually). Parsed into an editable table (name/phone/domain/
-     resume columns matched case-insensitively).
-  2. Set a time slot (and optionally a mentor name) per student.
-  3. Click **Send** on a row to open a pre-filled WhatsApp confirmation to
-     that student — you tap Send yourself. **Send All** does this for every
-     student with a slot set, opening one tab every ~0.6s (browsers may
-     block pop-ups after the first one — allow pop-ups for this site if
-     that happens).
-  4. Tick **Completed** once a session has actually happened to unlock the
-     **Certificate** button — downloads a PNG "Certificate of Completion"
-     (name, domain, mentor) generated entirely client-side via
-     `src/lib/certificate.js`. This is Anobyt's own completion
-     certificate, not a claim of outside accreditation. Share it with the
-     student yourself (e.g. attach it in WhatsApp), same manual pattern as
-     everything else.
-  5. A private **Activity Log** at the bottom records every confirmation
-     you've sent, timestamped — visible only to you, never to students.
-  6. **Download Sheet** exports the table (slots/mentors/sent/completed
-     status) back to Excel for your own records.
-  7. Google Meet links are **not** generated by the site — per your
-     workflow, you create the Meet manually and share it with the student
-     and mentor yourself, closer to the slot.
-
-  Table and activity-log state are saved to `localStorage`, so refreshing
-  the admin page won't lose your work.
+- `/colleges` — Bulk-onboarding page for placement cells: college and contact
+  details plus the student Excel/CSV, sent to the data service as an onboarding
+  request (super admins see it under College requests).
+- `/login`, `/account`, `/exam/:testId`, `/t/:slug`, `/results/:attemptId`,
+  `/verify-email`, `/reset-password` — see "Data service" above.
+- `/admin` — see "Data service" above and "Admin access" below.
 
 ## Admin access
 
-`/admin` has two tabs:
+Sign in at `/admin` with a data-service ADMIN or SUPERADMIN account. Batches,
+the question bank and the super-admin tabs use that sign-in alone.
 
-- **Sessions**: the student booking sheet, WhatsApp confirmations and
-  certificates. Data stays in the admin's browser (`localStorage`).
-- **Tests**: create and manage MCQ tests, coding assessments and
-  Olympiad-style papers (single correct, multiple correct, numeric and
-  coding questions, marks, negative marking, time limits, samples and
-  hidden test cases), publish them, copy a student link and see results.
-
-Tests are stored on the server in Netlify Blobs (`netlify/functions/tests.js`,
-logic in `src/lib/server/testsApi.js`), so they need a real password:
+The site-content tabs (super admins only) are stored on Netlify and also ask
+for Netlify's `ADMIN_PASSWORD` the first time one is opened:
 
 1. In Netlify, open **Site configuration → Environment variables** and add
    `ADMIN_PASSWORD` with a strong password.
-2. Redeploy, then unlock `/admin` with that password.
+2. Redeploy, then enter that password when a site-content tab asks for it.
 
+- **Coding tests**: MCQ, coding and Olympiad-style papers judged on Netlify
+  (`netlify/functions/tests.js`), taken at `/assessment/<id>`.
 The other server-backed admin tabs (same password):
 
-- **Inbox**: every booking and college request submitted on the site (also
-  sent to WhatsApp as before), with "add to Sessions sheet" and CSV export.
+- **Inbox**: bookings and contact requests submitted on the site (also sent
+  to WhatsApp as before), with CSV export.
 - **Courses**: create and edit free and premium courses, modules and lessons
   (YouTube / Vimeo / Google Drive video links, notes, PDFs or links, plus
   free-preview lessons). Shown at `/courses` and `/courses/<id>`.
@@ -162,8 +172,7 @@ Content lives in Netlify Blobs (`netlify/functions/content.js`, logic in
 starting content in `src/lib/content/defaults.js`, and pages fall back to it
 if the server can't be reached.
 
-The old passcode in `src/lib/adminConfig.js` (`ADMIN_PASSCODE`) still opens
-the Sessions tab only. Students take published tests at
+Students take published coding tests at
 `/assessment/<id>` (also listed on `/practice`); answers and hidden test
 cases never reach the browser, and grading (including running code
 against the hidden cases) happens on the server.
@@ -172,19 +181,13 @@ Locally, `npm run dev` serves the same API from memory (data resets when
 the server restarts); the admin password is `ADMIN_PASSWORD` from your
 shell, or `admin` if unset.
 
-## Known limitations (by design, given no backend)
+## Known limitations
 
-- No WhatsApp message is ever sent automatically — every "send" requires a
-  human to press Send inside WhatsApp itself. This is intentional (avoids
-  needing WhatsApp Business API credentials / a server), but it does mean
-  a student registration only reaches the admin's WhatsApp if that Send
-  tap actually happens.
-- Bulk Excel files from colleges arrive on your personal WhatsApp, not
-  inside the app — the admin panel is where *you* re-upload and process
-  them.
-- "Send All" opens multiple browser tabs; some browsers throttle pop-ups
-  triggered outside a direct click, so very large batches may need a
-  couple of passes with pop-ups allowed.
+- `/book` bookings still go to WhatsApp (`wa.me` links a person sends by hand)
+  and the Netlify Inbox; the data service has no booking endpoint.
+- Interview confirmations and announcements by WhatsApp need the WhatsApp
+  Cloud API configured on the data service; Zoom links need Zoom configured
+  there (otherwise "Create Zoom meeting" returns 503).
 - Certificates are unverified PNGs generated in the browser — there's no
   registry or ID to check one against. Fine for a completion certificate,
   not a substitute for a verified credential.
@@ -215,7 +218,7 @@ automatically, no manual redeploy):
 ## To customize
 
 - WhatsApp number: `src/lib/whatsapp.js` (`ADMIN_WHATSAPP`)
-- Admin passcode: `src/lib/adminConfig.js`
+- Data service URL / key: `src/lib/dataService.js` (or `VITE_DATA_API_URL` / `VITE_DATA_API_KEY`)
 - Domains list (used in the booking form + homepage grid):
   `src/lib/domains.js`
 - Certificate design/copy: `src/lib/certificate.js`

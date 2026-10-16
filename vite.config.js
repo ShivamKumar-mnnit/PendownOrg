@@ -39,4 +39,17 @@ function compileApiPlugin() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), compileApiPlugin()],
+  server: {
+    proxy: {
+      // The data service only allows the https://anobyt.in origin (CORS), so in
+      // dev the browser calls /ds/* on this server and Vite forwards it without
+      // the Origin header. Production calls the data service directly.
+      '/ds': {
+        target: 'https://dataservice.anobyt.in',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/ds/, ''),
+        configure: (proxy) => proxy.on('proxyReq', (req) => req.removeHeader('origin')),
+      },
+    },
+  },
 })

@@ -102,9 +102,57 @@ export async function makeUserToken(store, user) {
   return `${payload}.${b64url(await hmacRaw(await sessionSecret(store), payload))}`;
 }
 
+// ---- Data-service sign-in (dataservice.anobyt.in) ----
+// The site signs people in on the data service. Its token (a JWT, three dot
+// separated parts) is checked there and linked to the purchases record with
+// the same email, so purchases, premium access and progress keep working.
+
+const ENV = (typeof process !== "undefined" && process.env) || {};
+const DS_URL = ENV.DATA_SERVICE_URL || "https://dataservice.anobyt.in";
+const DS_KEY = ENV.DATA_SERVICE_KEY || "9cf3f911e5c7ac0bde2826a82359248e537fd8aa8b5af41d98135c9dbf147803";
+const dsCache = new Map(); // token -> { me, until }
+
+async function dataServiceUser(token) {
+  const hit = dsCache.get(token);
+  if (hit && hit.until > Date.now()) return hit.me;
+  let me = null;
+  try {
+    const res = await fetch(`${DS_URL}/api/auth/me`, { headers: { "X-Secret-Key": DS_KEY, Authorization: `Bearer ${token}` } });
+    if (res.ok) me = await res.json();
+  } catch {
+    return null; // data service unreachable: treat as signed out, don't cache
+  }
+  if (dsCache.size > 500) dsCache.clear();
+  dsCache.set(token, { me, until: Date.now() + 60_000 });
+  return me;
+}
+
+async function linkedUser(token, store) {
+  const me = await dataServiceUser(token);
+  if (!me?.id || !me.active || me.mustChangePassword) return null;
+  const email = String(me.email || "").trim().toLowerCase();
+  const key = email ? "email:" + email : "dsid:" + me.id;
+  const ref = await store.get(key);
+  let user = ref ? await store.get("user:" + ref.id) : null;
+  if (user?.disabled) return null;
+  // An older site account with this email is only linked once the email is confirmed,
+  // so nobody can claim someone else's purchases by signing up with their address.
+  if (user && user.ext !== me.id && !me.emailVerified && !me.googleLinked) return null;
+  if (!user) {
+    user = { id: "d" + me.id, name: me.name, email, phone: me.phone || "", college: me.college?.name || "", year: "", role: "student", collegeName: "", sv: 0, grants: [], progress: { solved: [] }, createdAt: Date.now() };
+    await store.set(key, { id: user.id });
+  }
+  if (user.ext !== me.id || user.name !== me.name) {
+    user = { ...user, ext: me.id, name: me.name, lastLoginAt: Date.now() };
+    await store.set("user:" + user.id, user);
+  }
+  return user;
+}
+
 /** The signed-in account behind `x-user-token`, or null. */
 export async function readUser(request, store) {
   const token = request.headers.get("x-user-token") || "";
+  if (token.split(".").length === 3) return linkedUser(token, store);
   if (!token.includes(".")) return null;
   const [payload, sig] = token.split(".");
   try {

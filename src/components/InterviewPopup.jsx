@@ -8,9 +8,9 @@ const SESSION_KEY = "anobyt_demo_popup_seen";
 const DELAY_MS = 5000;
 // Pages that are already the booking flow itself, or aren't marketing
 // pages at all — a lead popup on top of either would just be noise.
-const SKIP_ROUTES = ["/book", "/admin", "/compiler", "/account", "/workspace"];
+const SKIP_ROUTES = ["/book", "/admin", "/compiler", "/account", "/workspace", "/login", "/verify-email", "/reset-password"];
 // Pages where students are typing code or reading a lesson: never interrupt them.
-const SKIP_PREFIXES = ["/problem", "/problems/year/", "/assessment/", "/take"];
+const SKIP_PREFIXES = ["/problem", "/problems/year/", "/assessment/", "/take", "/exam/", "/t/", "/results/"];
 
 const STAGES = [
   { id: "1st-year", title: "1st Year", subtitle: "Just starting out" },

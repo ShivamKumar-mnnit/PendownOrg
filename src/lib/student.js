@@ -1,19 +1,8 @@
-// Demo student account for the dashboard: saved only in this browser's
-// localStorage (there is no accounts backend). Solved problems and test
-// scores are added to it from the problem and test pages.
+// Practice progress from the old browser-only demo login (localStorage).
+// Real sign-in now lives on the data service (src/lib/account.js); this only
+// keeps problems solved before that counted.
 
 const STORAGE_KEY = "ab_user";
-
-export const LEADERBOARD = [
-  ["Aarav S.", 512],
-  ["Priya M.", 438],
-  ["Rohan K.", 301],
-  ["Sneha T.", 224],
-  ["Karan P.", 167],
-  ["Meera J.", 98],
-  ["Dev A.", 54],
-  ["Isha R.", 21],
-];
 
 export const REWARDS = [
   [10, "🌱", "Starter badge"],

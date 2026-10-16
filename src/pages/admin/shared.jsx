@@ -28,8 +28,8 @@ export function ServerLogin({ status, onDone }) {
         } else setErr(r.error || "Incorrect password.");
       }}
     >
-      <h3>Enter the server admin password</h3>
-      <p className="note">This section uses the ADMIN_PASSWORD set in Netlify, which is different from the old sessions passcode.</p>
+      <h3>Enter the site content password</h3>
+      <p className="note">Site content (courses, events, payments, coding tests…) is stored on Netlify and also needs the ADMIN_PASSWORD set there.</p>
       <input className="inp" type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="ADMIN_PASSWORD" style={{ marginTop: 12 }} />
       {err && <p className="note bad">{err}</p>}
       <button className="btn" style={{ marginTop: 12 }} disabled={!key}>

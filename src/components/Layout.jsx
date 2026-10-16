@@ -6,10 +6,12 @@ import PlacementAssist from "./PlacementAssist";
 import InterviewPopup from "./InterviewPopup";
 import StudyBackground from "./StudyBackground";
 import { useReveal } from "../lib/useReveal";
+import { useAccount } from "../lib/account";
+import { PasswordGate } from "./AuthForms";
 
 // Tool pages where the floating promo/chat buttons would sit on top of the
 // editor and its output.
-const NO_FLOATERS = ["/compiler", "/problem", "/problems/year", "/assessment", "/admin", "/workspace"];
+const NO_FLOATERS = ["/compiler", "/problem", "/problems/year", "/assessment", "/exam", "/admin", "/workspace"];
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -17,6 +19,9 @@ export default function Layout() {
   const showFloaters =
     !NO_FLOATERS.some((p) => pathname === p || pathname.startsWith(p + "/")) && !/^\/(courses|talks)\/./.test(pathname);
   useReveal(pathname);
+  const { user } = useAccount();
+  // Accounts created with a temporary password must choose their own before anything else.
+  const mustChange = user?.mustChangePassword && pathname !== "/reset-password";
 
   return (
     <div className="min-h-screen flex flex-col text-(--color-fg)">
@@ -24,7 +29,7 @@ export default function Layout() {
 
       <Navbar />
       <main className="flex-1">
-        <Outlet />
+        {mustChange ? <PasswordGate user={user} /> : <Outlet />}
       </main>
       <Footer />
       {showFloaters && <PlacementAssist />}

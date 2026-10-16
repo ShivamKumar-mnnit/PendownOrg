@@ -58,7 +58,10 @@ export default function UsersAdmin() {
       {college && (
         <form className="panel" onSubmit={createCollege} style={{ marginBottom: 18 }}>
           <h3 style={{ fontSize: 19 }}>New college account</h3>
-          <p className="note">The college signs in at /account with this email and password and gets the college panel.</p>
+          <p className="note">
+            This record holds the college panel access. The college signs in with a data-service account that has the same email: create it in the
+            Accounts tab (role Admin), and it links to this record once the email is confirmed.
+          </p>
           <div className="three">
             <Field label="College name">
               <input className="inp" value={college.collegeName} onChange={(e) => setCollege({ ...college, collegeName: e.target.value })} required />

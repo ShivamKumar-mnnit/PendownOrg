@@ -31,6 +31,11 @@ const Premium = lazy(() => import("./pages/Premium"));
 const Lesson = lazy(() => import("./pages/Lesson"));
 const YearPractice = lazy(() => import("./pages/YearPractice"));
 const Workspace = lazy(() => import("./pages/Workspace"));
+const Exam = lazy(() => import("./pages/Exam"));
+const ExamResult = lazy(() => import("./pages/Exam").then((m) => ({ default: m.Result })));
+const Login = lazy(() => import("./pages/Login"));
+const VerifyEmail = lazy(() => import("./pages/Login").then((m) => ({ default: m.VerifyEmail })));
+const ResetPassword = lazy(() => import("./pages/Login").then((m) => ({ default: m.ResetPassword })));
 
 const lazyPage = (el) => <Suspense fallback={<Page narrow={620}><p className="note">Loading…</p></Page>}>{el}</Suspense>;
 
@@ -63,6 +68,12 @@ export default function App() {
           <Route path="/courses/:id" element={<CourseDetail />} />
           <Route path="/courses/:id/learn/:lessonId" element={lazyPage(<Lesson />)} />
           <Route path="/account" element={lazyPage(<Account />)} />
+          <Route path="/login" element={lazyPage(<Login />)} />
+          <Route path="/verify-email" element={lazyPage(<VerifyEmail />)} />
+          <Route path="/reset-password" element={lazyPage(<ResetPassword />)} />
+          <Route path="/exam/:testId" element={lazyPage(<Exam />)} />
+          <Route path="/t/:slug" element={lazyPage(<Exam />)} />
+          <Route path="/results/:attemptId" element={lazyPage(<ExamResult />)} />
           <Route path="/premium" element={lazyPage(<Premium />)} />
           <Route path="/workspace" element={lazyPage(<Workspace />)} />
           <Route path="/placement" element={<Placement />} />

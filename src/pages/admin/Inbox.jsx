@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Download, RotateCcw, Trash2, UserPlus } from "lucide-react";
+import { Check, Download, RotateCcw, Trash2 } from "lucide-react";
 import WhatsAppIcon from "../../components/WhatsAppIcon";
 import { deleteLead, listLeads, updateLead } from "../../lib/contentApi";
 import { buildWaLink, normalizePhone } from "../../lib/whatsapp";
@@ -8,29 +8,6 @@ import { downloadCsv, fmtDate, useAdminData } from "./adminUtils";
 
 const KINDS = { booking: "Booking", college: "College", premium: "Premium", contact: "Contact" };
 const DATA_LABELS = { sessionType: "Session", domain: "Domain", company: "Company", resume: "Resume", college: "College", students: "Students", file: "File", rows: "Rows in file", course: "Course" };
-
-// Same storage the Sessions tab uses, so a booking can be moved straight into it.
-const SESSIONS_KEY = "algomate_admin_students";
-function addToSessions(lead) {
-  let rows = [];
-  try {
-    rows = JSON.parse(localStorage.getItem(SESSIONS_KEY)) || [];
-  } catch {
-    rows = [];
-  }
-  rows.push({
-    id: Math.random().toString(36).slice(2, 10),
-    name: lead.name,
-    phone: lead.phone,
-    domain: lead.data.domain || "",
-    resume: lead.data.resume || "",
-    slot: "",
-    mentor: "",
-    sent: false,
-    completed: false,
-  });
-  localStorage.setItem(SESSIONS_KEY, JSON.stringify(rows));
-}
 
 export default function Inbox() {
   const state = useAdminData(listLeads);
@@ -61,7 +38,7 @@ export default function Inbox() {
 
   return (
     <div>
-      <SectionTop title={`Inbox${newCount ? ` (${newCount} new)` : ""}`} text="Every booking and college request submitted on the website, saved even if the WhatsApp message was never sent.">
+      <SectionTop title={`Inbox${newCount ? ` (${newCount} new)` : ""}`} text="Bookings and contact requests from the website, saved even if the WhatsApp message was never sent. College onboarding requests are in the College requests tab.">
         <button type="button" className="btn ghost" onClick={exportCsv} disabled={!shown.length}>
           <Download className="h-4 w-4" /> Export CSV
         </button>
@@ -84,7 +61,7 @@ export default function Inbox() {
         {!shown.length && (
           <div className="empty">
             <b>Nothing here</b>
-            <span>New bookings and college requests will appear here.</span>
+            <span>New bookings will appear here.</span>
           </div>
         )}
         <div className="tlist">
@@ -112,22 +89,6 @@ export default function Inbox() {
                     <a className="ib" title="Message on WhatsApp" href={buildWaLink(digits, `Hi ${l.name || "there"}! This is Anobyt.`)} target="_blank" rel="noopener noreferrer">
                       <WhatsAppIcon className="h-4 w-4" />
                     </a>
-                  )}
-                  {l.kind === "booking" && (
-                    <button
-                      type="button"
-                      className="ib"
-                      title="Add to Sessions sheet"
-                      onClick={() =>
-                        act(async () => {
-                          addToSessions(l);
-                          await updateLead(l.id, { status: "done" });
-                          setMsg(`${l.name} added to the Sessions sheet.`);
-                        })
-                      }
-                    >
-                      <UserPlus className="h-4 w-4" />
-                    </button>
                   )}
                   <button type="button" className="ib" title={l.status === "new" ? "Mark handled" : "Mark as new"} onClick={() => act(() => updateLead(l.id, { status: l.status === "new" ? "done" : "new" }))}>
                     {l.status === "new" ? <Check className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}

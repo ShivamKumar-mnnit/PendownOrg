@@ -144,7 +144,7 @@ export default function Navbar() {
             })}
           </nav>
           <ThemeToggle className="tog" />
-          <Link className={`acct${pathname === "/account" ? " on" : ""}`} to="/account" title={user ? "Your account" : "Sign in"}>
+          <Link className={`acct${pathname === "/account" || pathname === "/login" ? " on" : ""}`} to={user ? "/account" : "/login"} title={user ? "Your account" : "Sign in"}>
             <UserRound className="h-4 w-4" />
             <span>{user ? user.name.split(" ")[0] : "Sign in"}</span>
           </Link>

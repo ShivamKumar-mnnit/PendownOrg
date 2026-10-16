@@ -1,72 +1,348 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Head, Cards, Page } from "../components/ui";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Award, Bell, CalendarClock, ClipboardList, ExternalLink, PlayCircle, Video } from "lucide-react";
+import { Head, Page } from "../components/ui";
+import { SignInForm } from "../components/AuthForms";
 import { YEAR_NAMES, usePractice, useSolved } from "../lib/problemBank";
-import { LEADERBOARD, REWARDS, getStudent, saveStudent, logOutStudent } from "../lib/student";
+import { REWARDS } from "../lib/student";
+import { useAccount } from "../lib/account";
+import { INTERVIEW_STATUS, fmtDay, fmtWhen, isAdminRole, pct, studentApi, testWindow } from "../lib/dataService";
 import { usePageSEO } from "../lib/seo";
 
-function Login({ onLogin }) {
-  const [name, setName] = useState("");
-  const [id, setId] = useState("");
-  const [error, setError] = useState("");
+/** Loads one student endpoint; `null` while loading, `{error}` on failure. */
+function useLoad(fn) {
+  const [v, setV] = useState(null);
+  useEffect(() => {
+    let on = true;
+    fn().then(
+      (d) => on && setV(d ?? []),
+      (e) => on && setV({ error: e.message }),
+    );
+    return () => {
+      on = false;
+    };
+  }, [fn]);
+  return v;
+}
 
-  function submit() {
-    const n = name.trim();
-    const e = id.trim();
-    if (!n || !e) {
-      setError("Enter your name and email or roll number.");
-      return;
-    }
-    onLogin({ name: n, id: e, solved: 0 });
-  }
+export default function Dashboard() {
+  usePageSEO({ title: "Dashboard", description: "Your tests, interviews, scorecard and practice progress.", path: "/dashboard", noindex: true });
+  const { user, loaded } = useAccount();
+  const nav = useNavigate();
 
+  if (!loaded) return <Page narrow={520}><p className="note">Loading…</p></Page>;
+  if (!user)
+    return (
+      <Page narrow={480}>
+        <Head title="Student dashboard">Sign in to see your tests, interview slots, scorecard and announcements.</Head>
+        <SignInForm onMode={(m) => nav(`/login?mode=${m}&next=/dashboard`)} />
+      </Page>
+    );
+
+  const admin = isAdminRole(user);
   return (
-    <Page narrow={520}>
-      <Head title="Student login">Log in to track the problems you solve, see your rank and unlock rewards.</Head>
-      <div className="panel">
-        <label className="l" htmlFor="ln" style={{ marginTop: 0 }}>
-          Full name
-        </label>
-        <input id="ln" className="inp" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
-        <label className="l" htmlFor="le">
-          College email or roll number
-        </label>
-        <input id="le" className="inp" value={id} onChange={(e) => setId(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} />
-        <div className="row" style={{ marginTop: 18 }}>
-          <button type="button" className="btn" onClick={submit}>
-            Log in
-          </button>
+    <Page>
+      <div className="admin-top">
+        <div>
+          <span className="eyebrow">{user.college || "Dashboard"}</span>
+          <h1 style={{ fontSize: "clamp(28px, 4vw, 38px)", marginTop: 6 }}>Welcome, {user.name.split(" ")[0]}</h1>
         </div>
-        {error && (
-          <div className="note">
-            <span className="bad">{error}</span>
-          </div>
-        )}
-        <div className="note">Demo login, saved only in this browser. Real accounts and a shared leaderboard are not connected yet.</div>
+        <div className="row">
+          {admin && (
+            <Link className="btn" to="/admin">
+              Open admin panel
+            </Link>
+          )}
+          <Link className="btn ghost" to="/account">
+            Your account
+          </Link>
+        </div>
       </div>
+      {admin ? (
+        <p className="note">You're signed in as an admin. Tests, interviews and scorecards for your batches are in the admin panel.</p>
+      ) : (
+        <StudentArea />
+      )}
+      <PracticeProgress />
     </Page>
   );
 }
 
-function PracticeProgress({ user }) {
+function StudentArea() {
+  const tests = useLoad(studentApi.tests);
+  const interviews = useLoad(studentApi.interviews);
+  const scorecard = useLoad(studentApi.scorecard);
+  const notes = useLoad(studentApi.announcements);
+  const attempts = useLoad(studentApi.attempts);
+
+  const list = (v) => (Array.isArray(v) ? v : []);
+  const upcoming = list(interviews).filter((i) => i.status === "SCHEDULED" && new Date(i.scheduledAt).getTime() > Date.now() - 2 * 3600e3);
+  const openTests = list(tests).filter((t) => testWindow(t).state !== "ended" && (t.attemptsUsed < t.maxAttempts || t.inProgressAttemptId));
+  const best = list(scorecard).reduce((m, r) => (r.overallPercent != null && r.overallPercent > (m ?? -1) ? r.overallPercent : m), null);
+
+  return (
+    <>
+      <div className="kpis">
+        <div><b>{tests === null ? "…" : openTests.length}</b><span>Tests open to you</span></div>
+        <div><b>{interviews === null ? "…" : upcoming.length}</b><span>Upcoming interviews</span></div>
+        <div><b>{attempts === null ? "…" : list(attempts).filter((a) => a.status === "SUBMITTED").length}</b><span>Tests completed</span></div>
+        <div><b>{scorecard === null ? "…" : pct(best)}</b><span>Overall score</span></div>
+      </div>
+
+      <Announcements data={notes} />
+
+      <Section icon={<ClipboardList className="h-5 w-5" />} title="Your tests">
+        <Loaded data={tests} empty="No tests yet. When your college or trainer publishes one, it shows up here. Got a test link? Just open it.">
+          {(rows) => (
+            <div className="cards">
+              {rows.map((t) => (
+                <TestCard key={t.id} t={t} />
+              ))}
+            </div>
+          )}
+        </Loaded>
+      </Section>
+
+      <Section icon={<Video className="h-5 w-5" />} title="Mock interviews">
+        <Loaded data={interviews} empty="No interviews scheduled yet. Your slot, mentor and meeting link appear here once they're set.">
+          {(rows) => (
+            <div className="tablewrap">
+              <table className="dtable">
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>Mentor</th>
+                    <th>Batch</th>
+                    <th>Status</th>
+                    <th>Meeting / feedback</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...rows]
+                    .sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt))
+                    .map((i) => (
+                      <tr key={i.id}>
+                        <td>
+                          {fmtWhen(i.scheduledAt)}
+                          <div className="note" style={{ margin: 0, fontSize: 12 }}>{i.durationMinutes} min</div>
+                        </td>
+                        <td>{i.mentorName}</td>
+                        <td>{i.templateName || "—"}</td>
+                        <td>
+                          <span className={`tag ${i.status === "COMPLETED" ? "free" : i.status === "SCHEDULED" ? "" : "adv"}`}>{INTERVIEW_STATUS[i.status] || i.status}</span>
+                        </td>
+                        <td>
+                          {i.status === "SCHEDULED" && i.meetingLink ? (
+                            <a className="btn" href={i.meetingLink} target="_blank" rel="noopener noreferrer" style={{ padding: "6px 12px" }}>
+                              Join <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          ) : i.status === "SCHEDULED" ? (
+                            <span className="note" style={{ margin: 0 }}>Link coming soon</span>
+                          ) : null}
+                          {i.meetingPasscode && i.status === "SCHEDULED" && <div className="note" style={{ margin: "4px 0 0", fontSize: 12 }}>Passcode {i.meetingPasscode}</div>}
+                          {i.status === "COMPLETED" && (
+                            <div style={{ fontSize: 14 }}>
+                              {i.rating != null && <b>{i.rating}/10 · </b>}
+                              {i.feedback || "No written feedback"}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Loaded>
+      </Section>
+
+      <Section icon={<Award className="h-5 w-5" />} title="Scorecard">
+        <Loaded data={scorecard} empty="Your scorecard fills in as you take tests, coding rounds and interviews.">
+          {(rows) => (
+            <div className="cards">
+              {rows.map((r, i) => (
+                <div className="card" key={i}>
+                  <div className="meta">
+                    <span className="tag">{r.domain || "Batch"}</span>
+                    {r.shortlisted && <span className="tag free">Shortlisted</span>}
+                    {r.rank && <small>Rank #{r.rank}</small>}
+                  </div>
+                  <h3 style={{ marginTop: 10 }}>{pct(r.overallPercent)} overall</h3>
+                  <dl className="kv" style={{ marginTop: 8 }}>
+                    <dt>MCQ tests</dt>
+                    <dd>{pct(r.mcqPercent)}</dd>
+                    <dt>Coding</dt>
+                    <dd>{pct(r.codingPercent)}</dd>
+                    <dt>Interviews</dt>
+                    <dd>
+                      {pct(r.interviewPercent)}
+                      {r.interviewsCompleted ? ` (${r.interviewsCompleted})` : ""}
+                    </dd>
+                  </dl>
+                  {r.coding?.some((c) => c.reportUrl) && (
+                    <p className="note" style={{ fontSize: 13 }}>
+                      {r.coding
+                        .filter((c) => c.reportUrl)
+                        .map((c) => (
+                          <a key={c.reportUrl} className="linkish" href={c.reportUrl} target="_blank" rel="noopener noreferrer" style={{ marginRight: 10 }}>
+                            {c.assessmentTitle} report
+                          </a>
+                        ))}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </Loaded>
+      </Section>
+
+      <Section icon={<CalendarClock className="h-5 w-5" />} title="Your attempts">
+        <Loaded data={attempts} empty="Tests you take show up here with your score.">
+          {(rows) => (
+            <div className="tablewrap">
+              <table className="dtable">
+                <thead>
+                  <tr>
+                    <th>Test</th>
+                    <th>Attempt</th>
+                    <th>Score</th>
+                    <th>Date</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((a) => (
+                    <tr key={a.attemptId}>
+                      <td>{a.testTitle}</td>
+                      <td>#{a.attemptNumber}</td>
+                      <td>{a.status === "SUBMITTED" ? `${a.score ?? 0} / ${a.maxScore ?? "—"}` : "In progress"}</td>
+                      <td>{fmtDay(a.submittedAt || a.startedAt)}</td>
+                      <td>
+                        {a.status === "SUBMITTED" ? (
+                          <Link className="linkish" to={`/results/${a.attemptId}`}>
+                            View result
+                          </Link>
+                        ) : (
+                          <Link className="linkish" to={`/exam/${a.testId}`}>
+                            Resume
+                          </Link>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Loaded>
+      </Section>
+    </>
+  );
+}
+
+function TestCard({ t }) {
+  const w = testWindow(t);
+  const left = t.maxAttempts - t.attemptsUsed;
+  const can = w.state === "open" && (t.inProgressAttemptId || left > 0);
+  return (
+    <div className="card">
+      <div className="meta">
+        <span className={`tag ${w.state === "open" ? "free" : w.state === "soon" ? "med" : "adv"}`}>{w.state === "open" ? "Open" : w.state === "soon" ? "Upcoming" : "Closed"}</span>
+        {t.proctoring && <span className="tag">Proctored</span>}
+      </div>
+      <h3 style={{ marginTop: 10 }}>{t.title}</h3>
+      <p>
+        {t.questionCount} questions · {t.durationMinutes} min{t.totalMarks ? ` · ${t.totalMarks} marks` : ""}
+      </p>
+      <p className="note" style={{ fontSize: 13, margin: "6px 0 0" }}>
+        {w.text} · {t.attemptsUsed}/{t.maxAttempts} attempt{t.maxAttempts === 1 ? "" : "s"} used
+      </p>
+      {can ? (
+        <Link className="btn" to={`/exam/${t.id}`} style={{ marginTop: 14 }}>
+          <PlayCircle className="h-4 w-4" /> {t.inProgressAttemptId ? "Resume test" : "Start test"}
+        </Link>
+      ) : (
+        <p className="note" style={{ fontSize: 13 }}>{w.state === "open" ? "No attempts left." : ""}</p>
+      )}
+    </div>
+  );
+}
+
+function Announcements({ data }) {
+  const [all, setAll] = useState(false);
+  if (!Array.isArray(data) || !data.length) return null;
+  const shown = all ? data : data.slice(0, 3);
+  return (
+    <div className="panel" style={{ marginBottom: 8 }}>
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+        <b style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <Bell className="h-4 w-4" /> Announcements
+        </b>
+        {data.length > 3 && (
+          <button type="button" className="linkish" onClick={() => setAll(!all)}>
+            {all ? "Show fewer" : `Show all ${data.length}`}
+          </button>
+        )}
+      </div>
+      {shown.map((a) => (
+        <div key={a.id} style={{ borderTop: "1px solid var(--color-border)", marginTop: 12, paddingTop: 12 }}>
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <b style={{ fontSize: 15 }}>{a.subject}</b>
+            <small className="note" style={{ margin: 0 }}>{fmtWhen(a.createdAt)}</small>
+          </div>
+          <p style={{ margin: "4px 0 0", color: "var(--color-fg-muted)", whiteSpace: "pre-wrap" }}>{a.message}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Section({ icon, title, children }) {
+  return (
+    <section style={{ marginTop: 40 }}>
+      <h2 style={{ fontSize: 22, display: "flex", gap: 10, alignItems: "center", marginBottom: 16 }}>
+        {icon} {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function Loaded({ data, empty, children }) {
+  if (data === null) return <p className="note">Loading…</p>;
+  if (data.error) return <p className="note bad">{data.error}</p>;
+  if (!data.length)
+    return (
+      <div className="empty">
+        <span>{empty}</span>
+      </div>
+    );
+  return children(data);
+}
+
+function PracticeProgress() {
   const { data } = usePractice(true);
   const solved = useSolved();
-  const done = user.done || {};
   const index = data?.index || [];
   const byId = new Map(index.map((p) => [p.id, p]));
-  const recent = [...new Set([...Object.keys(done), ...solved])]
+  const recent = [...solved]
     .map((id) => byId.get(id))
     .filter(Boolean)
     .slice(-8)
     .reverse();
+  const count = solved.size;
+  const next = REWARDS.find((r) => r[0] > count);
 
   return (
     <>
-      <Head title="Practice problems" style={{ margin: "56px 0 24px" }} />
+      <Head title="Practice problems" style={{ margin: "56px 0 24px" }}>
+        {count} solved{next ? ` · ${next[0] - count} more to unlock ${next[2].toLowerCase()}` : " · every reward unlocked"}
+      </Head>
       <div className="cards">
         {[1, 2, 3, 4].map((y) => {
           const all = index.filter((p) => p.year === y);
-          const n = all.filter((p) => done[p.id] || solved.has(p.id)).length;
+          const n = all.filter((p) => solved.has(p.id)).length;
           return (
             <Link className="card" key={y} to={`/problems/year/${y}`}>
               <div className="meta">
@@ -104,105 +380,15 @@ function PracticeProgress({ user }) {
           </Link>
         </div>
       )}
+      <div className="cards" style={{ marginTop: 24 }}>
+        {REWARDS.map(([at, icon, title]) => (
+          <div className="card" key={title} style={{ opacity: count >= at ? 1 : 0.55 }}>
+            <div className="ic">{icon}</div>
+            <h3>{title}</h3>
+            <p>{count >= at ? "Unlocked" : `Unlocks at ${at} problems`}</p>
+          </div>
+        ))}
+      </div>
     </>
-  );
-}
-
-export default function Dashboard() {
-  usePageSEO({
-    title: "Dashboard",
-    description: "Track the problems you solve, see your rank and unlock rewards.",
-    path: "/dashboard",
-  });
-
-  const [user, setUser] = useState(getStudent);
-
-  function update(next) {
-    if (next) saveStudent(next);
-    else logOutStudent();
-    setUser(next);
-  }
-
-  if (!user) return <Login onLogin={update} />;
-
-  const all = LEADERBOARD.concat([[user.name, user.solved]]).sort((a, b) => b[1] - a[1]);
-  const isMe = (x) => x[0] === user.name && x[1] === user.solved;
-  const rank = all.findIndex(isMe) + 1;
-  const next = REWARDS.find((r) => r[0] > user.solved);
-  const prev = REWARDS.filter((r) => r[0] <= user.solved).pop();
-  const base = prev ? prev[0] : 0;
-  const pct = next ? Math.round(((user.solved - base) / (next[0] - base)) * 100) : 100;
-
-  return (
-    <Page>
-      <Head title={`Welcome, ${user.name}`}>Your progress, rank and rewards.</Head>
-      <Cards
-        items={[
-          ["✅", `${user.solved} problems solved`, "Questions you answered correctly"],
-          ["🏅", `Rank #${rank}`, `out of ${all.length} students`],
-          ["🎯", next ? `${next[0] - user.solved} to go` : "All rewards unlocked", next ? `Next reward: ${next[2]}` : "You have unlocked every reward"],
-        ]}
-      />
-      <div className="panel" style={{ marginTop: 18 }}>
-        <b>{next ? `Progress to ${next[2]}` : "Top tier reached"}</b>
-        <div className="bar2" style={{ marginBottom: 0 }}>
-          <b style={{ width: `${pct}%` }} />
-        </div>
-      </div>
-
-      <PracticeProgress user={user} />
-
-      <Head title="Rewards" style={{ margin: "56px 0 24px" }} />
-      <div className="cards">
-        {REWARDS.map(([at, icon, title]) => {
-          const on = user.solved >= at;
-          return (
-            <div className="card" key={title} style={{ opacity: on ? 1 : 0.55 }}>
-              <div className="ic">{icon}</div>
-              <h3>{title}</h3>
-              <p>{on ? "Unlocked" : `Unlocks at ${at} problems`}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      <Head title="Leaderboard" style={{ margin: "56px 0 24px" }} />
-      <div className="panel" style={{ padding: 8 }}>
-        {all.map((x, i) => {
-          const me = isMe(x);
-          return (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "12px 14px",
-                borderRadius: 10,
-                ...(me ? { background: "var(--ab-soft)", fontWeight: 600 } : {}),
-              }}
-            >
-              <span>
-                #{i + 1} {x[0]}
-                {me ? " (you)" : ""}
-              </span>
-              <b>{x[1]}</b>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="row" style={{ marginTop: 28 }}>
-        <button type="button" className="btn ghost" onClick={() => update({ ...user, solved: user.solved + 1 })}>
-          Demo: add 1 solved
-        </button>
-        <button type="button" className="btn ghost" onClick={() => update({ ...user, solved: user.solved + 10 })}>
-          Demo: add 10 solved
-        </button>
-        <button type="button" className="btn ghost" onClick={() => update(null)}>
-          Log out
-        </button>
-      </div>
-      <div className="note">Problems also count automatically when you submit a practice test or solve a practice problem while logged in.</div>
-    </Page>
   );
 }

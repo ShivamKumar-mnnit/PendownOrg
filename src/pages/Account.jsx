@@ -1,98 +1,20 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, Clock, LogOut } from "lucide-react";
-import { Head, Page } from "../components/ui";
-import { login, logout, myPayments, rupees, signup, updateProfile, useAccount } from "../lib/account";
+import { Link, Navigate, useLocation } from "react-router-dom";
+import { CheckCircle2, Clock, LayoutDashboard, LogOut, MailWarning, ShieldCheck } from "lucide-react";
+import { Page } from "../components/ui";
+import { ChangePasswordForm } from "../components/AuthForms";
+import { logout, myPayments, rupees, updateProfile, useAccount } from "../lib/account";
+import { ROLE_LABELS, authApi, fmtDay, isAdminRole } from "../lib/dataService";
 import { usePageSEO } from "../lib/seo";
 
-const fmt = (ts) => (ts ? new Date(ts).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "");
-
 export default function Account() {
-  usePageSEO({ title: "Your account", description: "Sign in to Anobyt to unlock courses, tests and the college panel.", path: "/account", noindex: true });
+  usePageSEO({ title: "Your account", description: "Your Anobyt profile, password and purchases.", path: "/account", noindex: true });
   const { user, features, loaded } = useAccount();
+  const location = useLocation();
   if (!loaded) return <Page narrow={520}><p className="note">Loading…</p></Page>;
-  return user ? <Profile user={user} features={features} /> : <SignIn />;
-}
-
-function SignIn() {
-  const [params] = useSearchParams();
-  const nav = useNavigate();
-  const [mode, setMode] = useState(params.get("mode") === "signup" ? "signup" : "login");
-  const [f, setF] = useState({ name: "", email: "", password: "", phone: "", college: "", year: "", website: "" });
-  const [err, setErr] = useState("");
-  const [busy, setBusy] = useState(false);
-  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
-
-  async function submit(e) {
-    e.preventDefault();
-    setErr("");
-    setBusy(true);
-    try {
-      if (mode === "login") await login(f.email, f.password);
-      else await signup(f);
-      const next = params.get("next");
-      if (next && next.startsWith("/")) nav(next);
-    } catch (x) {
-      setErr(x.message);
-    }
-    setBusy(false);
-  }
-
-  return (
-    <Page narrow={520}>
-      <Head title={mode === "login" ? "Sign in" : "Create your account"}>
-        {mode === "login" ? "Pick up where you left off: your courses, tests and progress." : "Free to create. Your practice progress and purchases stay with your account."}
-      </Head>
-      <div className="seg tabs" style={{ marginBottom: 16 }}>
-        <button type="button" className={mode === "login" ? "on" : ""} onClick={() => setMode("login")}>
-          Sign in
-        </button>
-        <button type="button" className={mode === "signup" ? "on" : ""} onClick={() => setMode("signup")}>
-          Create account
-        </button>
-      </div>
-      <form className="panel" onSubmit={submit}>
-        {mode === "signup" && (
-          <>
-            <label className="l" style={{ marginTop: 0 }}>Full name</label>
-            <input className="inp" value={f.name} onChange={set("name")} required autoComplete="name" />
-          </>
-        )}
-        <label className="l" style={mode === "login" ? { marginTop: 0 } : undefined}>Email</label>
-        <input className="inp" type="email" value={f.email} onChange={set("email")} required autoComplete="email" />
-        <label className="l">Password</label>
-        <input className="inp" type="password" value={f.password} onChange={set("password")} required minLength={mode === "signup" ? 8 : undefined} autoComplete={mode === "login" ? "current-password" : "new-password"} />
-        {mode === "signup" && (
-          <>
-            <p className="note" style={{ marginTop: 4, fontSize: 13 }}>At least 8 characters.</p>
-            <div className="two">
-              <div>
-                <label className="l">Phone (optional)</label>
-                <input className="inp" value={f.phone} onChange={set("phone")} autoComplete="tel" />
-              </div>
-              <div>
-                <label className="l">Year (optional)</label>
-                <select className="inp" value={f.year} onChange={set("year")}>
-                  <option value="">Choose</option>
-                  {["1st year", "2nd year", "3rd year", "4th year", "Graduate", "Faculty / TPO"].map((y) => (
-                    <option key={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <label className="l">College (optional)</label>
-            <input className="inp" value={f.college} onChange={set("college")} />
-            <input className="hp" tabIndex={-1} autoComplete="off" value={f.website} onChange={set("website")} aria-hidden="true" />
-          </>
-        )}
-        {err && <p className="note bad">{err}</p>}
-        <button className="btn" style={{ marginTop: 18, width: "100%" }} disabled={busy}>
-          {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
-        </button>
-        {mode === "login" && <p className="note" style={{ fontSize: 13 }}>Forgot your password? Message us on WhatsApp and we'll reset it.</p>}
-      </form>
-    </Page>
-  );
+  // Older links point at /account?next=…&mode=signup; the sign-in page takes the same parameters.
+  if (!user) return <Navigate to={`/login${location.search || "?next=/account"}`} replace />;
+  return <Profile user={user} features={features} />;
 }
 
 function Profile({ user, features }) {
@@ -104,22 +26,25 @@ function Profile({ user, features }) {
   const owned = Object.entries(features || {}).filter(([, f]) => f.has);
   const workspace = features?.studentData?.has || features?.createTests?.has || features?.collegePanel?.has;
   const courseGrants = (user.grants || []).filter((g) => g.type !== "feature");
+  const admin = isAdminRole(user);
 
   return (
     <Page narrow={980}>
       <div className="admin-top">
         <div>
-          <span className="eyebrow">{user.role === "college" ? "College account" : "Student account"}</span>
+          <span className="eyebrow">{ROLE_LABELS[user.role] || "Account"}</span>
           <h1 style={{ fontSize: 34, marginTop: 8 }}>Hi, {user.name.split(" ")[0]}</h1>
           <p className="note" style={{ marginTop: 4 }}>
-            {user.email}
-            {user.collegeName || user.college ? ` · ${user.collegeName || user.college}` : ""}
+            {[user.email, user.college, user.regNo && `Reg. no ${user.regNo}`].filter(Boolean).join(" · ")}
           </p>
         </div>
         <div className="row">
+          <Link className="btn" to={admin ? "/admin" : "/dashboard"}>
+            <LayoutDashboard className="h-4 w-4" /> {admin ? "Admin panel" : "Dashboard"}
+          </Link>
           {workspace && (
-            <Link className="btn" to="/workspace">
-              Open {features?.collegePanel?.has ? "college panel" : "workspace"}
+            <Link className="btn ghost" to="/workspace">
+              {features?.collegePanel?.has ? "College panel" : "Workspace"}
             </Link>
           )}
           <button type="button" className="btn ghost" onClick={() => logout()}>
@@ -128,29 +53,9 @@ function Profile({ user, features }) {
         </div>
       </div>
 
+      {user.email && !user.emailVerified && !user.googleLinked && <VerifyBanner email={user.email} />}
+
       <div className="two" style={{ gap: 20, alignItems: "start" }}>
-        <div className="panel">
-          <h3 style={{ fontSize: 19 }}>Your access</h3>
-          {!owned.length && !courseGrants.length && <p className="note">Nothing premium yet. Free courses, problems and the compiler are open to you.</p>}
-          <ul className="ck">
-            {owned.map(([id, f]) => (
-              <li key={id}>
-                <b style={{ color: "var(--color-fg)" }}>{f.title}</b>
-                {f.paid ? (f.expiresAt ? ` · until ${fmt(f.expiresAt)}` : " · lifetime") : " · free for everyone"}
-              </li>
-            ))}
-            {courseGrants.map((g, i) => (
-              <li key={i}>
-                <Link className="linkish" to={`/courses/${g.type === "course" ? g.id : g.courseId}`}>
-                  {g.type === "course" ? `Course: ${g.id}` : `Module of ${g.courseId}`}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <Link className="btn ghost" to="/premium" style={{ marginTop: 14 }}>
-            See premium plans
-          </Link>
-        </div>
         <div className="panel">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ fontSize: 19 }}>Profile</h3>
@@ -164,17 +69,91 @@ function Profile({ user, features }) {
             <dl className="kv">
               <dt>Name</dt>
               <dd>{user.name}</dd>
+              <dt>Email</dt>
+              <dd>
+                {user.email || "—"}{" "}
+                {user.emailVerified && <ShieldCheck className="h-4 w-4 ok" style={{ display: "inline", verticalAlign: -3 }} aria-label="Confirmed" />}
+              </dd>
               <dt>Phone</dt>
               <dd>{user.phone || "—"}</dd>
-              <dt>College</dt>
-              <dd>{user.collegeName || user.college || "—"}</dd>
-              <dt>Year</dt>
-              <dd>{user.year || "—"}</dd>
-              <dt>Problems solved</dt>
-              <dd>{user.progress?.solved?.length || 0}</dd>
+              {admin ? (
+                <>
+                  <dt>Organisation</dt>
+                  <dd>{user.organization || "—"}</dd>
+                </>
+              ) : (
+                <>
+                  <dt>College</dt>
+                  <dd>{user.college || "—"}</dd>
+                  <dt>Domain</dt>
+                  <dd>{user.domain || "—"}</dd>
+                  <dt>Resume</dt>
+                  <dd>
+                    {user.resumeLink ? (
+                      <a className="linkish" href={user.resumeLink} target="_blank" rel="noopener noreferrer">
+                        Open
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </dd>
+                </>
+              )}
+              <dt>Member since</dt>
+              <dd>{fmtDay(user.createdAt)}</dd>
             </dl>
           )}
         </div>
+
+        <div className="panel">
+          <h3 style={{ fontSize: 19 }}>Password and sign-in</h3>
+          <div style={{ marginTop: 14 }}>
+            <ChangePasswordForm />
+          </div>
+          <div style={{ borderTop: "1px solid var(--color-border)", marginTop: 20, paddingTop: 16 }}>
+            <p className="note" style={{ marginTop: 0, fontSize: 14 }}>Lost a phone or used a shared computer? Sign out every device at once.</p>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => confirm("Sign out on every device, including this one?") && logout(true)}
+            >
+              Sign out everywhere
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginTop: 20 }}>
+        <h3 style={{ fontSize: 19 }}>Your premium access</h3>
+        {features === null ? (
+          <p className="note">
+            {user.email && !user.emailVerified && !user.googleLinked
+              ? "Confirm your email to link purchases made with this address."
+              : "Purchases couldn't be loaded right now."}
+          </p>
+        ) : (
+          <>
+            {!owned.length && !courseGrants.length && <p className="note">Nothing premium yet. Free courses, problems and the compiler are open to you.</p>}
+            <ul className="ck">
+              {owned.map(([id, f]) => (
+                <li key={id}>
+                  <b style={{ color: "var(--color-fg)" }}>{f.title}</b>
+                  {f.paid ? (f.expiresAt ? ` · until ${fmtDay(f.expiresAt)}` : " · lifetime") : " · free for everyone"}
+                </li>
+              ))}
+              {courseGrants.map((g, i) => (
+                <li key={i}>
+                  <Link className="linkish" to={`/courses/${g.type === "course" ? g.id : g.courseId}`}>
+                    {g.type === "course" ? `Course: ${g.id}` : `Module of ${g.courseId}`}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        <Link className="btn ghost" to="/premium" style={{ marginTop: 14 }}>
+          See premium plans
+        </Link>
       </div>
 
       <h3 style={{ fontSize: 19, margin: "28px 0 12px" }}>Purchases</h3>
@@ -201,7 +180,7 @@ function Profile({ user, features }) {
                 <tr key={p.id}>
                   <td>{p.title}</td>
                   <td>{rupees(p.amount)}</td>
-                  <td>{fmt(p.createdAt)}</td>
+                  <td>{fmtDay(p.createdAt)}</td>
                   <td>
                     {p.status === "paid" ? (
                       <span className="ok">
@@ -225,44 +204,81 @@ function Profile({ user, features }) {
   );
 }
 
-function ProfileForm({ user, onDone }) {
-  const [f, setF] = useState({ name: user.name, phone: user.phone || "", college: user.college || "", year: user.year || "", password: "", newPassword: "" });
+function VerifyBanner({ email }) {
   const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="panel" style={{ marginBottom: 20, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+      <MailWarning className="h-5 w-5" style={{ color: "var(--color-accent)", flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 220 }}>
+        <b>Confirm your email</b>
+        <p className="note" style={{ margin: "2px 0 0", fontSize: 14 }}>
+          {msg || `We sent a link to ${email}. Confirming it keeps your account recoverable.`}
+        </p>
+      </div>
+      <button
+        type="button"
+        className="btn ghost"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            setMsg((await authApi.resendVerification())?.message || "A new link is on its way.");
+          } catch (e) {
+            setMsg(e.message);
+          }
+          setBusy(false);
+        }}
+      >
+        {busy ? "Sending…" : "Resend link"}
+      </button>
+    </div>
+  );
+}
+
+function ProfileForm({ user, onDone }) {
+  const admin = isAdminRole(user);
+  const [f, setF] = useState({ name: user.name || "", phone: user.phone || "", domain: user.domain || "", resumeLink: user.resumeLink || "", organization: user.organization || "" });
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   async function save(e) {
     e.preventDefault();
     setMsg("");
+    setBusy(true);
     try {
-      await updateProfile(f.newPassword ? f : { ...f, password: undefined, newPassword: undefined });
+      const body = { name: f.name.trim(), phone: f.phone.trim() };
+      if (admin) body.organization = f.organization.trim();
+      else Object.assign(body, { domain: f.domain.trim(), resumeLink: f.resumeLink.trim() });
+      await updateProfile(body);
       onDone();
     } catch (x) {
       setMsg(x.message);
     }
+    setBusy(false);
   }
   return (
     <form onSubmit={save}>
       <label className="l">Name</label>
-      <input className="inp" value={f.name} onChange={set("name")} />
-      <div className="two">
-        <div>
-          <label className="l">Phone</label>
-          <input className="inp" value={f.phone} onChange={set("phone")} />
-        </div>
-        <div>
-          <label className="l">Year</label>
-          <input className="inp" value={f.year} onChange={set("year")} />
-        </div>
-      </div>
-      <label className="l">College</label>
-      <input className="inp" value={f.college} onChange={set("college")} />
-      <label className="l">Change password (optional)</label>
-      <div className="two">
-        <input className="inp" type="password" value={f.password} onChange={set("password")} placeholder="Current password" autoComplete="current-password" />
-        <input className="inp" type="password" value={f.newPassword} onChange={set("newPassword")} placeholder="New password" autoComplete="new-password" />
-      </div>
+      <input className="inp" value={f.name} onChange={set("name")} required maxLength={100} />
+      <label className="l">Phone</label>
+      <input className="inp" type="tel" value={f.phone} onChange={set("phone")} maxLength={20} />
+      {admin ? (
+        <>
+          <label className="l">Organisation</label>
+          <input className="inp" value={f.organization} onChange={set("organization")} maxLength={150} />
+        </>
+      ) : (
+        <>
+          <label className="l">Domain</label>
+          <input className="inp" value={f.domain} onChange={set("domain")} maxLength={100} placeholder="SDE, Data, Product…" />
+          <label className="l">Resume link</label>
+          <input className="inp" type="url" value={f.resumeLink} onChange={set("resumeLink")} maxLength={1000} placeholder="https://drive.google.com/…" />
+        </>
+      )}
       {msg && <p className="note bad">{msg}</p>}
-      <button className="btn" style={{ marginTop: 14 }}>
-        Save
+      <button className="btn" style={{ marginTop: 14 }} disabled={busy}>
+        {busy ? "Saving…" : "Save"}
       </button>
     </form>
   );

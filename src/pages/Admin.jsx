@@ -1,15 +1,24 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import {
-  Lock, LogOut, UploadCloud, CalendarCheck, ClipboardList, Inbox as Inbox_, BookOpen, Mic, KeyRound, Settings2, Download, Plus, Trash2, Send, RotateCcw, CheckCircle2, Info, History, Award,
-  CreditCard, BadgeIndianRupee, UsersRound, Code2, Cpu,
+  BadgeIndianRupee, BookOpen, Building2, ClipboardList, Code2, Cpu, CreditCard, FileQuestion, Gauge, Inbox as Inbox_, KeyRound, Layers, LogOut, Mic,
+  School, Settings2, UserCog, UsersRound,
 } from "lucide-react";
-import WhatsAppIcon from "../components/WhatsAppIcon";
-import { buildWaLink, openWhatsApp, normalizePhone } from "../lib/whatsapp";
-import { ADMIN_PASSCODE } from "../lib/adminConfig";
-import { generateCertificate, downloadCertificate } from "../lib/certificate";
+import { Page } from "../components/ui";
+import { ForgotForm, SignInForm } from "../components/AuthForms";
+import { logout, useAccount } from "../lib/account";
+import { ROLE_LABELS, isAdminRole } from "../lib/dataService";
 import { usePageSEO } from "../lib/seo";
-import { adminLogin, getAdminKey, setAdminKey } from "../lib/testsApi";
 
+// Data-service sections (sign in with an ADMIN or SUPERADMIN account).
+const Batches = lazy(() => import("./admin/ds/Batches"));
+const QuestionBank = lazy(() => import("./admin/ds/QuestionBank"));
+const superPanel = (name) => lazy(() => import("./admin/ds/SuperAdmin").then((m) => ({ default: m[name] })));
+const Overview = superPanel("Overview");
+const Onboarding = superPanel("Onboarding");
+const Accounts = superPanel("Accounts");
+const CollegesAdmin = superPanel("CollegesAdmin");
+
+// Site content sections, stored in Netlify (they also ask for the site's ADMIN_PASSWORD).
 const TestsAdmin = lazy(() => import("./admin/TestsAdmin"));
 const Inbox = lazy(() => import("./admin/Inbox"));
 const CoursesAdmin = lazy(() => import("./admin/CoursesAdmin"));
@@ -22,566 +31,112 @@ const UsersAdmin = lazy(() => import("./admin/UsersAdmin"));
 const ProblemsAdmin = lazy(() => import("./admin/ProblemsAdmin"));
 const RunnerAdmin = lazy(() => import("./admin/RunnerAdmin"));
 
-// Each tab: id, label, icon. Sessions lives in this file; the rest load on demand.
+// [id, label, icon, component, who]: "admin" = every admin, "super" = super admins only.
 const TABS = [
-  ["sessions", "Sessions", CalendarCheck],
-  ["inbox", "Inbox", Inbox_],
-  ["tests", "Tests", ClipboardList],
-  ["courses", "Courses", BookOpen],
-  ["problems", "Problems", Code2],
-  ["events", "Events", Mic],
-  ["users", "Users and colleges", UsersRound],
-  ["payments", "Payments", CreditCard],
-  ["pricing", "Prices and features", BadgeIndianRupee],
-  ["access", "Access codes", KeyRound],
-  ["runner", "Compiler", Cpu],
-  ["site", "Site and FAQ", Settings2],
+  ["overview", "Overview", Gauge, Overview, "super"],
+  ["batches", "Batches", Layers, Batches, "admin"],
+  ["questions", "Question bank", FileQuestion, QuestionBank, "admin"],
+  ["onboarding", "College requests", School, Onboarding, "super"],
+  ["accounts", "Accounts", UserCog, Accounts, "super"],
+  ["colleges", "Colleges", Building2, CollegesAdmin, "super"],
+  ["inbox", "Inbox", Inbox_, Inbox, "super", true],
+  ["tests", "Coding tests", ClipboardList, TestsAdmin, "super", true],
+  ["courses", "Courses", BookOpen, CoursesAdmin, "super", true],
+  ["problems", "Problems", Code2, ProblemsAdmin, "super", true],
+  ["events", "Events", Mic, EventsAdmin, "super", true],
+  ["users", "Purchases and users", UsersRound, UsersAdmin, "super", true],
+  ["payments", "Payments", CreditCard, PaymentsAdmin, "super", true],
+  ["pricing", "Prices and features", BadgeIndianRupee, AccessAdmin, "super", true],
+  ["access", "Access codes", KeyRound, AccessCodes, "super", true],
+  ["runner", "Compiler", Cpu, RunnerAdmin, "super", true],
+  ["site", "Site and FAQ", Settings2, SiteAdmin, "super", true],
 ];
-const PANELS = {
-  inbox: Inbox,
-  tests: TestsAdmin,
-  courses: CoursesAdmin,
-  problems: ProblemsAdmin,
-  events: EventsAdmin,
-  users: UsersAdmin,
-  payments: PaymentsAdmin,
-  pricing: AccessAdmin,
-  access: AccessCodes,
-  runner: RunnerAdmin,
-  site: SiteAdmin,
-};
-
-const SESSION_KEY = "algomate_admin_ok";
-const STORAGE_KEY = "algomate_admin_students";
-const LOG_KEY = "algomate_admin_log";
-
-function newId() {
-  return Math.random().toString(36).slice(2, 10);
-}
-
-function pick(row, keys) {
-  for (const k of Object.keys(row)) {
-    if (keys.includes(k.trim().toLowerCase())) return String(row[k] ?? "").trim();
-  }
-  return "";
-}
-
-function rowsFromSheet(json) {
-  return json.map((r) => ({
-    id: newId(),
-    name: pick(r, ["name", "full name", "student name"]),
-    phone: pick(r, ["phone", "phone number", "mobile", "mobile number", "contact"]),
-    domain: pick(r, ["domain", "track", "field"]),
-    resume: pick(r, ["resume link", "resume", "resume url"]),
-    slot: "",
-    mentor: "",
-    sent: false,
-    completed: false,
-  }));
-}
-
-function formatSlot(value) {
-  if (!value) return "TBD";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
-}
-
-function buildConfirmationMessage(row) {
-  const lines = [
-    `Hi ${row.name || "there"}! Your *${row.domain || "interview"}* session with Anobyt is confirmed.`,
-    "",
-    `Slot: ${formatSlot(row.slot)}`,
-  ];
-  if (row.mentor) lines.push(`Mentor: ${row.mentor}`);
-  lines.push("", "We'll share the Google Meet link closer to your slot. See you then!");
-  return lines.join("\n");
-}
+const TAB_KEY = "anobyt_admin_tab";
 
 export default function Admin() {
-  usePageSEO({
-    title: "Admin",
-    description: "Internal admin panel.",
-    path: "/admin",
-    noindex: true,
-  });
+  usePageSEO({ title: "Admin", description: "Internal admin panel.", path: "/admin", noindex: true });
+  const { user, loaded } = useAccount();
+  const [forgot, setForgot] = useState(false);
 
-  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1" || !!getAdminKey());
-  const [passInput, setPassInput] = useState("");
-  const [passError, setPassError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState(() => sessionStorage.getItem("anobyt_admin_tab") || "sessions");
+  if (!loaded) return <Page narrow={420}><p className="note">Loading…</p></Page>;
 
-  function chooseTab(next) {
-    setTab(next);
-    sessionStorage.setItem("anobyt_admin_tab", next);
-  }
-
-  // The server password (ADMIN_PASSWORD in Netlify) unlocks everything,
-  // including tests, which are stored on the server. The old built-in
-  // passcode still opens the Sessions tab, which only lives in this browser.
-  async function handleUnlock(e) {
-    e.preventDefault();
-    setBusy(true);
-    const server = await adminLogin(passInput);
-    setBusy(false);
-    if (server.ok) setAdminKey(passInput);
-    if (server.ok || passInput === ADMIN_PASSCODE) {
-      sessionStorage.setItem(SESSION_KEY, "1");
-      setUnlocked(true);
-      setPassError("");
-    } else {
-      setPassError("Incorrect password.");
-    }
-  }
-
-  function lock() {
-    sessionStorage.removeItem(SESSION_KEY);
-    setAdminKey("");
-    setPassInput("");
-    setUnlocked(false);
-  }
-
-  if (!unlocked) {
+  if (!user)
     return (
-      <section className="page">
-        <div className="wrap" style={{ maxWidth: 420 }}>
-          <div className="panel" style={{ textAlign: "center" }}>
-            <div className="ic" style={{ margin: "0 auto" }}>
-              <Lock className="h-5 w-5" />
-            </div>
-            <h1 style={{ fontSize: 26, margin: "16px 0 6px" }}>Admin access</h1>
-            <p className="note" style={{ marginTop: 0 }}>Enter the admin password to manage sessions and tests.</p>
-            <form onSubmit={handleUnlock} style={{ marginTop: 18 }}>
-              <input
-                type="password"
-                value={passInput}
-                onChange={(e) => setPassInput(e.target.value)}
-                placeholder="Password"
-                aria-label="Admin password"
-                className="inp"
-                style={{ textAlign: "center" }}
-                autoFocus
-              />
-              {passError && <p className="note bad">{passError}</p>}
-              <button type="submit" className="btn" style={{ width: "100%", marginTop: 14 }} disabled={busy || !passInput}>
-                {busy ? "Checking…" : "Unlock"}
-              </button>
-            </form>
-          </div>
+      <Page narrow={440}>
+        <div style={{ textAlign: "center", marginBottom: 18 }}>
+          <h1 style={{ fontSize: 26, margin: "0 0 6px" }}>Admin sign-in</h1>
+          <p className="note" style={{ marginTop: 0 }}>Use your Anobyt admin account.</p>
         </div>
-      </section>
+        {forgot ? <ForgotForm onMode={() => setForgot(false)} /> : <SignInForm adminOnly onMode={() => setForgot(true)} />}
+      </Page>
     );
-  }
+
+  if (!isAdminRole(user))
+    return (
+      <Page narrow={520}>
+        <div className="panel" style={{ textAlign: "center" }}>
+          <h1 style={{ fontSize: 24, margin: "0 0 8px" }}>Admins only</h1>
+          <p className="note">
+            You're signed in as {user.name} ({ROLE_LABELS[user.role] || user.role}). This area is for trainers, companies and the Anobyt team.
+          </p>
+          <button type="button" className="btn ghost" style={{ marginTop: 12 }} onClick={() => logout()}>
+            <LogOut className="h-4 w-4" /> Sign in with another account
+          </button>
+        </div>
+      </Page>
+    );
+
+  return <Panel me={user} />;
+}
+
+function Panel({ me }) {
+  const isSuper = me.role === "SUPERADMIN";
+  const tabs = TABS.filter((t) => t[4] === "admin" || isSuper);
+  const [tab, setTab] = useState(() => {
+    const saved = sessionStorage.getItem(TAB_KEY);
+    return tabs.some((t) => t[0] === saved) ? saved : tabs[0][0];
+  });
+  const choose = (id) => {
+    setTab(id);
+    sessionStorage.setItem(TAB_KEY, id);
+  };
+  const current = tabs.find((t) => t[0] === tab) || tabs[0];
+  const C = current[3];
+  const main = tabs.filter((t) => !t[5]);
+  const site = tabs.filter((t) => t[5]);
 
   return (
     <section className="page">
       <div className="wrap" style={{ maxWidth: 1200 }}>
         <div className="admin-top">
           <div>
-            <span className="eyebrow">Admin panel</span>
-            <h1 style={{ fontSize: "clamp(28px, 4vw, 38px)", marginTop: 6 }}>Manage Anobyt</h1>
+            <span className="eyebrow">{ROLE_LABELS[me.role]}</span>
+            <h1 style={{ fontSize: "clamp(28px, 4vw, 38px)", marginTop: 6 }}>{isSuper ? "Manage Anobyt" : `Hi, ${me.name.split(" ")[0]}`}</h1>
           </div>
-          <button type="button" className="btn ghost" onClick={lock}>
-            <LogOut className="h-4 w-4" /> Lock
+          <button type="button" className="btn ghost" onClick={() => logout()}>
+            <LogOut className="h-4 w-4" /> Sign out
           </button>
         </div>
         <div className="seg tabs" role="tablist" aria-label="Admin sections">
-          {TABS.map(([id, label, Icon]) => (
-            <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? "on" : ""} onClick={() => chooseTab(id)}>
+          {main.map(([id, label, Icon]) => (
+            <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? "on" : ""} onClick={() => choose(id)}>
               <Icon className="h-4 w-4" /> {label}
             </button>
           ))}
         </div>
-        {tab === "sessions" || !PANELS[tab] ? (
-          <Sessions />
-        ) : (
-          <Suspense fallback={<p className="note">Loading…</p>}>
-            <Panel tab={tab} />
-          </Suspense>
+        {site.length > 0 && (
+          <div className="seg tabs" role="tablist" aria-label="Site content" style={{ marginTop: -6, opacity: 0.9 }}>
+            {site.map(([id, label, Icon]) => (
+              <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? "on" : ""} onClick={() => choose(id)}>
+                <Icon className="h-4 w-4" /> {label}
+              </button>
+            ))}
+          </div>
         )}
+        <Suspense fallback={<p className="note">Loading…</p>}>
+          <C me={me} onGo={choose} />
+        </Suspense>
       </div>
     </section>
-  );
-}
-
-function Panel({ tab }) {
-  const C = PANELS[tab];
-  return <C />;
-}
-
-function Sessions() {
-  const [rows, setRows] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [fileError, setFileError] = useState("");
-
-  const [log, setLog] = useState(() => {
-    try {
-      const raw = localStorage.getItem(LOG_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-  }, [rows]);
-
-  useEffect(() => {
-    localStorage.setItem(LOG_KEY, JSON.stringify(log));
-  }, [log]);
-
-  // Private audit trail — every time a confirmation goes out, it's recorded
-  // here for you only. The student never sees this; it's just so you have a
-  // record of who was notified and when, even though you're the one who
-  // triggers the send.
-  function logEvent(row) {
-    setLog((prev) => [
-      { id: newId(), ts: Date.now(), name: row.name || "Unnamed", phone: row.phone, slot: row.slot },
-      ...prev,
-    ].slice(0, 100));
-  }
-
-  async function handleFile(e) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setFileError("");
-    try {
-      const XLSX = await import("xlsx");
-      const buffer = await f.arrayBuffer();
-      const wb = XLSX.read(buffer, { type: "array" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-      const parsed = rowsFromSheet(json).filter((r) => r.name || r.phone);
-      if (parsed.length === 0) {
-        setFileError("No usable rows found. Make sure the sheet has Name / Phone columns.");
-        return;
-      }
-      setRows((prev) => [...prev, ...parsed]);
-    } catch {
-      setFileError("Couldn't read that file. Try exporting as .xlsx and re-uploading.");
-    }
-    e.target.value = "";
-  }
-
-  function updateRow(id, field, value) {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
-  }
-
-  function removeRow(id) {
-    setRows((prev) => prev.filter((r) => r.id !== id));
-  }
-
-  function addRow() {
-    setRows((prev) => [
-      ...prev,
-      { id: newId(), name: "", phone: "", domain: "", resume: "", slot: "", mentor: "", sent: false, completed: false },
-    ]);
-  }
-
-  function sendOne(row) {
-    const digits = normalizePhone(row.phone);
-    if (digits.length < 12) {
-      alert("This student's phone number doesn't look valid.");
-      return;
-    }
-    openWhatsApp(buildWaLink(digits, buildConfirmationMessage(row)));
-    updateRow(row.id, "sent", true);
-    logEvent(row);
-  }
-
-  // Issued once a session has actually happened — an Anobyt certificate of
-  // completion, not a claim of any outside accreditation. Downloads as a
-  // PNG so it's easy to share straight into the WhatsApp chat with the
-  // student, same as everything else here.
-  function issueCertificate(row) {
-    const dataUrl = generateCertificate({
-      name: row.name,
-      domain: row.domain,
-      mentor: row.mentor,
-    });
-    const safeName = (row.name || "student").trim().replace(/\s+/g, "-").toLowerCase();
-    downloadCertificate(dataUrl, `anobyt-certificate-${safeName}.png`);
-  }
-
-  function sendAll() {
-    const pending = rows.filter((r) => !r.sent && r.slot && normalizePhone(r.phone).length >= 12);
-    if (pending.length === 0) {
-      alert("No pending students with a time slot set.");
-      return;
-    }
-    const ok = confirm(
-      `This opens ${pending.length} WhatsApp chat${pending.length === 1 ? "" : "s"} in new tabs, one per student.\n\n` +
-        "Your browser may block pop-ups after the first one — if so, allow pop-ups for this site and try again.\n\nContinue?"
-    );
-    if (!ok) return;
-    pending.forEach((row, i) => {
-      setTimeout(() => sendOne(row), i * 600);
-    });
-  }
-
-  async function downloadSheet() {
-    const XLSX = await import("xlsx");
-    const data = rows.map((r) => ({
-      Name: r.name,
-      Phone: r.phone,
-      Domain: r.domain,
-      "Resume Link": r.resume,
-      Slot: formatSlot(r.slot),
-      Mentor: r.mentor,
-      "WhatsApp Sent": r.sent ? "Yes" : "No",
-      Completed: r.completed ? "Yes" : "No",
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Students");
-    XLSX.writeFile(wb, "anobyt-students-updated.xlsx");
-  }
-
-  function clearAll() {
-    if (!confirm("Remove all students from this list? This can't be undone.")) return;
-    setRows([]);
-  }
-
-  return (
-    <div>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-(--color-fg)">Student sessions</h2>
-          <p className="mt-1 text-sm text-(--color-fg-faint)">
-            Upload the Excel sheet you received on WhatsApp, assign slots, and send confirmations.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <label
-            htmlFor="admin-file"
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-(--color-border-strong) px-4 py-2 text-xs font-semibold text-(--color-fg) hover:bg-(--color-input) transition-colors"
-          >
-            <UploadCloud className="h-3.5 w-3.5" />
-            Upload Excel
-          </label>
-          <input id="admin-file" type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" />
-
-          <button
-            onClick={addRow}
-            className="inline-flex items-center gap-2 rounded-full border border-(--color-border-strong) px-4 py-2 text-xs font-semibold text-(--color-fg) hover:bg-(--color-input) transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add Student
-          </button>
-
-          <button
-            onClick={downloadSheet}
-            disabled={rows.length === 0}
-            className="inline-flex items-center gap-2 rounded-full border border-(--color-border-strong) px-4 py-2 text-xs font-semibold text-(--color-fg) hover:bg-(--color-input) transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Download Sheet
-          </button>
-
-          <button
-            onClick={clearAll}
-            disabled={rows.length === 0}
-            className="inline-flex items-center gap-2 rounded-full border border-(--color-border-strong) px-4 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Clear All
-          </button>
-        </div>
-      </div>
-
-      {fileError && <p className="mt-4 text-sm text-amber-400">{fileError}</p>}
-
-      <div className="mt-4 flex items-start gap-2 rounded-xl border border-(--color-border) bg-(--color-card) px-4 py-3 text-xs text-(--color-fg-faint)">
-        <Info className="h-4 w-4 shrink-0 text-(--color-fg-faint) mt-0.5" />
-        <p>
-          Set a slot for each student, then click their WhatsApp button to open a
-          pre-filled confirmation — you still tap Send yourself. "Send All" does this
-          for every student with a slot set, one tab at a time. Once a session has
-          actually happened, tick <span className="text-(--color-fg)">Completed</span> to
-          unlock a downloadable certificate of completion you can share with them.
-        </p>
-      </div>
-
-      {rows.length > 0 && (
-        <div className="mt-4">
-          <button
-            onClick={sendAll}
-            className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-xs font-semibold text-white hover:brightness-110 transition-[filter]"
-          >
-            <WhatsAppIcon className="h-3.5 w-3.5" />
-            Send All Pending Confirmations
-          </button>
-        </div>
-      )}
-
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-(--color-border)">
-        <table className="w-full min-w-[900px] text-left text-sm">
-          <thead className="bg-(--color-card-alt) text-xs uppercase tracking-wide text-(--color-fg-faint)">
-            <tr>
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Phone</th>
-              <th className="px-4 py-3 font-medium">Domain</th>
-              <th className="px-4 py-3 font-medium">Resume</th>
-              <th className="px-4 py-3 font-medium">Time Slot</th>
-              <th className="px-4 py-3 font-medium">Mentor</th>
-              <th className="px-4 py-3 font-medium text-center">Status</th>
-              <th className="px-4 py-3 font-medium text-center">Completed</th>
-              <th className="px-4 py-3 font-medium">Certificate</th>
-              <th className="px-4 py-3 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-(--color-border)">
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={10} className="px-4 py-10 text-center text-(--color-fg-faint)">
-                  No students yet — upload an Excel sheet or add one manually.
-                </td>
-              </tr>
-            )}
-            {rows.map((row) => (
-              <tr key={row.id} className="align-top">
-                <td className="px-4 py-2.5">
-                  <input
-                    value={row.name}
-                    onChange={(e) => updateRow(row.id, "name", e.target.value)}
-                    className="w-36 rounded-lg border border-(--color-border) bg-(--color-input) px-2.5 py-1.5 text-(--color-fg) outline-none focus:border-(--color-accent)"
-                  />
-                </td>
-                <td className="px-4 py-2.5">
-                  <input
-                    value={row.phone}
-                    onChange={(e) => updateRow(row.id, "phone", e.target.value)}
-                    className="w-32 rounded-lg border border-(--color-border) bg-(--color-input) px-2.5 py-1.5 text-(--color-fg) outline-none focus:border-(--color-accent)"
-                  />
-                </td>
-                <td className="px-4 py-2.5">
-                  <input
-                    value={row.domain}
-                    onChange={(e) => updateRow(row.id, "domain", e.target.value)}
-                    className="w-40 rounded-lg border border-(--color-border) bg-(--color-input) px-2.5 py-1.5 text-(--color-fg) outline-none focus:border-(--color-accent)"
-                  />
-                </td>
-                <td className="px-4 py-2.5">
-                  {row.resume ? (
-                    <a
-                      href={row.resume}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-(--color-accent) hover:opacity-75 transition-opacity underline underline-offset-2"
-                    >
-                      Link
-                    </a>
-                  ) : (
-                    <span className="text-(--color-fg-faint)">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-2.5">
-                  <input
-                    type="datetime-local"
-                    value={row.slot}
-                    onChange={(e) => updateRow(row.id, "slot", e.target.value)}
-                    className="rounded-lg border border-(--color-border) bg-(--color-input) px-2.5 py-1.5 text-(--color-fg) outline-none focus:border-(--color-accent)"
-                  />
-                </td>
-                <td className="px-4 py-2.5">
-                  <input
-                    value={row.mentor}
-                    onChange={(e) => updateRow(row.id, "mentor", e.target.value)}
-                    placeholder="Mentor name"
-                    className="w-32 rounded-lg border border-(--color-border) bg-(--color-input) px-2.5 py-1.5 text-(--color-fg) placeholder-(--color-fg-faint) outline-none focus:border-(--color-accent)"
-                  />
-                </td>
-                <td className="px-4 py-2.5 text-center">
-                  {row.sent ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-(--color-accent-emerald)">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      Sent
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => sendOne(row)}
-                      disabled={!row.phone}
-                      title={row.slot ? "Send confirmation" : "No slot set yet — will send as TBD"}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:brightness-110 transition-[filter] disabled:opacity-30"
-                    >
-                      <Send className="h-3 w-3" />
-                      Send
-                    </button>
-                  )}
-                </td>
-                <td className="px-4 py-2.5 text-center">
-                  <input
-                    type="checkbox"
-                    checked={row.completed}
-                    onChange={(e) => updateRow(row.id, "completed", e.target.checked)}
-                    aria-label="Session completed"
-                    className="h-4 w-4 accent-(--color-accent-solid)"
-                  />
-                </td>
-                <td className="px-4 py-2.5">
-                  <button
-                    onClick={() => issueCertificate(row)}
-                    disabled={!row.completed || !row.name}
-                    title={
-                      !row.completed
-                        ? "Mark the session completed first"
-                        : "Download a certificate of completion for this student"
-                    }
-                    className="inline-flex items-center gap-1.5 rounded-full border border-(--color-border-strong) px-3 py-1.5 text-xs font-semibold text-(--color-fg) hover:bg-(--color-input) transition-colors disabled:opacity-30"
-                  >
-                    <Award className="h-3 w-3" />
-                    Certificate
-                  </button>
-                </td>
-                <td className="px-4 py-2.5">
-                  <button
-                    onClick={() => removeRow(row.id)}
-                    aria-label="Remove student"
-                    className="text-(--color-fg-faint) hover:text-rose-400 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {log.length > 0 && (
-        <div className="mt-8">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-(--color-fg)">
-            <History className="h-4 w-4 text-(--color-fg-faint)" />
-            Activity Log
-          </h2>
-          <p className="mt-1 text-xs text-(--color-fg-faint)">
-            A private record of every confirmation you've sent — only visible here, never to students.
-          </p>
-          <div className="mt-3 max-h-64 overflow-y-auto rounded-xl border border-(--color-border)">
-            <ul className="divide-y divide-(--color-border)">
-              {log.map((entry) => (
-                <li key={entry.id} className="flex items-center justify-between gap-4 px-4 py-2.5 text-xs">
-                  <span className="text-(--color-fg-muted)">
-                    Sent confirmation to <span className="font-medium text-(--color-fg)">{entry.name}</span>
-                    {entry.slot ? <span className="text-(--color-fg-faint)"> — slot {formatSlot(entry.slot)}</span> : null}
-                  </span>
-                  <span className="shrink-0 text-(--color-fg-faint)">
-                    {new Date(entry.ts).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-    </div>
   );
 }
