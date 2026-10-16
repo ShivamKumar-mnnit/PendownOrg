@@ -219,7 +219,7 @@ export default function ProblemsAdmin() {
 
   return (
     <div>
-      <SectionTop title="Practice problems" text="Every problem on the Practice pages. Set what is free or premium, change the order, edit statements, hints and solutions, hide problems, or add your own: function problems (JavaScript and Python) or input/output problems in any language.">
+      <SectionTop title="Practice problems" text="Every problem on the Practice pages. Set what is free or premium, change the order, edit statements, hints and solutions, hide problems, or add your own: function problems (JavaScript, Python, Java, C and C++) or input/output problems in any language.">
         <button type="button" className="btn" onClick={() => setEditing(blank("function", year))}>
           <Plus className="h-4 w-4" /> Function problem
         </button>
@@ -475,7 +475,7 @@ function ProblemEditor({ initial, books: allBooks, onCancel, onSaved }) {
       {p.kind === "function" ? (
         <div className="panel" style={{ marginTop: 16 }}>
           <h3 style={{ fontSize: 19 }}>Function and tests</h3>
-          <p className="note">Students write this function in JavaScript or Python. Inputs are a comma-separated list of JSON values, one per parameter, e.g. <span className="mono">[3, 1, 2], 5</span> or <span className="mono">"hello"</span>.</p>
+          <p className="note">Students write this function in JavaScript or Python, and also Java, C and C++ when every test uses whole numbers, true/false, text, lists of these or lists of number lists (the typed signature is worked out from the tests). Inputs are a comma-separated list of JSON values, one per parameter, e.g. <span className="mono">[3, 1, 2], 5</span> or <span className="mono">"hello"</span>.</p>
           <div className="two">
             <Field label="Function name">
               <input className="inp mono" value={p.fn} onChange={(e) => set({ fn: e.target.value.trim() })} />

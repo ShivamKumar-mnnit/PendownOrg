@@ -12,6 +12,7 @@ import { call } from "./testsApi";
 import { runCode } from "./compiler";
 import { syncSolved, useAccount, userHeaders } from "./account";
 import { getStudent, markProblemSolved } from "./student";
+import { TYPED_LANGS, signatureOf, typedHarness, typedStarter } from "./harness";
 
 const clone = (x) => JSON.parse(JSON.stringify(x));
 const enc = encodeURIComponent;
@@ -61,7 +62,9 @@ export function groupByTopic(list) {
 }
 
 export function languagesFor(p) {
-  return p.kind === "stdio" ? p.languages || ["python", "javascript", "java", "c", "cpp"] : ["javascript", "python"];
+  if (p.kind === "stdio") return p.languages || ["python", "javascript", "java", "c", "cpp"];
+  // Java, C and C++ need a typed signature, worked out from the test cases (src/lib/harness.js).
+  return signatureOf(p) ? ["javascript", "python", ...TYPED_LANGS] : ["javascript", "python"];
 }
 
 const STDIO_STARTER = {
@@ -74,6 +77,7 @@ const STDIO_STARTER = {
 
 export function starterFor(p, lang) {
   if (p.kind === "stdio") return p.starter?.[lang] || STDIO_STARTER[lang] || "";
+  if (TYPED_LANGS.includes(lang)) return typedStarter(p, lang);
   const hint = p.ll?.length ? "head is a node with val and next (None/null at the end)." : "write your solution here";
   if (lang === "python") return `def ${p.fn}(${p.params}):\n    # ${hint}\n    pass\n`;
   return `function ${p.fn}(${p.params}) {\n  // ${hint}\n\n}\n`;
@@ -199,6 +203,21 @@ for _args in _tests:
 async function judgePython(p, code) {
   if (!new RegExp(`def\\s+${p.fn}\\s*\\(`).test(code)) return { err: `Define a function named ${p.fn} with def ${p.fn}(${p.params}):` };
   const out = await runCode({ language: "python", code: pythonHarness(p, code), stdin: JSON.stringify(p.tests.map((t) => t.args)) });
+  return readMarked(p, out);
+}
+
+/** Java, C and C++: the harness has the tests built in, so it needs no input. */
+async function judgeTyped(p, lang, code) {
+  if (!new RegExp(`\\b${p.fn}\\s*\\(`).test(code)) return { err: `Keep the function named ${p.fn} from the starter code.` };
+  // Java allows one public class per file, and the harness has public class Main.
+  const src = lang === "java" ? code.replace(/public\s+(final\s+)?class\s+Solution\b/, "class Solution") : code;
+  const program = typedHarness(p, lang, src);
+  if (!program) return { err: "This problem can't be solved in this language yet. Try JavaScript or Python." };
+  return readMarked(p, await runCode({ language: lang, code: program, stdin: "" }));
+}
+
+/** Reads the "@@R <json>" / "@@E <error>" lines a harness prints, one per test. */
+function readMarked(p, out) {
   const lines = String(out.stdout || "")
     .split("\n")
     .filter((l) => l.startsWith("@@"));
@@ -240,7 +259,14 @@ export async function judgeAnswer(p, lang, code, mode = "submit") {
   const q = p.kind === "stdio" ? p : { ...p, tests: run ? (p.tests || []).slice(0, 2) : p.tests || [] };
   let r;
   try {
-    r = p.kind === "stdio" ? await judgeStdio(q, lang, code, run) : lang === "python" ? await judgePython(q, code) : judgeJs(q, code);
+    r =
+      p.kind === "stdio"
+        ? await judgeStdio(q, lang, code, run)
+        : lang === "python"
+          ? await judgePython(q, code)
+          : TYPED_LANGS.includes(lang)
+            ? await judgeTyped(q, lang, code)
+            : judgeJs(q, code);
   } catch (e) {
     return { err: e.message || "Couldn't check your answer. Please try again." };
   }

@@ -5,6 +5,7 @@ import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
 import { CheckCircle2, Loader2, Play, RotateCcw, Send, SquareTerminal, XCircle } from "lucide-react";
 import { getLanguage, runCode } from "../lib/compiler";
 import { LANG_NAMES, judgeAnswer, languagesFor, starterFor } from "../lib/problemBank";
+import { TYPED_LANGS } from "../lib/harness";
 import { useIsDark } from "../lib/useIsDark";
 import RunOutput from "./RunOutput";
 
@@ -87,6 +88,9 @@ export default function Solver({ p, compact = false, onSolved }) {
   }
 
   const passed = result?.res?.filter((x) => x.pass).length || 0;
+  // Java / C / C++ function answers have no main of their own, so they only run through the test harness.
+  const typed = p.kind !== "stdio" && TYPED_LANGS.includes(lang);
+  const canCustom = !typed;
 
   return (
     <div className={`solver${compact ? " compact" : ""}`}>
@@ -120,15 +124,23 @@ export default function Solver({ p, compact = false, onSolved }) {
         <button type="button" className="btn" onClick={() => runTests("submit")} disabled={Boolean(busy)} title="Check every test case and save your progress">
           {busy === "submit" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Submit solution
         </button>
-        <button type="button" className={`btn ghost${custom ? " on" : ""}`} onClick={() => setCustom(!custom)}>
-          <SquareTerminal className="h-4 w-4" /> Custom input
-        </button>
+        {canCustom && (
+          <button type="button" className={`btn ghost${custom ? " on" : ""}`} onClick={() => setCustom(!custom)}>
+            <SquareTerminal className="h-4 w-4" /> Custom input
+          </button>
+        )}
       </div>
       <div className="solver-hint">
-        {p.kind === "stdio" ? "Read from standard input and print the answer." : lang === "javascript" ? "Run code checks the samples instantly in your browser. Submit checks every test case." : "Your code runs on our code runner. Submit checks every test case."}
+        {p.kind === "stdio"
+          ? "Read from standard input and print the answer."
+          : lang === "javascript"
+            ? "Run code checks the samples instantly in your browser. Submit checks every test case."
+            : typed
+              ? "Fill in the function in the starter code; we call it for each test on our code runner. Don't add a main function."
+              : "Your code runs on our code runner. Submit checks every test case."}
       </div>
 
-      {custom && (
+      {custom && canCustom && (
         <div className="custom-run">
           <label className="l">Input (stdin)</label>
           <textarea className="inp code" rows={3} value={stdin} onChange={(e) => setStdin(e.target.value)} spellCheck={false} placeholder="Type the input your program reads" />
