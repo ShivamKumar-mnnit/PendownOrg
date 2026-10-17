@@ -16,7 +16,8 @@ function useLoad(fn) {
     let on = true;
     fn().then(
       (d) => on && setV(d ?? []),
-      (e) => on && setV({ error: e.message }),
+      // 404: a data-service version without this feature yet; show it as empty, not as an error.
+      (e) => on && setV(e.status === 404 ? [] : { error: e.message }),
     );
     return () => {
       on = false;

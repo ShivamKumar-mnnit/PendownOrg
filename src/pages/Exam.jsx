@@ -494,7 +494,9 @@ export function Result() {
     );
   if (!r) return <Page narrow={620}><p className="note">Loading your result…</p></Page>;
 
-  const p = Math.max(0, Math.round(r.percentage ?? 0));
+  // Older data-service versions send only score / maxScore.
+  const percentage = r.percentage ?? (r.maxScore ? (Math.max(0, r.score ?? 0) / r.maxScore) * 100 : 0);
+  const p = Math.max(0, Math.round(percentage));
   return (
     <Page narrow={860}>
       <span className="eyebrow">Result · attempt {r.attemptNumber}</span>
