@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { UserRound } from "lucide-react";
+import { Menu, UserRound, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import { useSettings } from "../lib/contentApi";
 import { useAccount } from "../lib/account";
@@ -51,14 +51,27 @@ function sectionFor(pathname) {
 export default function Navbar() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navRef = useRef(null);
+  const toggleRef = useRef(null);
+
+  // Close the mobile menu whenever the route changes.
+  useEffect(() => {
+    setMobileOpen(false);
+    setOpen(null);
+  }, [pathname]);
 
   useEffect(() => {
     function onClick(e) {
-      if (!navRef.current?.contains(e.target)) setOpen(null);
+      if (navRef.current?.contains(e.target) || toggleRef.current?.contains(e.target)) return;
+      setOpen(null);
+      setMobileOpen(false);
     }
     function onKey(e) {
-      if (e.key === "Escape") setOpen(null);
+      if (e.key === "Escape") {
+        setOpen(null);
+        setMobileOpen(false);
+      }
     }
     document.addEventListener("click", onClick);
     document.addEventListener("keydown", onKey);
@@ -102,7 +115,7 @@ export default function Navbar() {
             <img src="/anobyt-icon.svg" alt="" />
             Anobyt
           </Link>
-          <nav className="site-nav" ref={navRef}>
+          <nav id="site-nav" className={`site-nav${mobileOpen ? " open" : ""}`} ref={navRef}>
             {MENU.map(([key, value]) => {
               if (typeof value === "string") {
                 return (
@@ -151,6 +164,17 @@ export default function Navbar() {
           <Link className="btn" to="/book">
             Book<span className="hide-sm">a session</span>
           </Link>
+          <button
+            ref={toggleRef}
+            type="button"
+            className="nav-toggle"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            aria-controls="site-nav"
+            onClick={() => setMobileOpen((o) => !o)}
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
       </header>
     </>
