@@ -18,7 +18,6 @@ const COMPARE = [
   ["Free course modules and practice tests", true, true, true],
   ["Solutions and hints (as each year allows)", "On free problems", true, true],
   ["Premium course modules", false, false, true],
-  ["Create and share your own tests", false, false, true],
 ];
 
 const PAY_STEPS = [
@@ -42,7 +41,6 @@ export default function Premium() {
   const { items: courses } = useCollection("courses");
   const f = cfg?.features || {};
   const paidCourses = courses.filter((c) => c.tier === "premium" && c.price > 0);
-  const college = ["createTests", "studentData", "collegePanel"].filter((id) => f[id]?.enabled);
 
   const student = [
     { id: "free", name: "Free", perks: FREE_PERKS },
@@ -53,7 +51,7 @@ export default function Premium() {
   return (
     <Page>
       <Head eyebrow="Free and premium" title="Know exactly what you get">
-        Most of Anobyt is free. Premium opens the rest of the practice problems, solutions, premium courses and the test builder. Prices are shown up front and nothing renews by itself.
+        Most of Anobyt is free. Premium opens the rest of the practice problems, solutions, and premium courses. Prices are shown up front and nothing renews by itself.
       </Head>
 
       {!cfg ? (
@@ -194,39 +192,23 @@ export default function Premium() {
         <ShieldCheck className="h-4 w-4" /> Payments are verified on our server before anything unlocks. Your purchases are listed on your <Link to="/account" className="linkish">account page</Link>.
       </p>
 
-      {college.length > 0 && (
-        <>
-          <h2 style={{ fontSize: 28, margin: "56px 0 18px" }}>For teachers, TPOs and colleges</h2>
-          <div className="plans">
-            {college.map((id) => {
-              const x = f[id];
-              const has = features?.[id]?.has;
-              return (
-                <div key={id} className={`plan${id === "collegePanel" ? " best" : ""}`}>
-                  {id === "collegePanel" && <span className="badge">For colleges and TPOs</span>}
-                  <h3>{x.title}</h3>
-                  <p>{x.text}</p>
-                  <div className="price">
-                    {x.paid ? rupees(x.price) : "Free"}
-                    {x.paid && <small>{validity(x.days)}</small>}
-                  </div>
-                  {has ? (
-                    <Link className="btn ghost" to={LINKS[id]}>
-                      Open
-                    </Link>
-                  ) : x.paid ? (
-                    <Buy item={{ type: "feature", id }} price={x.price} label={`Get ${x.title.toLowerCase()}`} />
-                  ) : (
-                    <Link className="btn ghost" to={features ? LINKS[id] : "/account?mode=signup"}>
-                      {features ? "Open" : "Create a free account"}
-                    </Link>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+      <h2 style={{ fontSize: 28, margin: "56px 0 18px" }}>For trainers, TPOs and colleges</h2>
+      <div className="panel" style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ maxWidth: 640 }}>
+          <h3 style={{ fontSize: 20 }}>College panel</h3>
+          <p className="note" style={{ margin: "6px 0 0" }}>
+            Batches, student logins, proctored tests, mock interviews with Zoom links, scorecards and announcements. Priced per batch: send us your details and we'll set it up.
+          </p>
+        </div>
+        <div className="row">
+          <Link className="btn" to="/colleges#bulk-onboard">
+            Request a panel
+          </Link>
+          <Link className="btn ghost" to="/workspace">
+            Open my panel
+          </Link>
+        </div>
+      </div>
 
       {paidCourses.length > 0 && (
         <>

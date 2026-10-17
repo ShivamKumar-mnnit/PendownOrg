@@ -1124,6 +1124,11 @@ select option {
   .crumbs a { color: var(--color-fg-muted); }
   .crumbs a:hover { color: var(--color-accent); }
   .crumbs span { color: var(--color-fg); font-weight: 500; }
+  .ws-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 14px; }
+  .ws-list li { display: flex; gap: 12px; align-items: flex-start; }
+  .ws-list svg { flex: none; margin-top: 3px; color: var(--color-accent); }
+  .ws-list b { display: block; }
+  .ws-list span { display: block; color: var(--color-fg-muted); font-size: 15px; margin-top: 2px; }
   .ticks { list-style: none; margin: 10px 0 16px; padding: 0; display: grid; gap: 7px; font-size: 15px; }
   .ticks li { display: flex; gap: 8px; align-items: flex-start; color: var(--color-fg-muted); }
   .ticks svg { flex: none; margin-top: 3px; color: var(--color-accent-emerald); }

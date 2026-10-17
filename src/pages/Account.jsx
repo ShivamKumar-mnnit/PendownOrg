@@ -24,7 +24,6 @@ function Profile({ user, features }) {
     myPayments().then(setPays, () => setPays([]));
   }, []);
   const owned = Object.entries(features || {}).filter(([, f]) => f.has);
-  const workspace = features?.studentData?.has || features?.createTests?.has || features?.collegePanel?.has;
   const courseGrants = (user.grants || []).filter((g) => g.type !== "feature");
   const admin = isAdminRole(user);
 
@@ -42,9 +41,9 @@ function Profile({ user, features }) {
           <Link className="btn" to={admin ? "/admin" : "/dashboard"}>
             <LayoutDashboard className="h-4 w-4" /> {admin ? "Admin panel" : "Dashboard"}
           </Link>
-          {workspace && (
+          {admin && (
             <Link className="btn ghost" to="/workspace">
-              {features?.collegePanel?.has ? "College panel" : "Workspace"}
+              College panel
             </Link>
           )}
           <button type="button" className="btn ghost" onClick={() => logout()}>

@@ -182,23 +182,6 @@ export const payManually = (item, utr) => authed("/api/pay/manual", { method: "P
 export const rupees = (n) => "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 export const validity = (days) => (days ? (days % 365 === 0 ? `${days / 365} year${days > 365 ? "s" : ""}` : `${days} days`) : "lifetime");
 
-// ---- Workspace (student records) ----
-
-export const listStudents = () => authed("/api/workspace/students");
-export const addStudent = (s) => authed("/api/workspace/students", { method: "POST", body: s }).then((d) => d.student);
-export const saveStudent = (id, s) => authed(`/api/workspace/students/${enc(id)}`, { method: "PUT", body: s }).then((d) => d.student);
-export const removeStudent = (id) => authed(`/api/workspace/students/${enc(id)}`, { method: "DELETE" });
-export const importStudents = (rows) => authed("/api/workspace/students/import", { method: "POST", body: { rows } });
-
-// ---- Tests owned by the signed-in user ----
-
-export const myTests = () => authed("/api/tests?mine=1");
-export const myTest = (id) => authed(`/api/tests/${enc(id)}?full=1`).then((d) => d.test);
-export const createMyTest = (t) => authed("/api/tests", { method: "POST", body: t }).then((d) => d.test);
-export const updateMyTest = (id, t) => authed(`/api/tests/${enc(id)}`, { method: "PUT", body: t }).then((d) => d.test);
-export const deleteMyTest = (id) => authed(`/api/tests/${enc(id)}`, { method: "DELETE" });
-export const myTestResults = (id) => authed(`/api/tests/${enc(id)}/results`).then((d) => d.submissions);
-
 // ---- Admin ----
 
 const adm = (path, opts = {}) => call(path, { ...opts, admin: true });

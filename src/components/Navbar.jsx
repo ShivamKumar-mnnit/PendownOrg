@@ -23,7 +23,7 @@ const MENU = [
     [
       ["/problems", "Coding practice", "1st to 4th year, free and premium"],
       ["/practice", "Practice tests", "Ready-made tests for students"],
-      ["/tests", "Create tests", "Premium: build tests for your class"],
+      ["/tests", "Create tests", "For trainers: proctored tests for a batch"],
       ["/compiler", "Online compiler", "Run code in the browser"],
     ],
   ],
@@ -31,7 +31,7 @@ const MENU = [
     "Colleges",
     [
       ["/colleges", "For colleges", "Onboard a whole batch"],
-      ["/workspace", "College panel", "Students, tests and results"],
+      ["/workspace", "College panel", "Batches, tests, interviews, scorecards"],
       ["/talks", "Tech talks and events", "Mock sessions for campuses"],
       ["/faq", "FAQ", "Common questions"],
     ],
@@ -55,15 +55,19 @@ export default function Navbar() {
   const navRef = useRef(null);
   const toggleRef = useRef(null);
 
-  // Close the mobile menu whenever the route changes.
-  useEffect(() => {
+  // Close the menus whenever the route changes.
+  const [lastPath, setLastPath] = useState(pathname);
+  if (lastPath !== pathname) {
+    setLastPath(pathname);
     setMobileOpen(false);
     setOpen(null);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     function onClick(e) {
-      if (navRef.current?.contains(e.target) || toggleRef.current?.contains(e.target)) return;
+      // composedPath, not contains(): the toggle swaps its icon on click, so e.target may already be detached.
+      const path = e.composedPath();
+      if (path.includes(navRef.current) || path.includes(toggleRef.current)) return;
       setOpen(null);
       setMobileOpen(false);
     }

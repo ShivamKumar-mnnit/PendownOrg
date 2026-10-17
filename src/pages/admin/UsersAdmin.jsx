@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Building2, Download, Pencil, Plus, Trash2 } from "lucide-react";
-import { adminCreateUser, adminDeleteUser, adminSaveUser, adminUser, adminUsers, rupees } from "../../lib/account";
+import { Download, Pencil, Plus, Trash2 } from "lucide-react";
+import { adminDeleteUser, adminSaveUser, adminUser, adminUsers, rupees } from "../../lib/account";
 import { adminList } from "../../lib/contentApi";
 import { Field, Gate, SectionTop } from "./shared";
 import { downloadCsv, fmtDate, useAdminData } from "./adminUtils";
 
 const FEATURE_NAMES = { createTests: "Create tests", studentData: "Student records", collegePanel: "College panel", allCourses: "All premium courses" };
-const blankCollege = { name: "", collegeName: "", email: "", password: "", phone: "", days: 365 };
 
 /** Student and college accounts: search, edit, give or take away access, reset passwords. */
 export default function UsersAdmin() {
@@ -15,8 +14,6 @@ export default function UsersAdmin() {
   const [q, setQ] = useState("");
   const [role, setRole] = useState("all");
   const [open, setOpen] = useState(null);
-  const [college, setCollege] = useState(null);
-  const [err, setErr] = useState("");
   const users = useMemo(() => state.data?.users || [], [state.data]);
   const [now] = useState(() => Date.now());
   const shown = useMemo(() => {
@@ -24,27 +21,11 @@ export default function UsersAdmin() {
     return users.filter((u) => (role === "all" || u.role === role) && (!s || [u.name, u.email, u.college, u.collegeName, u.phone].join(" ").toLowerCase().includes(s)));
   }, [users, q, role]);
 
-  async function createCollege(e) {
-    e.preventDefault();
-    setErr("");
-    try {
-      const expiresAt = Number(college.days) ? Date.now() + Number(college.days) * 864e5 : 0;
-      await adminCreateUser({ ...college, role: "college", grants: [{ type: "feature", id: "collegePanel", expiresAt }] });
-      setCollege(null);
-      state.reload();
-    } catch (x) {
-      setErr(x.message);
-    }
-  }
-
   if (open) return <UserEditor id={open} courses={state.data?.courses || []} onClose={() => { setOpen(null); state.reload(); }} />;
 
   return (
     <div>
-      <SectionTop title="Users and colleges" text="Everyone who created an account, and the college accounts you set up. Open an account to change its access or reset its password.">
-        <button type="button" className="btn" onClick={() => setCollege({ ...blankCollege })}>
-          <Building2 className="h-4 w-4" /> New college account
-        </button>
+      <SectionTop title="Purchases and users" text="Purchase records, linked by email to data-service accounts. Open one to change its access. College panel logins are made in the Accounts tab (role Admin).">
         <button
           type="button"
           className="btn ghost"
@@ -54,48 +35,6 @@ export default function UsersAdmin() {
           <Download className="h-4 w-4" /> Export
         </button>
       </SectionTop>
-      {err && <p className="note bad">{err}</p>}
-      {college && (
-        <form className="panel" onSubmit={createCollege} style={{ marginBottom: 18 }}>
-          <h3 style={{ fontSize: 19 }}>New college account</h3>
-          <p className="note">
-            This record holds the college panel access. The college signs in with a data-service account that has the same email: create it in the
-            Accounts tab (role Admin), and it links to this record once the email is confirmed.
-          </p>
-          <div className="three">
-            <Field label="College name">
-              <input className="inp" value={college.collegeName} onChange={(e) => setCollege({ ...college, collegeName: e.target.value })} required />
-            </Field>
-            <Field label="Contact person">
-              <input className="inp" value={college.name} onChange={(e) => setCollege({ ...college, name: e.target.value })} required />
-            </Field>
-            <Field label="Phone">
-              <input className="inp" value={college.phone} onChange={(e) => setCollege({ ...college, phone: e.target.value })} />
-            </Field>
-            <Field label="Sign-in email">
-              <input className="inp" type="email" value={college.email} onChange={(e) => setCollege({ ...college, email: e.target.value })} required />
-            </Field>
-            <Field label="Password (8+ characters)">
-              <input className="inp" value={college.password} onChange={(e) => setCollege({ ...college, password: e.target.value })} required minLength={8} />
-            </Field>
-            <Field label="College panel for">
-              <select className="inp" value={college.days} onChange={(e) => setCollege({ ...college, days: e.target.value })}>
-                <option value={90}>3 months</option>
-                <option value={180}>6 months</option>
-                <option value={365}>1 year</option>
-                <option value={730}>2 years</option>
-                <option value={0}>No end date</option>
-              </select>
-            </Field>
-          </div>
-          <div className="row" style={{ marginTop: 14 }}>
-            <button className="btn">Create account</button>
-            <button type="button" className="btn ghost" onClick={() => setCollege(null)}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
       <Gate state={state}>
         <div className="row" style={{ marginBottom: 12, alignItems: "center" }}>
           <input className="inp" placeholder="Search name, email, college" value={q} onChange={(e) => setQ(e.target.value)} style={{ maxWidth: 320 }} />

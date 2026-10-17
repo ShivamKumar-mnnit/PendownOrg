@@ -94,7 +94,7 @@ export default function PracticeTests() {
       <div className="panel" style={{ marginTop: 32 }}>
         <h3 style={{ fontSize: 20 }}>Are you a trainer?</h3>
         <p style={{ color: "var(--color-fg-muted)", margin: "8px 0 18px" }}>
-          Create a quick test, share the link with your class and let students practice.
+          Get a college panel to run proctored tests for your batch and see every score.
         </p>
         <Link className="btn" to="/tests">
           Create a test

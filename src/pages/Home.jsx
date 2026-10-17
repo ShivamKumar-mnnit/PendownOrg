@@ -39,8 +39,8 @@ const PLATFORM = [
   ["/courses", BookOpen, "Learning modules", "Structured courses. Start with the free modules and unlock the rest.", "Free + Premium"],
   ["/practice", ClipboardCheck, "Assessments", "MCQ, coding and Olympiad tests with instant scores.", "Free"],
   ["/compiler", SquareTerminal, "Online compiler", "Python, Java, C, C++ and JavaScript with input, test cases and clear errors.", "Free"],
-  ["/tests", Crown, "Create tests", "Build your own MCQ and coding tests and share them with a link.", "Premium"],
-  ["/workspace", Building2, "College panel", "Manage students, follow their progress and run your own tests.", "Premium"],
+  ["/tests", Crown, "Create tests", "Proctored MCQ tests with random question sets, ranks and analytics.", "Colleges"],
+  ["/workspace", Building2, "College panel", "Batches, student logins, interviews, scorecards and announcements.", "Colleges"],
 ];
 
 const FEATURES = [

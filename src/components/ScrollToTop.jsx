@@ -8,11 +8,14 @@ import { useLocation } from "react-router-dom";
  * spot. Jumps to top on every route change.
  */
 export default function ScrollToTop() {
-  const { pathname, search } = useLocation();
+  const { pathname, search, hash } = useLocation();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [pathname, search]);
+    // Links like /colleges#bulk-onboard land on that section once it renders.
+    const el = hash && document.getElementById(decodeURIComponent(hash.slice(1)));
+    if (el) el.scrollIntoView({ block: "start" });
+    else window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname, search, hash]);
 
   return null;
 }

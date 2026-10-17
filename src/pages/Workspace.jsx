@@ -1,387 +1,140 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ClipboardList, Download, LayoutDashboard, Lock, Pencil, Plus, Trash2, Upload, Users } from "lucide-react";
-import Buy from "../components/Buy";
+import { Award, Bell, Building2, ClipboardList, FileQuestion, Layers, LogOut, Users, Video } from "lucide-react";
 import { Head, Page } from "../components/ui";
-import {
-  addStudent,
-  importStudents,
-  listStudents,
-  myTests,
-  removeStudent,
-  saveStudent,
-  useAccount,
-  validity,
-  rupees,
-} from "../lib/account";
-import { downloadCsv, fmtDate } from "./admin/adminUtils";
+import { logout, useAccount } from "../lib/account";
+import { ROLE_LABELS, isAdminRole } from "../lib/dataService";
 import { usePageSEO } from "../lib/seo";
-import { USER_TESTS } from "../lib/myTests";
 
-const TestsAdmin = lazy(() => import("./admin/TestsAdmin"));
+// The same data-service panels the admin area uses.
+const Batches = lazy(() => import("./admin/ds/Batches"));
+const QuestionBank = lazy(() => import("./admin/ds/QuestionBank"));
 
 const TABS = [
-  ["overview", "Overview", LayoutDashboard],
-  ["students", "Students", Users],
-  ["tests", "Tests", ClipboardList],
+  ["batches", "Batches", Layers, Batches],
+  ["questions", "Question bank", FileQuestion, QuestionBank],
 ];
 
+const WHAT_YOU_GET = [
+  [Users, "Students", "Add students one by one or from Excel. Each gets a login with your college code and reg. no."],
+  [ClipboardList, "Proctored tests", "MCQ and numeric tests with random question sets, shuffled options, pass marks and a leaderboard."],
+  [Video, "Mock interviews", "Schedule interviews with Zoom links. Students get email and WhatsApp confirmations and reminders."],
+  [Award, "Scorecards", "Tests, coding and interview scores in one ranked list, with a shortlist you can export."],
+  [Bell, "Announcements", "Message the whole batch by email, WhatsApp or in the app."],
+];
+
+/**
+ * College panel: batches, students, tests, interviews and scorecards on the
+ * Anobyt data service. Open to trainer, company and college accounts (ADMIN);
+ * everyone else can ask for one through the college onboarding form.
+ */
 export default function Workspace() {
-  usePageSEO({ title: "College panel", description: "Manage students, create tests and follow results on Anobyt.", path: "/workspace", noindex: true });
-  const { user, features, loaded } = useAccount();
+  usePageSEO({ title: "College panel", description: "Manage students, tests, interviews and scorecards for your college on Anobyt.", path: "/workspace", noindex: true });
+  const { user, loaded } = useAccount();
   const [params, setParams] = useSearchParams();
-  const tab = TABS.some((t) => t[0] === params.get("tab")) ? params.get("tab") : "overview";
 
   if (!loaded) return <Page narrow={520}><p className="note">Loading…</p></Page>;
-  if (!user)
-    return (
-      <Page narrow={620}>
-        <Head eyebrow="College panel" title="Manage students and tests in one place">
-          Sign in to open your panel. Colleges, TPOs and teachers can keep student records, create tests and follow every student's progress.
-        </Head>
-        <div className="row">
-          <Link className="btn" to="/account?next=/workspace">
-            Sign in
-          </Link>
-          <Link className="btn ghost" to="/premium">
-            See plans
-          </Link>
-        </div>
-      </Page>
-    );
+  if (!user || !isAdminRole(user)) return <RequestAccess user={user} />;
 
-  const panel = features?.collegePanel?.has;
+  const current = TABS.find((t) => t[0] === params.get("tab")) || TABS[0];
+  const C = current[3];
   return (
     <section className="page">
-      <div className="wrap">
+      <div className="wrap" style={{ maxWidth: 1200 }}>
         <div className="admin-top">
           <div>
-            <span className="eyebrow">{panel ? "College panel" : "Workspace"}</span>
-            <h1 style={{ fontSize: 34, marginTop: 8 }}>{user.collegeName || user.college || user.name}</h1>
+            <span className="eyebrow">College panel</span>
+            <h1 style={{ fontSize: "clamp(28px, 4vw, 34px)", marginTop: 8 }}>{user.organization || user.collegeName || user.name}</h1>
           </div>
-          <Link className="btn ghost" to="/account">
-            Account and purchases
-          </Link>
+          <div className="row">
+            {user.role === "SUPERADMIN" && (
+              <Link className="btn ghost" to="/admin">
+                Admin panel
+              </Link>
+            )}
+            <button type="button" className="btn ghost" onClick={() => logout()}>
+              <LogOut className="h-4 w-4" /> Sign out
+            </button>
+          </div>
         </div>
-        <div className="seg tabs" role="tablist">
+        <div className="seg tabs" role="tablist" aria-label="College panel">
           {TABS.map(([id, label, Icon]) => (
-            <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? "on" : ""} onClick={() => setParams(id === "overview" ? {} : { tab: id })}>
-              <Icon className="h-4 w-4" style={{ display: "inline", verticalAlign: -3, marginRight: 6 }} />
-              {label}
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={current[0] === id}
+              className={current[0] === id ? "on" : ""}
+              onClick={() => setParams(id === TABS[0][0] ? {} : { tab: id })}
+            >
+              <Icon className="h-4 w-4" /> {label}
             </button>
           ))}
         </div>
-        {tab === "overview" && <Overview features={features} go={(t) => setParams({ tab: t })} />}
-        {tab === "students" && (features?.studentData?.has ? <Students panel={panel} /> : <Locked id="studentData" features={features} />)}
-        {tab === "tests" &&
-          (features?.createTests?.has ? (
-            <Suspense fallback={<p className="note">Loading…</p>}>
-              <TestsAdmin api={USER_TESTS} title="Your tests" intro="Build MCQ, coding and Olympiad tests. Publish a test, copy its link and send it to your students. Only people with the link can take it; results show up here." />
-            </Suspense>
-          ) : (
-            <Locked id="createTests" features={features} />
-          ))}
+        <Suspense fallback={<p className="note">Loading…</p>}>
+          <C me={user} />
+        </Suspense>
       </div>
     </section>
   );
 }
 
-function Locked({ id, features }) {
-  const f = features?.[id];
-  const panel = features?.collegePanel;
-  if (!f?.enabled) return <p className="note">This feature is switched off right now.</p>;
+function RequestAccess({ user }) {
   return (
-    <div className="panel unlock" style={{ maxWidth: 620 }}>
-      <div className="ic">
-        <Lock className="h-5 w-5" />
-      </div>
-      <h3>{f.title} is a premium feature</h3>
-      <p className="note">{f.text}</p>
-      <div className="row" style={{ marginTop: 14 }}>
-        <Buy item={{ type: "feature", id }} price={f.price} label={`Get ${f.title.toLowerCase()} for ${validity(f.days)}`} />
-        {panel?.enabled && panel.paid && !panel.has && (
-          <Buy item={{ type: "feature", id: "collegePanel" }} price={panel.price} label="Get the full college panel" className="btn ghost" />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Overview({ features, go }) {
-  const [stats, setStats] = useState(null);
-  const [now] = useState(() => Date.now());
-  useEffect(() => {
-    let on = true;
-    Promise.all([features?.studentData?.has ? listStudents().catch(() => null) : null, features?.createTests?.has ? myTests().catch(() => null) : null]).then(([s, t]) => {
-      if (on) setStats({ students: s?.students || null, tests: t?.tests || null });
-    });
-    return () => {
-      on = false;
-    };
-  }, [features]);
-
-  const st = stats?.students;
-  const active = st ? st.filter((s) => s.lastActive && now - s.lastActive < 7 * 864e5).length : 0;
-  const solved = st ? st.reduce((n, s) => n + (s.solved || 0), 0) : 0;
-  const tools = Object.entries(features || {}).filter(([id]) => !["allCourses", "practice", "allAccess"].includes(id));
-
-  return (
-    <div>
-      <div className="kpis">
-        <div>
-          <b>{st ? st.length : "—"}</b>
-          <span>Students</span>
+    <Page>
+      <Head eyebrow="College panel" title="Run placement prep for your whole batch">
+        Trainers, companies and college placement cells get a panel to manage students, tests, interviews and results. Panels are set up by the Anobyt team.
+      </Head>
+      <div className="ct-gate">
+        <div className="panel">
+          <h3 style={{ fontSize: 20, display: "flex", gap: 8, alignItems: "center" }}>
+            <Building2 className="h-5 w-5" /> What's in the panel
+          </h3>
+          <ul className="ws-list">
+            {WHAT_YOU_GET.map(([Icon, title, text]) => (
+              <li key={title}>
+                <Icon className="h-4 w-4" />
+                <div>
+                  <b>{title}</b>
+                  <span>{text}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div>
-          <b>{st ? st.filter((s) => s.linked).length : "—"}</b>
-          <span>With an Anobyt account</span>
-        </div>
-        <div>
-          <b>{st && features?.collegePanel?.has ? active : "—"}</b>
-          <span>Practised this week</span>
-        </div>
-        <div>
-          <b>{st && features?.collegePanel?.has ? solved : "—"}</b>
-          <span>Problems solved</span>
-        </div>
-        <div>
-          <b>{stats?.tests ? stats.tests.length : "—"}</b>
-          <span>Tests created</span>
-        </div>
-      </div>
-      <div className="plans">
-        {tools.map(([id, f]) => (
-          <div key={id} className={`plan${f.has ? "" : " dim"}`}>
-            <h3>{f.title}</h3>
-            <p>{f.text}</p>
-            {f.has ? (
-              <>
-                <span className="owned">{f.paid ? (f.expiresAt ? `Active until ${fmtDate(f.expiresAt).split(",")[0]}` : "Active") : "Free"}</span>
-                {id !== "collegePanel" && (
-                  <button type="button" className="btn ghost" onClick={() => go(id === "createTests" ? "tests" : "students")}>
-                    Open
-                  </button>
-                )}
-              </>
-            ) : f.enabled ? (
-              <Buy item={{ type: "feature", id }} price={f.price} label={`Get it for ${validity(f.days)}`} />
+        <div className="panel">
+          {user ? (
+            <>
+              <h3 style={{ fontSize: 20 }}>This account can't open a panel</h3>
+              <p className="note">
+                You're signed in as {user.name} ({ROLE_LABELS[user.role] || user.role}). Panels belong to trainer and college accounts. Send us your college's details and we'll set one up, or sign in with your panel account.
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 style={{ fontSize: 20 }}>Already have a panel account?</h3>
+              <p className="note">Sign in with the email and password we sent you.</p>
+            </>
+          )}
+          <div className="row" style={{ marginTop: 14 }}>
+            <Link className="btn" to="/colleges#bulk-onboard">
+              Request a college panel
+            </Link>
+            {user ? (
+              <button type="button" className="btn ghost" onClick={() => logout()}>
+                Use another account
+              </button>
             ) : (
-              <span className="note">Not available</span>
+              <Link className="btn ghost" to="/login?next=/workspace">
+                Sign in
+              </Link>
             )}
           </div>
-        ))}
-      </div>
-      {!features?.collegePanel?.has && features?.collegePanel?.enabled && (
-        <p className="note" style={{ marginTop: 18 }}>
-          The college panel ({rupees(features.collegePanel.price)}) includes student records and test creation, plus each student's practice progress.
-        </p>
-      )}
-    </div>
-  );
-}
-
-const FIELDS = [
-  ["name", "Name"],
-  ["email", "Email"],
-  ["phone", "Phone"],
-  ["roll", "Roll no."],
-  ["branch", "Branch"],
-  ["year", "Year"],
-  ["section", "Section"],
-];
-const blank = { name: "", email: "", phone: "", roll: "", branch: "", year: "", section: "", notes: "" };
-
-function pickField(row, names) {
-  for (const k of Object.keys(row)) if (names.includes(k.trim().toLowerCase())) return String(row[k] ?? "").trim();
-  return "";
-}
-
-function Students({ panel }) {
-  const [data, setData] = useState(null);
-  const [err, setErr] = useState("");
-  const [edit, setEdit] = useState(null);
-  const [q, setQ] = useState("");
-  const [msg, setMsg] = useState("");
-
-  const load = useCallback(
-    () =>
-      listStudents().then(
-        (d) => setData(d.students),
-        (e) => setErr(e.message),
-      ),
-    [],
-  );
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const shown = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    return (data || []).filter((x) => !s || Object.values(x).join(" ").toLowerCase().includes(s));
-  }, [data, q]);
-
-  async function save(e) {
-    e.preventDefault();
-    setErr("");
-    try {
-      if (edit.id) await saveStudent(edit.id, edit);
-      else await addStudent(edit);
-      setEdit(null);
-      load();
-    } catch (x) {
-      setErr(x.message);
-    }
-  }
-
-  async function onFile(e) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setMsg("Reading the file…");
-    try {
-      const XLSX = await import("xlsx");
-      const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" }).map((r) => ({
-        name: pickField(r, ["name", "full name", "student name"]),
-        email: pickField(r, ["email", "email id", "mail"]),
-        phone: pickField(r, ["phone", "mobile", "phone number", "contact"]),
-        roll: pickField(r, ["roll", "roll no", "roll no.", "roll number", "enrollment", "registration no"]),
-        branch: pickField(r, ["branch", "department", "dept", "course"]),
-        year: pickField(r, ["year", "batch"]),
-        section: pickField(r, ["section", "sec"]),
-      }));
-      const valid = rows.filter((r) => r.name);
-      if (!valid.length) return setMsg("No rows with a Name column were found.");
-      const r = await importStudents(valid);
-      setMsg(`Imported: ${r.added} added, ${r.updated} updated.`);
-      load();
-    } catch (x) {
-      setMsg(x.message || "Couldn't read that file. Save it as .xlsx or .csv and try again.");
-    }
-  }
-
-  function exportAll() {
-    downloadCsv([[...FIELDS.map((f) => f[1]), "Notes", ...(panel ? ["Has account", "Problems solved", "Last active"] : [])], ...(data || []).map((s) => [...FIELDS.map((f) => s[f[0]]), s.notes, ...(panel ? [s.linked ? "Yes" : "No", s.solved || 0, s.lastActive ? fmtDate(s.lastActive) : ""] : [])])], "students.csv");
-  }
-
-  return (
-    <div>
-      <div className="admin-top">
-        <div>
-          <h2 style={{ fontSize: 24 }}>Students</h2>
-          <p className="note" style={{ marginTop: 4 }}>
-            {panel ? "Students who sign up on Anobyt with the same email show their practice progress here." : "Add, update and export your student records."}
+          <p className="note" style={{ marginTop: 16 }}>
+            Students: your tests, interviews and scores are on your <Link to="/dashboard" className="linkish">dashboard</Link>.
           </p>
         </div>
-        <div className="row">
-          <button type="button" className="btn" onClick={() => setEdit({ ...blank })}>
-            <Plus className="h-4 w-4" /> Add student
-          </button>
-          <label className="btn ghost" style={{ cursor: "pointer" }}>
-            <Upload className="h-4 w-4" /> Import Excel / CSV
-            <input type="file" accept=".xlsx,.xls,.csv" onChange={onFile} hidden />
-          </label>
-          <button type="button" className="btn ghost" onClick={exportAll} disabled={!data?.length}>
-            <Download className="h-4 w-4" /> Export
-          </button>
-        </div>
       </div>
-      {msg && <p className="note">{msg}</p>}
-      {err && <p className="note bad">{err}</p>}
-      {edit && (
-        <form className="panel" onSubmit={save} style={{ marginBottom: 18 }}>
-          <h3 style={{ fontSize: 19 }}>{edit.id ? "Edit student" : "New student"}</h3>
-          <div className="three">
-            {FIELDS.map(([k, label]) => (
-              <div key={k}>
-                <label className="l">{label}</label>
-                <input className="inp" value={edit[k]} onChange={(e) => setEdit({ ...edit, [k]: e.target.value })} required={k === "name"} type={k === "email" ? "email" : "text"} />
-              </div>
-            ))}
-          </div>
-          <label className="l">Notes</label>
-          <textarea className="inp" rows={2} value={edit.notes} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} />
-          <div className="row" style={{ marginTop: 14 }}>
-            <button className="btn">Save</button>
-            <button type="button" className="btn ghost" onClick={() => setEdit(null)}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
-      {data === null ? (
-        <p className="note">Loading…</p>
-      ) : !data.length ? (
-        <div className="empty">
-          <b>No students yet</b>
-          <span>Add them one by one or import an Excel sheet with Name, Email, Phone, Roll no., Branch and Year columns.</span>
-        </div>
-      ) : (
-        <>
-          <input className="inp" placeholder="Search students" value={q} onChange={(e) => setQ(e.target.value)} style={{ maxWidth: 340, marginBottom: 12 }} />
-          <div className="tablewrap">
-            <table className="dtable">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Roll no.</th>
-                  <th>Branch / year</th>
-                  <th>Contact</th>
-                  {panel && <th>Practice</th>}
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {shown.map((s) => (
-                  <tr key={s.id}>
-                    <td>
-                      <b>{s.name}</b>
-                      {s.notes && <small className="note" style={{ display: "block", margin: 0 }}>{s.notes.slice(0, 80)}</small>}
-                    </td>
-                    <td>{s.roll || "—"}</td>
-                    <td>{[s.branch, s.year, s.section].filter(Boolean).join(" · ") || "—"}</td>
-                    <td>
-                      {s.email || "—"}
-                      {s.phone && <small style={{ display: "block", color: "var(--color-fg-muted)" }}>{s.phone}</small>}
-                    </td>
-                    {panel && (
-                      <td>
-                        {s.linked ? (
-                          <>
-                            <b>{s.solved || 0}</b> solved
-                            <small style={{ display: "block", color: "var(--color-fg-muted)" }}>{s.lastActive ? `Active ${fmtDate(s.lastActive).split(",")[0]}` : "No activity yet"}</small>
-                          </>
-                        ) : (
-                          <span className="note" style={{ margin: 0 }}>No account yet</span>
-                        )}
-                      </td>
-                    )}
-                    <td>
-                      <div className="tact" style={{ flexWrap: "nowrap" }}>
-                        <button type="button" className="ib" title="Edit" onClick={() => setEdit({ ...blank, ...s })}>
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="ib danger"
-                          title="Delete"
-                          onClick={() =>
-                            confirm(`Delete ${s.name}?`) &&
-                            removeStudent(s.id).then(load, (x) => setErr(x.message))
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="note">{shown.length} of {data.length} students</p>
-        </>
-      )}
-    </div>
+    </Page>
   );
 }
