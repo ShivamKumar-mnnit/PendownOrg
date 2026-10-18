@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from "react";
 import {
-  BadgeIndianRupee, BookOpen, Building2, ClipboardList, Code2, Cpu, CreditCard, FileQuestion, Gauge, Inbox as Inbox_, KeyRound, Layers, Link2, LogOut, Mic,
+  BadgeIndianRupee, BookOpen, Building2, CalendarRange, ClipboardList, Code2, Cpu, CreditCard, FileQuestion, Gauge, Inbox as Inbox_, KeyRound, Layers, Link2, LogOut, Mic,
   School, Settings2, UserCog, UsersRound, Video,
 } from "lucide-react";
 import { Page } from "../components/ui";
@@ -14,6 +14,7 @@ const Batches = lazy(() => import("./admin/ds/Batches"));
 const QuestionBank = lazy(() => import("./admin/ds/QuestionBank"));
 const TrainerInterviews = lazy(() => import("./admin/ds/TrainerInterviews"));
 const MeetingLinks = lazy(() => import("./admin/ds/MeetingLinks"));
+const InterviewSchedule = lazy(() => import("./admin/ds/InterviewSchedule"));
 const superPanel = (name) => lazy(() => import("./admin/ds/SuperAdmin").then((m) => ({ default: m[name] })));
 const Overview = superPanel("Overview");
 const Onboarding = superPanel("Onboarding");
@@ -39,6 +40,7 @@ const TABS = [
   ["interviews", "Interviews", Video, TrainerInterviews, "admin"],
   ["batches", "Batches", Layers, Batches, "admin"],
   ["questions", "Question bank", FileQuestion, QuestionBank, "admin"],
+  ["schedule", "Interview schedule", CalendarRange, InterviewSchedule, "super"],
   ["meetings", "Meeting links", Link2, MeetingLinks, "super"],
   ["onboarding", "College requests", School, Onboarding, "super"],
   ["accounts", "Accounts", UserCog, Accounts, "super"],
