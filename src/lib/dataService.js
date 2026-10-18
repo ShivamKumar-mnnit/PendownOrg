@@ -306,6 +306,12 @@ export const interviewApi = {
   exportScorecards: (tid) => download(`/api/templates/${enc(tid)}/interview-scorecards/export`, "interview-scorecards.xlsx"),
   /** Trainer accounts an interview can be assigned to: [{id, name, email, organization}]. */
   trainers: () => api("/api/trainers"),
+  /**
+   * Emails the meeting link (with a calendar invite) to the student and / or trainer.
+   * Body: {meetingLink?, meetingPlatform?, sendTo?: ["STUDENT", "TRAINER"], message?, calendarInvite?}.
+   * Returns {sent, deliveries: [{recipient, name, email, status: SENT | FAILED | SKIPPED, error}]}.
+   */
+  sendMeetingEmail: (id, b) => api(`/api/interviews/${enc(id)}/send-meeting-email`, { method: "POST", body: b }),
 };
 
 // ---- Student ----

@@ -221,7 +221,7 @@ export default function TrainerInterviews({ me }) {
 
       {modal?.kind === "links" && (
         <Modal title={`Links for interview ${interviewLabel(modal.interview)}`} onClose={close} wide={620}>
-          <LinksForm interview={modal.interview} onSaved={saved("Links saved.")} />
+          <LinksForm interview={modal.interview} onSaved={(_, note) => saved(note)()} />
         </Modal>
       )}
       {modal?.kind === "score" && (

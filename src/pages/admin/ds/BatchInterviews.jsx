@@ -6,7 +6,7 @@ import { downloadCertificate, generateCertificate } from "../../../lib/certifica
 import { createTeamsMeeting, meetingSubject, microsoftToken, teamsConfigured } from "../../../lib/teams";
 import { Field } from "../shared";
 import { Empty, FilePick, Loading, Modal, RowErrors, act, tagFor, useDs } from "./common";
-import { LinkCell, LinksForm, ScorecardEditor, interviewLabel, saveLinks } from "./interviewUi";
+import { LinkCell, LinksForm, ScorecardEditor, emailMeeting, interviewLabel, saveLinks } from "./interviewUi";
 
 const statusTag = (s) => (s === "DONE" ? "free" : s === "UPCOMING" ? "" : tagFor(s));
 
@@ -32,10 +32,36 @@ export default function BatchInterviews({ batch }) {
     if (text) setMsg(text);
     state.reload();
   };
+  async function emailRow(i) {
+    if (!confirm(`Email the meeting link and a calendar invite to ${i.studentName} and ${i.mentorName || "the trainer"}?`)) return;
+    setMsg("");
+    const r = await act(setErr, () => emailMeeting(i.id, { meetingLink: i.meetingLink, meetingPlatform: i.meetingPlatform }));
+    if (r) (r.ok ? setMsg : setErr)(r.text);
+  }
 
   async function upload(file) {
     setBusy(true);
-    const r = await act(setErr, () => adminApi.bulkInterviews(batch.id, file, false, confirmBulk));
+    // Email only: no server confirmations (they also go by WhatsApp); meeting emails are sent below.
+    const r = await act(setErr, () => adminApi.bulkInterviews(batch.id, file, false, false));
+    if (r && confirmBulk && r.interviewIds?.length) {
+      const created = new Set(r.interviewIds);
+      const all = await adminApi.interviews(batch.id).catch(() => []);
+      const withLink = all.filter((i) => created.has(i.id) && i.meetingLink);
+      let sent = 0;
+      const failed = [];
+      for (const i of withLink) {
+        try {
+          if ((await emailMeeting(i.id, { meetingLink: i.meetingLink, meetingPlatform: i.meetingPlatform })).ok) sent++;
+          else failed.push(i.studentName);
+        } catch {
+          failed.push(i.studentName);
+        }
+      }
+      r.emailNote =
+        `Emailed ${sent} of ${withLink.length} interview${withLink.length === 1 ? "" : "s"} with a link.` +
+        (failed.length ? ` Not sent for: ${failed.join(", ")}.` : "") +
+        (withLink.length < r.interviewIds.length ? " The rest get their email when you add the link." : "");
+    }
     setBusy(false);
     if (r) {
       setBulk(r);
@@ -86,7 +112,7 @@ export default function BatchInterviews({ batch }) {
         )}
       </div>
       <label className="row" style={{ gap: 6, alignItems: "center", fontSize: 13, marginBottom: 12 }}>
-        <input type="checkbox" checked={confirmBulk} onChange={(e) => setConfirmBulk(e.target.checked)} /> Bulk upload: send confirmations to students
+        <input type="checkbox" checked={confirmBulk} onChange={(e) => setConfirmBulk(e.target.checked)} /> Bulk upload: send email to the student and trainer (rows with a meeting link)
       </label>
       {err && <p className="note bad">{err}</p>}
       {msg && <p className="note ok">{msg}</p>}
@@ -95,6 +121,7 @@ export default function BatchInterviews({ batch }) {
           <b>
             Scheduled {bulk.created} of {bulk.totalRows}.
           </b>
+          {bulk.emailNote && <p className="note" style={{ fontSize: 13 }}>{bulk.emailNote}</p>}
           {bulk.created > 0 && <p className="note" style={{ fontSize: 13 }}>Rows without a meeting link are listed under "Fill missing links".</p>}
           <RowErrors rows={bulk.failed} />
           <RowErrors rows={bulk.warnings} title="Scheduled with warnings" />
@@ -167,7 +194,7 @@ export default function BatchInterviews({ batch }) {
                               <button type="button" className="ib" title="Reschedule / edit" onClick={() => setModal({ kind: "edit", interview: i })}>
                                 <Pencil className="h-4 w-4" />
                               </button>
-                              <button type="button" className="ib" title="Resend confirmation" onClick={() => run(() => adminApi.resendInterview(i.id), "Send the confirmation again by email and WhatsApp?", "Confirmation sent again.")}>
+                              <button type="button" className="ib" title={i.meetingLink ? "Email the meeting link to the student and trainer" : "Add the meeting link first"} disabled={!i.meetingLink} onClick={() => emailRow(i)}>
                                 <Send className="h-4 w-4" />
                               </button>
                               <button
@@ -219,9 +246,9 @@ export default function BatchInterviews({ batch }) {
         <Modal title="Schedule an interview" onClose={() => setModal(null)} wide={680}>
           <ScheduleForm
             batch={batch}
-            onSaved={(r) => {
+            onSaved={(r, note) => {
               setModal(null);
-              setMsg(r.meetingLink ? "Interview scheduled." : "Interview scheduled. Add the Teams link from the links button when it's ready.");
+              setMsg(note);
               state.reload();
             }}
           />
@@ -229,12 +256,12 @@ export default function BatchInterviews({ batch }) {
       )}
       {modal?.kind === "edit" && (
         <Modal title={`Reschedule ${modal.interview.studentName}`} onClose={() => setModal(null)} wide={680}>
-          <ScheduleForm batch={batch} initial={modal.interview} onSaved={closeAnd("Interview updated.")} />
+          <ScheduleForm batch={batch} initial={modal.interview} onSaved={(_, note) => closeAnd(note)()} />
         </Modal>
       )}
       {modal?.kind === "links" && (
         <Modal title={`Links for interview ${interviewLabel(modal.interview)}`} onClose={() => setModal(null)} wide={620}>
-          <LinksForm interview={modal.interview} onSaved={closeAnd("Links saved.")} />
+          <LinksForm interview={modal.interview} onSaved={(_, note) => closeAnd(note)()} />
         </Modal>
       )}
       {modal?.kind === "score" && (
@@ -284,7 +311,8 @@ function ScheduleForm({ batch, initial, onSaved }) {
     studentInterviewNo: initial?.studentInterviewNo || "",
     meetingLink: initial?.meetingLink || "",
     meetingPlatform: initial?.meetingPlatform || "TEAMS",
-    sendConfirmation: true,
+    sendEmail: true,
+    message: "",
   });
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState("");
@@ -323,16 +351,29 @@ function ScheduleForm({ batch, initial, onSaved }) {
       durationMinutes: Number(f.durationMinutes),
       studentInterviewNo: f.studentInterviewNo ? Number(f.studentInterviewNo) : undefined,
       meetingPlatform: f.meetingLink.trim() ? f.meetingPlatform : undefined,
-      sendConfirmation: f.sendConfirmation,
+      // Email only: the meeting email below replaces the server's email + WhatsApp confirmation.
+      sendConfirmation: false,
     };
+    const link = f.meetingLink.trim();
     setBusy("save");
     const r = await act(setErr, () =>
       editing
-        ? adminApi.updateInterview(initial.id, { ...common, meetingLink: f.meetingLink.trim() || undefined })
-        : adminApi.scheduleInterview(batch.id, { ...common, studentId: f.studentId, meetingLink: f.meetingLink.trim(), createZoomMeeting: false }),
+        ? adminApi.updateInterview(initial.id, { ...common, meetingLink: link || undefined })
+        : adminApi.scheduleInterview(batch.id, { ...common, studentId: f.studentId, meetingLink: link, createZoomMeeting: false }),
     );
+    if (!r) return setBusy("");
+    let note = editing ? "Interview updated." : "Interview scheduled.";
+    if (f.sendEmail && link) {
+      try {
+        note += ` ${(await emailMeeting(r.id || initial.id, { meetingLink: link, meetingPlatform: f.meetingPlatform, message: f.message })).text}`;
+      } catch (x) {
+        note += ` The email failed: ${x.message} Use the send button on the row to try again.`;
+      }
+    } else if (!link) {
+      note += " Add the Teams link from the links button when it's ready; the email goes out then.";
+    }
     setBusy("");
-    if (r) onSaved(r);
+    onSaved(r, note);
   }
 
   return (
@@ -406,11 +447,18 @@ function ScheduleForm({ batch, initial, onSaved }) {
         </Field>
       )}
       <label className="row" style={{ gap: 6, alignItems: "center", marginTop: 12, fontSize: 14 }}>
-        <input type="checkbox" checked={f.sendConfirmation} onChange={set("sendConfirmation")} /> {editing ? "Tell the student about the change" : "Send email + WhatsApp confirmation"}
+        <input type="checkbox" checked={f.sendEmail} onChange={set("sendEmail")} disabled={!f.meetingLink.trim()} />
+        {editing ? "Email the updated details" : "Send email"} to the student and trainer, with a calendar invite
       </label>
+      {!f.meetingLink.trim() && <p className="note" style={{ fontSize: 13, margin: "4px 0 0" }}>The email needs the meeting link. Without one, it's sent when you add the link.</p>}
+      {f.sendEmail && f.meetingLink.trim() && (
+        <Field label="Note in the email (optional)">
+          <input className="inp" value={f.message} onChange={set("message")} maxLength={1000} placeholder="Please join 5 minutes early." />
+        </Field>
+      )}
       {err && <p className="note bad">{err}</p>}
       <button className="btn" style={{ marginTop: 16 }} disabled={!!busy}>
-        {busy === "save" ? "Saving…" : editing ? "Save changes" : "Schedule interview"}
+        {busy === "save" ? "Saving…" : editing ? "Save changes" : f.sendEmail && f.meetingLink.trim() ? "Schedule and send email" : "Schedule interview"}
       </button>
     </form>
   );
@@ -535,11 +583,22 @@ function MissingLinks({ rows, onChange }) {
   const [done, setDone] = useState({});
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState("");
+  const [email, setEmail] = useState(true);
   const left = rows.filter((i) => !done[i.id]);
 
+  /** Saves one link and, when ticked, emails it; done[id] holds what to show in the row. */
   async function saveOne(i, link) {
     await saveLinks(i, { meetingLink: link, meetingPlatform: "TEAMS" });
-    setDone((d) => ({ ...d, [i.id]: link }));
+    let shown = { text: "Saved", ok: true };
+    if (email) {
+      try {
+        const r = await emailMeeting(i.id, { meetingLink: link, meetingPlatform: "TEAMS" });
+        shown = { text: r.ok ? "Saved · emailed" : `Saved · ${r.text}`, ok: r.ok };
+      } catch (e) {
+        shown = { text: `Saved · email failed: ${e.message}`, ok: false };
+      }
+    }
+    setDone((d) => ({ ...d, [i.id]: shown }));
   }
 
   async function savePasted() {
@@ -581,6 +640,9 @@ function MissingLinks({ rows, onChange }) {
           ? "Create a Teams meeting for each interview in one go (you sign in with your Microsoft account once), or paste links yourself."
           : "Create each meeting in Teams, paste its join link here and save. Students see the link on their dashboard."}
       </p>
+      <label className="row" style={{ gap: 6, alignItems: "center", fontSize: 14, marginBottom: 12 }}>
+        <input type="checkbox" checked={email} onChange={(e) => setEmail(e.target.checked)} /> Send email to the student and trainer as each link is saved
+      </label>
       {teamsConfigured() && left.length > 0 && (
         <button type="button" className="btn" onClick={createAll} disabled={!!busy} style={{ marginBottom: 12 }}>
           <Video className="h-4 w-4" /> {busy === "teams" ? "Creating meetings…" : `Create ${left.length} Teams meeting${left.length === 1 ? "" : "s"}`}
@@ -607,7 +669,7 @@ function MissingLinks({ rows, onChange }) {
                 <td>{i.mentorName}</td>
                 <td style={{ minWidth: 260 }}>
                   {done[i.id] ? (
-                    <span className="ok" style={{ fontSize: 13 }}>Saved</span>
+                    <span className={done[i.id].ok ? "ok" : "bad"} style={{ fontSize: 13 }}>{done[i.id].text}</span>
                   ) : (
                     <input
                       className="inp"

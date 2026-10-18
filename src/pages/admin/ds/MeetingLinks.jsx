@@ -40,6 +40,7 @@ export default function MeetingLinks({ me }) {
   const [filter, setFilter] = useState({ q: "", trainer: "", only: "" });
   const [modal, setModal] = useState(null);
   const [err, setErr] = useState("");
+  const [msg, setMsg] = useState("");
 
   const rows = state.data?.rows;
   const trainers = useMemo(() => [...new Set((rows || []).map((r) => r.trainerName).filter(Boolean))].sort(), [rows]);
@@ -112,6 +113,7 @@ export default function MeetingLinks({ me }) {
         </button>
       </div>
       {err && <p className="note bad">{err}</p>}
+      {msg && <p className="note ok">{msg}</p>}
 
       <Loading state={state}>
         {() =>
@@ -170,8 +172,9 @@ export default function MeetingLinks({ me }) {
         <Modal title={`Links for ${modal.studentName}`} onClose={() => setModal(null)} wide={620}>
           <LinksForm
             interview={modal}
-            onSaved={() => {
+            onSaved={(_, note) => {
               setModal(null);
+              setMsg(note || "");
               state.reload();
             }}
           />

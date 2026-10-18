@@ -58,6 +58,30 @@ export async function saveLinks(i, b) {
   }
 }
 
+const WHO = { STUDENT: "student", TRAINER: "trainer" };
+
+/**
+ * Emails the meeting link and a calendar invite to the student and trainer, and returns a
+ * one-line summary such as "Emailed the student and trainer." or what failed.
+ */
+export async function emailMeeting(interviewId, { meetingLink, meetingPlatform, message } = {}) {
+  const r = await interviewApi.sendMeetingEmail(interviewId, {
+    meetingLink: meetingLink || undefined,
+    meetingPlatform: meetingPlatform || undefined,
+    sendTo: ["STUDENT", "TRAINER"],
+    message: message?.trim() || undefined,
+    calendarInvite: true,
+  });
+  const rows = r?.deliveries || [];
+  const sent = rows.filter((d) => d.status === "SENT").map((d) => WHO[d.recipient] || d.name || d.email);
+  const bad = rows.filter((d) => d.status !== "SENT").map((d) => `${WHO[d.recipient] || d.email} ${d.status === "SKIPPED" ? "skipped" : "failed"}${d.error ? ` (${d.error})` : ""}`);
+  const parts = [];
+  if (sent.length) parts.push(`Emailed the ${sent.join(" and ")}.`);
+  else if (!rows.length) parts.push(r?.sent ? `${r.sent} email${r.sent === 1 ? "" : "s"} sent.` : "No email was sent.");
+  if (bad.length) parts.push(`Not sent: ${bad.join("; ")}.`);
+  return { text: parts.join(" "), ok: !bad.length && (sent.length > 0 || r?.sent > 0) };
+}
+
 export const interviewLabel = (i) => (i.interviewNo ? `#${i.interviewNo}` : "—");
 
 export function LinkCell({ href, label }) {
@@ -92,12 +116,26 @@ export function LinksForm({ interview, onSaved }) {
     setBusy("");
   }
 
+  const upcoming = interview.status === "UPCOMING" || interview.status === "IN_PROGRESS";
+  const linkChanged = f.meetingLink.trim() && f.meetingLink.trim() !== (interview.meetingLink || "");
+  const [email, setEmail] = useState(true);
+
+  /** onSaved(interview, note): note says whether the email went out. */
   async function save(e) {
     e.preventDefault();
     setBusy("save");
-    const r = await act(setErr, () => saveLinks(interview, { meetingLink: f.meetingLink.trim(), recordingLink: f.recordingLink.trim(), meetingPlatform: f.meetingPlatform }));
+    const link = f.meetingLink.trim();
+    const r = await act(setErr, () => saveLinks(interview, { meetingLink: link, recordingLink: f.recordingLink.trim(), meetingPlatform: f.meetingPlatform }));
+    let note = r ? "Links saved." : "";
+    if (r && upcoming && linkChanged && email) {
+      try {
+        note = `Links saved. ${(await emailMeeting(interview.id, { meetingLink: link, meetingPlatform: f.meetingPlatform })).text}`;
+      } catch (x) {
+        note = `Links saved, but the email failed: ${x.message}`;
+      }
+    }
     setBusy("");
-    if (r) onSaved(r);
+    if (r) onSaved(r, note);
   }
 
   return (
@@ -129,6 +167,11 @@ export function LinksForm({ interview, onSaved }) {
       <Field label="Recording link" hint={isLegacyInterviews() ? "Recording links are saved once the data service update is live." : "After the interview: the Teams recording's share link (OneDrive / SharePoint)."}>
         <input className="inp" type="url" value={f.recordingLink} onChange={set("recordingLink")} maxLength={1000} placeholder="https://…sharepoint.com/…" />
       </Field>
+      {upcoming && linkChanged && (
+        <label className="row" style={{ gap: 6, alignItems: "center", marginTop: 12, fontSize: 14 }}>
+          <input type="checkbox" checked={email} onChange={(e) => setEmail(e.target.checked)} /> Email the meeting link to the student and trainer (with a calendar invite)
+        </label>
+      )}
       {err && <p className="note bad">{err}</p>}
       <button className="btn" style={{ marginTop: 14 }} disabled={!!busy}>
         {busy === "save" ? "Saving…" : "Save links"}
