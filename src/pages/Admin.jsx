@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import {
-  BadgeIndianRupee, BookOpen, Building2, ClipboardList, Code2, Cpu, CreditCard, FileQuestion, Gauge, Inbox as Inbox_, KeyRound, Layers, LogOut, Mic,
-  School, Settings2, UserCog, UsersRound,
+  BadgeIndianRupee, BookOpen, Building2, ClipboardList, Code2, Cpu, CreditCard, FileQuestion, Gauge, Inbox as Inbox_, KeyRound, Layers, Link2, LogOut, Mic,
+  School, Settings2, UserCog, UsersRound, Video,
 } from "lucide-react";
 import { Page } from "../components/ui";
 import { ForgotForm, SignInForm } from "../components/AuthForms";
@@ -12,6 +12,8 @@ import { usePageSEO } from "../lib/seo";
 // Data-service sections (sign in with an ADMIN or SUPERADMIN account).
 const Batches = lazy(() => import("./admin/ds/Batches"));
 const QuestionBank = lazy(() => import("./admin/ds/QuestionBank"));
+const TrainerInterviews = lazy(() => import("./admin/ds/TrainerInterviews"));
+const MeetingLinks = lazy(() => import("./admin/ds/MeetingLinks"));
 const superPanel = (name) => lazy(() => import("./admin/ds/SuperAdmin").then((m) => ({ default: m[name] })));
 const Overview = superPanel("Overview");
 const Onboarding = superPanel("Onboarding");
@@ -34,8 +36,10 @@ const RunnerAdmin = lazy(() => import("./admin/RunnerAdmin"));
 // [id, label, icon, component, who]: "admin" = every admin, "super" = super admins only.
 const TABS = [
   ["overview", "Overview", Gauge, Overview, "super"],
+  ["interviews", "Interviews", Video, TrainerInterviews, "admin"],
   ["batches", "Batches", Layers, Batches, "admin"],
   ["questions", "Question bank", FileQuestion, QuestionBank, "admin"],
+  ["meetings", "Meeting links", Link2, MeetingLinks, "super"],
   ["onboarding", "College requests", School, Onboarding, "super"],
   ["accounts", "Accounts", UserCog, Accounts, "super"],
   ["colleges", "Colleges", Building2, CollegesAdmin, "super"],

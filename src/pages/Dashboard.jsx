@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Award, Bell, CalendarClock, ClipboardList, ExternalLink, PlayCircle, Video } from "lucide-react";
+import { Award, Bell, CalendarClock, ClipboardList, ExternalLink, FileText, PlayCircle, Video } from "lucide-react";
 import { Head, Page } from "../components/ui";
 import { SignInForm } from "../components/AuthForms";
 import { YEAR_NAMES, usePractice, useSolved } from "../lib/problemBank";
 import { REWARDS } from "../lib/student";
 import { useAccount } from "../lib/account";
-import { INTERVIEW_STATUS, fmtDay, fmtWhen, isAdminRole, pct, studentApi, testWindow } from "../lib/dataService";
+import { INTERVIEW_STATUS, fmtDay, fmtWhen, isAdminRole, ordinal, pct, studentApi, testWindow } from "../lib/dataService";
 import { usePageSEO } from "../lib/seo";
 
 /** Loads one student endpoint; `null` while loading, `{error}` on failure. */
@@ -60,7 +60,13 @@ export default function Dashboard() {
         </div>
       </div>
       {admin ? (
-        <p className="note">You're signed in as an admin. Tests, interviews and scorecards for your batches are in the admin panel.</p>
+        <p className="note">
+          You're signed in as a trainer. The interviews you take, their links, recordings and score cards are under Interviews in the{" "}
+          <Link className="linkish" to="/admin">
+            admin panel
+          </Link>
+          .
+        </p>
       ) : (
         <StudentArea />
       )}
@@ -75,9 +81,17 @@ function StudentArea() {
   const scorecard = useLoad(studentApi.scorecard);
   const notes = useLoad(studentApi.announcements);
   const attempts = useLoad(studentApi.attempts);
+  const reports = useLoad(studentApi.interviewScorecards);
 
   const list = (v) => (Array.isArray(v) ? v : []);
-  const upcoming = list(interviews).filter((i) => i.status === "SCHEDULED" && new Date(i.scheduledAt).getTime() > Date.now() - 2 * 3600e3);
+  // Published interview score cards, by interview: covers rows whose summary hasn't caught up.
+  const published = new Map(list(reports).map((c) => [c.interviewId, c]));
+  const withReports = Array.isArray(interviews)
+    ? interviews.map((i) =>
+        !i.scorecard?.published && published.has(i.id) ? { ...i, scorecard: { exists: true, published: true, overallPercent: published.get(i.id).overallPercent } } : i,
+      )
+    : interviews;
+  const upcoming = list(interviews).filter((i) => (i.status === "UPCOMING" || i.status === "IN_PROGRESS") && new Date(i.scheduledAt).getTime() > Date.now() - 2 * 3600e3);
   const openTests = list(tests).filter((t) => testWindow(t).state !== "ended" && (t.attemptsUsed < t.maxAttempts || t.inProgressAttemptId));
   const best = list(scorecard).reduce((m, r) => (r.overallPercent != null && r.overallPercent > (m ?? -1) ? r.overallPercent : m), null);
 
@@ -105,51 +119,64 @@ function StudentArea() {
       </Section>
 
       <Section icon={<Video className="h-5 w-5" />} title="Mock interviews">
-        <Loaded data={interviews} empty="No interviews scheduled yet. Your slot, mentor and meeting link appear here once they're set.">
+        <Loaded data={withReports} empty="No interviews scheduled yet. Your slot, mentor and meeting link appear here once they're set.">
           {(rows) => (
             <div className="tablewrap">
               <table className="dtable">
                 <thead>
                   <tr>
+                    <th>Interview</th>
                     <th>When</th>
-                    <th>Mentor</th>
+                    <th>Interviewer</th>
                     <th>Batch</th>
                     <th>Status</th>
-                    <th>Meeting / feedback</th>
+                    <th>Meeting / score card</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[...rows]
                     .sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt))
-                    .map((i) => (
-                      <tr key={i.id}>
-                        <td>
-                          {fmtWhen(i.scheduledAt)}
-                          <div className="note" style={{ margin: 0, fontSize: 12 }}>{i.durationMinutes} min</div>
-                        </td>
-                        <td>{i.mentorName}</td>
-                        <td>{i.templateName || "—"}</td>
-                        <td>
-                          <span className={`tag ${i.status === "COMPLETED" ? "free" : i.status === "SCHEDULED" ? "" : "adv"}`}>{INTERVIEW_STATUS[i.status] || i.status}</span>
-                        </td>
-                        <td>
-                          {i.status === "SCHEDULED" && i.meetingLink ? (
-                            <a className="btn" href={i.meetingLink} target="_blank" rel="noopener noreferrer" style={{ padding: "6px 12px" }}>
-                              Join <ExternalLink className="h-3.5 w-3.5" />
-                            </a>
-                          ) : i.status === "SCHEDULED" ? (
-                            <span className="note" style={{ margin: 0 }}>Link coming soon</span>
-                          ) : null}
-                          {i.meetingPasscode && i.status === "SCHEDULED" && <div className="note" style={{ margin: "4px 0 0", fontSize: 12 }}>Passcode {i.meetingPasscode}</div>}
-                          {i.status === "COMPLETED" && (
-                            <div style={{ fontSize: 14 }}>
-                              {i.rating != null && <b>{i.rating}/10 · </b>}
-                              {i.feedback || "No written feedback"}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    .map((i) => {
+                      const live = i.status === "UPCOMING" || i.status === "IN_PROGRESS";
+                      return (
+                        <tr key={i.id}>
+                          <td>{i.studentInterviewNo ? `${ordinal(i.studentInterviewNo)} interview` : "—"}</td>
+                          <td>
+                            {fmtWhen(i.scheduledAt)}
+                            <div className="note" style={{ margin: 0, fontSize: 12 }}>{i.durationMinutes} min</div>
+                          </td>
+                          <td>{i.mentorName}</td>
+                          <td>{i.templateName || "—"}</td>
+                          <td>
+                            <span className={`tag ${i.status === "DONE" ? "free" : live ? "" : "adv"}`}>{INTERVIEW_STATUS[i.status] || i.status}</span>
+                          </td>
+                          <td>
+                            {live && i.meetingLink ? (
+                              <a className="btn" href={i.meetingLink} target="_blank" rel="noopener noreferrer" style={{ padding: "6px 12px" }}>
+                                Join <ExternalLink className="h-3.5 w-3.5" />
+                              </a>
+                            ) : live ? (
+                              <span className="note" style={{ margin: 0 }}>Link coming soon</span>
+                            ) : null}
+                            {i.meetingPasscode && live && <div className="note" style={{ margin: "4px 0 0", fontSize: 12 }}>Passcode {i.meetingPasscode}</div>}
+                            {i.status === "DONE" &&
+                              (i.scorecard?.published ? (
+                                <Link className="btn" to={`/interview-report/${i.id}`} style={{ padding: "6px 12px" }}>
+                                  <FileText className="h-3.5 w-3.5" /> View score card
+                                  {i.scorecard.overallPercent != null && ` · ${pct(i.scorecard.overallPercent)}`}
+                                </Link>
+                              ) : i.feedback || i.rating != null ? (
+                                <div style={{ fontSize: 14 }}>
+                                  {i.rating != null && <b>{i.rating}/10 · </b>}
+                                  {i.feedback || "No written feedback"}
+                                </div>
+                              ) : (
+                                <span className="note" style={{ margin: 0 }}>Score card coming soon</span>
+                              ))}
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>

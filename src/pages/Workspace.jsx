@@ -18,7 +18,7 @@ const TABS = [
 const WHAT_YOU_GET = [
   [Users, "Students", "Add students one by one or from Excel. Each gets a login with your college code and reg. no."],
   [ClipboardList, "Proctored tests", "MCQ and numeric tests with random question sets, shuffled options, pass marks and a leaderboard."],
-  [Video, "Mock interviews", "Schedule interviews with Zoom links. Students get email and WhatsApp confirmations and reminders."],
+  [Video, "Mock interviews", "Schedule interviews with Teams links. Students get confirmations, reminders and a section-wise score card."],
   [Award, "Scorecards", "Tests, coding and interview scores in one ranked list, with a shortlist you can export."],
   [Bell, "Announcements", "Message the whole batch by email, WhatsApp or in the app."],
 ];

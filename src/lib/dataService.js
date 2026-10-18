@@ -150,11 +150,32 @@ export const TEST_TYPES = { MCQ: "MCQ test", CODING: "Coding", MOCK_INTERVIEW: "
 export const QUESTION_TYPES = { SINGLE: "Single correct", MULTIPLE: "Multiple correct", NUMERIC: "Numeric answer" };
 export const DIFFICULTIES = { EASY: "Easy", MEDIUM: "Medium", HARD: "Hard" };
 export const TEST_STATUS = { DRAFT: "Draft", PUBLISHED: "Live", CLOSED: "Closed" };
-export const INTERVIEW_STATUS = { SCHEDULED: "Scheduled", COMPLETED: "Completed", CANCELLED: "Cancelled", NO_SHOW: "No show" };
+export const INTERVIEW_STATUS = { UPCOMING: "Upcoming", IN_PROGRESS: "In progress", DONE: "Done", CANCELLED: "Cancelled", NO_SHOW: "No show" };
+export const MEETING_PLATFORMS = { TEAMS: "Microsoft Teams", GOOGLE_MEET: "Google Meet", ZOOM: "Zoom", OTHER: "Other" };
 export const ONBOARDING_STATUS = { NEW: "New", IN_PROGRESS: "In progress", COMPLETED: "Completed", REJECTED: "Rejected" };
 
 export const isAdminRole = (u) => u?.role === "ADMIN" || u?.role === "SUPERADMIN";
 export const testLink = (slug) => `${SITE_URL}/t/${slug}`;
+/** 1 -> "1st", 2 -> "2nd" ... */
+export const ordinal = (n) => (n ? n + (["th", "st", "nd", "rd"][((n % 100) >> 3) ^ 1 && n % 10] || "th") : "—");
+
+// ---- Interview statuses ----
+// The trainer-interviews server update renamed SCHEDULED -> UPCOMING and COMPLETED -> DONE and
+// added IN_PROGRESS. Older servers still use the old names, so responses are normalised to the
+// new names and updates are translated back once the server turns out to be an older one.
+
+const LEGACY_IN = { SCHEDULED: "UPCOMING", COMPLETED: "DONE" };
+const LEGACY_OUT = { UPCOMING: "SCHEDULED", DONE: "COMPLETED", IN_PROGRESS: "SCHEDULED" };
+let legacyInterviews = false;
+/** True once a response shows the server predates trainer interviews (no numbers, scorecards or recording links). */
+export const isLegacyInterviews = () => legacyInterviews;
+function normInterview(i) {
+  if (!i || typeof i !== "object" || !("scheduledAt" in i)) return i;
+  if (!("interviewNo" in i)) legacyInterviews = true;
+  return LEGACY_IN[i.status] ? { ...i, status: LEGACY_IN[i.status] } : i;
+}
+const normInterviews = (p) => p.then((r) => (Array.isArray(r) ? r.map(normInterview) : normInterview(r)));
+const outStatus = (b) => (legacyInterviews && b?.status && LEGACY_OUT[b.status] ? { ...b, status: LEGACY_OUT[b.status] } : b);
 
 // ---- Public ----
 
@@ -239,11 +260,12 @@ export const adminApi = {
   analytics: (id) => api(`/api/tests/${enc(id)}/analytics`),
   attempt: (id) => api(`/api/attempts/${enc(id)}`),
 
-  interviews: (tid, status) => api(`/api/templates/${enc(tid)}/interviews`, { query: { status } }),
-  scheduleInterview: (tid, b) => api(`/api/templates/${enc(tid)}/interviews`, { method: "POST", body: b }),
+  interviews: (tid, status) =>
+    normInterviews(api(`/api/templates/${enc(tid)}/interviews`, { query: { status: legacyInterviews ? LEGACY_OUT[status] || status : status } })),
+  scheduleInterview: (tid, b) => normInterviews(api(`/api/templates/${enc(tid)}/interviews`, { method: "POST", body: b })),
   bulkInterviews: (tid, file, createZoomMeetings, sendConfirmations) =>
     api(`/api/templates/${enc(tid)}/interviews/bulk`, { method: "POST", form: fileForm(file), query: { createZoomMeetings, sendConfirmations } }),
-  updateInterview: (id, b) => api(`/api/interviews/${enc(id)}`, { method: "PATCH", body: b }),
+  updateInterview: (id, b) => normInterviews(api(`/api/interviews/${enc(id)}`, { method: "PATCH", body: outStatus(b) })),
   zoomInterview: (id, sendConfirmation = true) => api(`/api/interviews/${enc(id)}/zoom`, { method: "POST", query: { sendConfirmation } }),
   resendInterview: (id) => api(`/api/interviews/${enc(id)}/resend-confirmation`, { method: "POST" }),
   interviewLog: (id) => api(`/api/interviews/${enc(id)}/notifications`),
@@ -258,6 +280,32 @@ export const adminApi = {
   deleteAnnouncement: (tid, aid) => api(`/api/templates/${enc(tid)}/announcements/${enc(aid)}`, { method: "DELETE" }),
 };
 
+// ---- Trainer interviews, scorecards and meeting links ----
+// The assigned trainer, the batch owner and super admins can change status, links and the
+// scorecard (anyone else gets 403). On older servers these 404 and the pages fall back to the
+// batch endpoints. docs/trainer-interviews-api.md lists them.
+
+export const interviewApi = {
+  /** The signed-in trainer's interviews: {counts, interviews}. Filters: status, templateId, from, to. */
+  dashboard: (query) => api("/api/trainer/interviews", { query }).then((r) => ({ ...r, interviews: (r?.interviews || []).map(normInterview) })),
+  one: (id) => normInterviews(api(`/api/interviews/${enc(id)}`)),
+  /** UPCOMING -> IN_PROGRESS -> DONE (or NO_SHOW / CANCELLED); the server sets startedAt / endedAt. */
+  setStatus: (id, status) => normInterviews(api(`/api/interviews/${enc(id)}/status`, { method: "PATCH", body: { status } })),
+  /** Stores the meeting / recording links the frontend created or pasted (only fields sent change, "" clears one). */
+  setLinks: (id, b) => normInterviews(api(`/api/interviews/${enc(id)}/links`, { method: "PUT", body: b })),
+  scorecard: (id) => api(`/api/interviews/${enc(id)}/scorecard`),
+  /** Sections 0-10; the server works out overallPercent and marks the interview DONE. */
+  saveScorecard: (id, b) => api(`/api/interviews/${enc(id)}/scorecard`, { method: "PUT", body: b }),
+  publish: (id, notifyStudent = true) => api(`/api/interviews/${enc(id)}/scorecard/publish`, { method: "POST", body: { notifyStudent } }),
+  unpublish: (id) => api(`/api/interviews/${enc(id)}/scorecard/unpublish`, { method: "POST" }),
+  /** Meeting-links register rows. Filters: templateId, interviewerId, from, to, onlyWithRecording. */
+  recordings: (query) => api("/api/interviews/recordings", { query }),
+  exportRecordings: (query) => download("/api/interviews/recordings/export", "interview-recordings.xlsx", query),
+  exportScorecards: (tid) => download(`/api/templates/${enc(tid)}/interview-scorecards/export`, "interview-scorecards.xlsx"),
+  /** Trainer accounts an interview can be assigned to: [{id, name, email, organization}]. */
+  trainers: () => api("/api/trainers"),
+};
+
 // ---- Student ----
 
 export const studentApi = {
@@ -270,7 +318,11 @@ export const studentApi = {
   attempts: () => api("/api/attempts/me"),
   attempt: (id) => api(`/api/attempts/${enc(id)}`),
   leaderboard: (testId) => api(`/api/student/tests/${enc(testId)}/leaderboard`),
-  interviews: () => api("/api/interviews/me"),
+  interviews: () => normInterviews(api("/api/interviews/me")),
+  /** Published interview scorecards only. */
+  interviewScorecards: () => api("/api/student/interview-scorecards"),
+  /** One published interview scorecard (404 until the trainer publishes it). */
+  interviewScorecard: (interviewId) => api(`/api/student/interview-scorecards/${enc(interviewId)}`),
   scorecard: () => api("/api/student/scorecard"),
   announcements: () => api("/api/student/announcements"),
 };
