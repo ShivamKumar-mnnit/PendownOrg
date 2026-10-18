@@ -1,5 +1,5 @@
-import { Suspense, lazy, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Award, Bell, CalendarClock, ClipboardList, ExternalLink, FileText, PlayCircle, Video } from "lucide-react";
 import { Head, Page } from "../components/ui";
 import { SignInForm } from "../components/AuthForms";
@@ -8,9 +8,6 @@ import { REWARDS } from "../lib/student";
 import { useAccount } from "../lib/account";
 import { INTERVIEW_STATUS, fmtDay, fmtWhen, isAdminRole, ordinal, pct, studentApi, testWindow } from "../lib/dataService";
 import { usePageSEO } from "../lib/seo";
-
-// Trainers (ADMIN) see the interviews they take here; same table as Admin panel > Interviews.
-const TrainerInterviews = lazy(() => import("./admin/ds/TrainerInterviews"));
 
 /** Loads one student endpoint; `null` while loading, `{error}` on failure. */
 function useLoad(fn) {
@@ -43,37 +40,23 @@ export default function Dashboard() {
       </Page>
     );
 
-  const admin = isAdminRole(user);
+  // Trainers and super admins have their own dashboard.
+  if (isAdminRole(user)) return <Navigate to="/trainer" replace />;
   return (
-    <Page narrow={admin ? 1240 : undefined}>
+    <Page>
       <div className="admin-top">
         <div>
-          <span className="eyebrow">{admin ? "Trainer dashboard" : user.college || "Dashboard"}</span>
+          <span className="eyebrow">{user.college || "Dashboard"}</span>
           <h1 style={{ fontSize: "clamp(28px, 4vw, 38px)", marginTop: 6 }}>Welcome, {user.name.split(" ")[0]}</h1>
         </div>
         <div className="row">
-          {admin && (
-            <Link className="btn" to="/admin">
-              Open admin panel
-            </Link>
-          )}
           <Link className="btn ghost" to="/account">
             Your account
           </Link>
         </div>
       </div>
-      {admin ? (
-        <div style={{ marginTop: 24 }}>
-          <Suspense fallback={<p className="note">Loading your interviews…</p>}>
-            <TrainerInterviews me={user} />
-          </Suspense>
-        </div>
-      ) : (
-        <>
-          <StudentArea />
-          <PracticeProgress />
-        </>
-      )}
+      <StudentArea />
+      <PracticeProgress />
     </Page>
   );
 }

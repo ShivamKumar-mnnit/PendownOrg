@@ -33,6 +33,7 @@ const YearPractice = lazy(() => import("./pages/YearPractice"));
 const Workspace = lazy(() => import("./pages/Workspace"));
 const Exam = lazy(() => import("./pages/Exam"));
 const ExamResult = lazy(() => import("./pages/Exam").then((m) => ({ default: m.Result })));
+const Trainer = lazy(() => import("./pages/Trainer"));
 const InterviewReport = lazy(() => import("./pages/InterviewReport"));
 const Login = lazy(() => import("./pages/Login"));
 const VerifyEmail = lazy(() => import("./pages/Login").then((m) => ({ default: m.VerifyEmail })));
@@ -94,6 +95,7 @@ export default function App() {
           <Route path="/problems/year/:year" element={lazyPage(<YearPractice />)} />
           <Route path="/problem/:id" element={<Problem />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/trainer" element={lazyPage(<Trainer />)} />
           <Route path="/interview-report/:id" element={lazyPage(<InterviewReport />)} />
           <Route path="/talks" element={<Talks />} />
           <Route path="/talks/:id" element={<EventDetail />} />

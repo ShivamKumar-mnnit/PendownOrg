@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Head, Page } from "../components/ui";
 import { ForgotForm, SignInForm, SignUpForm } from "../components/AuthForms";
-import { authApi, isAdminRole } from "../lib/dataService";
+import { authApi, homeFor } from "../lib/dataService";
 import { resetPassword, useAccount } from "../lib/account";
 import { usePageSEO } from "../lib/seo";
 
@@ -16,7 +16,7 @@ const TITLES = {
 function landing(params, user) {
   const next = params.get("next");
   if (next && next.startsWith("/") && !next.startsWith("//")) return next;
-  return isAdminRole(user) ? "/admin" : "/dashboard";
+  return homeFor(user);
 }
 
 export default function Login() {
@@ -42,7 +42,7 @@ export default function Login() {
       {mode === "signup" && <SignUpForm onMode={setMode} />}
       {mode === "forgot" && <ForgotForm onMode={setMode} />}
       <p className="note" style={{ fontSize: 13, textAlign: "center", marginTop: 18 }}>
-        College coordinator? <Link className="linkish" to="/colleges">Onboard your batch</Link>
+        Trainer? <Link className="linkish" to="/trainer">Trainer sign-in</Link> · College coordinator? <Link className="linkish" to="/colleges">Onboard your batch</Link>
       </p>
     </Page>
   );
@@ -102,7 +102,7 @@ export function ResetPassword() {
     setBusy(true);
     try {
       const d = await resetPassword(token, f.next);
-      nav(isAdminRole(d.user) ? "/admin" : "/dashboard", { replace: true });
+      nav(homeFor(d.user), { replace: true });
     } catch (x) {
       setErr(x.message);
       setBusy(false);

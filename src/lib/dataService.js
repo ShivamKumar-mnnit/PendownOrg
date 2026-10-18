@@ -155,6 +155,8 @@ export const MEETING_PLATFORMS = { TEAMS: "Microsoft Teams", GOOGLE_MEET: "Googl
 export const ONBOARDING_STATUS = { NEW: "New", IN_PROGRESS: "In progress", COMPLETED: "Completed", REJECTED: "Rejected" };
 
 export const isAdminRole = (u) => u?.role === "ADMIN" || u?.role === "SUPERADMIN";
+/** Where someone lands after signing in: trainers on their dashboard, super admins in the admin panel. */
+export const homeFor = (u) => (u?.role === "SUPERADMIN" ? "/admin" : u?.role === "ADMIN" ? "/trainer" : "/dashboard");
 export const testLink = (slug) => `${SITE_URL}/t/${slug}`;
 /** 1 -> "1st", 2 -> "2nd" ... */
 export const ordinal = (n) => (n ? n + (["th", "st", "nd", "rd"][((n % 100) >> 3) ^ 1 && n % 10] || "th") : "—");

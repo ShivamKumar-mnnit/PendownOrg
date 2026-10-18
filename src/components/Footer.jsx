@@ -102,6 +102,7 @@ export default function Footer() {
         <div className="fbot">
           <span>© {YEAR} Anobyt. All rights reserved.</span>
           <span>Company names are used for interview-prep reference only. Anobyt is not affiliated with them.</span>
+          <Link to="/trainer">Trainer login</Link>
           <Link to="/admin">Admin</Link>
         </div>
       </div>

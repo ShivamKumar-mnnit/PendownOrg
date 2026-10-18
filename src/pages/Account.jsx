@@ -4,7 +4,7 @@ import { CheckCircle2, Clock, LayoutDashboard, LogOut, MailWarning, ShieldCheck 
 import { Page } from "../components/ui";
 import { ChangePasswordForm } from "../components/AuthForms";
 import { logout, myPayments, rupees, updateProfile, useAccount } from "../lib/account";
-import { ROLE_LABELS, authApi, fmtDay, isAdminRole } from "../lib/dataService";
+import { ROLE_LABELS, authApi, fmtDay, homeFor, isAdminRole } from "../lib/dataService";
 import { usePageSEO } from "../lib/seo";
 
 export default function Account() {
@@ -38,8 +38,8 @@ function Profile({ user, features }) {
           </p>
         </div>
         <div className="row">
-          <Link className="btn" to={admin ? "/admin" : "/dashboard"}>
-            <LayoutDashboard className="h-4 w-4" /> {admin ? "Admin panel" : "Dashboard"}
+          <Link className="btn" to={homeFor(user)}>
+            <LayoutDashboard className="h-4 w-4" /> {user.role === "SUPERADMIN" ? "Admin panel" : admin ? "Trainer dashboard" : "Dashboard"}
           </Link>
           {admin && (
             <Link className="btn ghost" to="/workspace">
