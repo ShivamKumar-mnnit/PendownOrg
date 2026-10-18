@@ -8,6 +8,7 @@ import StudyBackground from "./StudyBackground";
 import { useReveal } from "../lib/useReveal";
 import { useAccount } from "../lib/account";
 import { PasswordGate } from "./AuthForms";
+import ErrorBoundary from "./ErrorBoundary";
 
 // Tool pages where the floating promo/chat buttons would sit on top of the
 // editor and its output.
@@ -29,7 +30,7 @@ export default function Layout() {
 
       <Navbar />
       <main className="flex-1">
-        {mustChange ? <PasswordGate user={user} /> : <Outlet />}
+        <ErrorBoundary key={pathname}>{mustChange ? <PasswordGate user={user} /> : <Outlet />}</ErrorBoundary>
       </main>
       <Footer />
       {showFloaters && <PlacementAssist />}

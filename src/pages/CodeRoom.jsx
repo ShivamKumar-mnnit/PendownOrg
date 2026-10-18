@@ -103,7 +103,13 @@ function Room({ problem, onChange, back }) {
   const [results, setResults] = useState({}); // test id -> {busy} | {out, verdict}
   const [editing, setEditing] = useState(false);
   const [err, setErr] = useState("");
-  const running = Object.values(results).some((r) => r.busy);
+  const running = Object.values(results).some((r) => r?.busy);
+  /** Forgets a test case's last run (after it's edited or deleted). */
+  const clearResult = (tid) =>
+    setResults((r) => {
+      const { [tid]: _gone, ...rest } = r;
+      return rest;
+    });
 
   function setCode(v) {
     setCodes((c) => ({ ...c, [lang]: v }));
@@ -146,7 +152,7 @@ function Room({ problem, onChange, back }) {
   useEffect(() => () => clearTimeout(saveTimer.current), []);
   const updateTest = (tid, k, v) => {
     keepTests(tests.map((t) => (t.id === tid ? { ...t, [k]: v } : t)));
-    setResults((r) => ({ ...r, [tid]: undefined }));
+    clearResult(tid);
   };
 
   async function runOne(t) {
@@ -266,7 +272,7 @@ function Room({ problem, onChange, back }) {
                         title="Delete test case"
                         onClick={() => {
                           keepTests(tests.filter((x) => x.id !== t.id));
-                          setResults((x) => ({ ...x, [t.id]: undefined }));
+                          clearResult(t.id);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
