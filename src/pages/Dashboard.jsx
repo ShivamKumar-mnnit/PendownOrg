@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { Award, Bell, CalendarClock, ClipboardList, ExternalLink, FileText, PlayCircle, Video } from "lucide-react";
+import { Award, Bell, CalendarClock, ClipboardList, ExternalLink, FileText, PlayCircle, Plus, Video } from "lucide-react";
 import { Head, Page } from "../components/ui";
 import { SignInForm } from "../components/AuthForms";
 import { YEAR_NAMES, usePractice, useSolved } from "../lib/problemBank";
@@ -8,6 +8,9 @@ import { REWARDS } from "../lib/student";
 import { useAccount } from "../lib/account";
 import { INTERVIEW_STATUS, fmtDay, fmtWhen, isAdminRole, ordinal, pct, studentApi, testWindow } from "../lib/dataService";
 import { usePageSEO } from "../lib/seo";
+
+// Coding problems the student pastes in (e.g. from their trainer in an interview) and solves in the code room.
+const CodingProblems = lazy(() => import("./admin/ds/CodingProblems"));
 
 /** Loads one student endpoint; `null` while loading, `{error}` on failure. */
 function useLoad(fn) {
@@ -30,6 +33,7 @@ export default function Dashboard() {
   usePageSEO({ title: "Dashboard", description: "Your tests, interviews, scorecard and practice progress.", path: "/dashboard", noindex: true });
   const { user, loaded } = useAccount();
   const nav = useNavigate();
+  const [addCoding, setAddCoding] = useState(0);
 
   if (!loaded) return <Page narrow={520}><p className="note">Loading…</p></Page>;
   if (!user)
@@ -50,18 +54,36 @@ export default function Dashboard() {
           <h1 style={{ fontSize: "clamp(28px, 4vw, 38px)", marginTop: 6 }}>Welcome, {user.name.split(" ")[0]}</h1>
         </div>
         <div className="row">
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setAddCoding((n) => n + 1);
+              document.getElementById("coding")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          >
+            <Plus className="h-4 w-4" /> Add coding problem
+          </button>
           <Link className="btn ghost" to="/account">
             Your account
           </Link>
         </div>
       </div>
-      <StudentArea />
+      <StudentArea
+        coding={
+          <section id="coding" style={{ marginTop: 40, scrollMarginTop: 90 }}>
+            <Suspense fallback={<p className="note">Loading your coding problems…</p>}>
+              <CodingProblems me={user} newSignal={addCoding} />
+            </Suspense>
+          </section>
+        }
+      />
       <PracticeProgress />
     </Page>
   );
 }
 
-function StudentArea() {
+function StudentArea({ coding }) {
   const tests = useLoad(studentApi.tests);
   const interviews = useLoad(studentApi.interviews);
   const scorecard = useLoad(studentApi.scorecard);
@@ -91,6 +113,8 @@ function StudentArea() {
       </div>
 
       <Announcements data={notes} />
+
+      {coding}
 
       <Section icon={<ClipboardList className="h-5 w-5" />} title="Your tests">
         <Loaded data={tests} empty="No tests yet. When your college or trainer publishes one, it shows up here. Got a test link? Just open it.">

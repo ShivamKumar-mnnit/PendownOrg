@@ -13,7 +13,9 @@ export const downloadServerExport = (createdBy) => download("/api/coding-problem
 
 const KEY = "anobyt_coding_problems";
 const enc = encodeURIComponent;
-const missing = (e) => e?.status === 404 || e?.status === 405;
+// 404/405: a server without the endpoint. 403: the endpoint isn't open to this role yet (students,
+// until the server allows them). Either way, fall back to this browser.
+const missing = (e) => e?.status === 404 || e?.status === 405 || e?.status === 403;
 
 // null until the first call tells us whether the server has the endpoint.
 let serverHas = null;

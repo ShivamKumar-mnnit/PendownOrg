@@ -53,5 +53,16 @@ There are two Excel exports. **Export to Excel** builds the file in the browser 
 screen, so it follows the search and trainer filters. **Server export** downloads the server's
 file: everything the user can see, or one trainer's when the super admin has a trainer selected.
 
+## Students
+
+Students add problems from the dashboard ("Add coding problem") and solve them in the same code
+room. For their problems to be kept on the server, the endpoints must also accept STUDENT
+tokens. Today `CodingProblemController` has `@PreAuthorize(Roles.ADMIN_OR_SUPERADMIN)`, so
+students get 403 and the frontend saves their problems in the browser instead.
+
+The service already limits non-super admins to their own `createdById`, so the only change
+needed is to let any signed-in user in, e.g. `@PreAuthorize("isAuthenticated()")`. Students then
+see and export only their own problems, and the super admin sees everyone's, students included.
+
 `createdByName` should be filled from the owner's account in list and get responses. The super
 admin's trainer filter and the Excel "Trainer" column use it.

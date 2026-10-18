@@ -47,7 +47,7 @@ export default function CodeRoom() {
   const { user, loaded } = useAccount();
   const [problem, setProblem] = useState(undefined); // undefined while loading, null when not found
   const [loadErr, setLoadErr] = useState("");
-  const signedIn = !!user && isAdminRole(user);
+  const signedIn = !!user;
 
   useEffect(() => {
     if (!signedIn) return;
@@ -62,30 +62,31 @@ export default function CodeRoom() {
   }, [id, signedIn]);
 
   if (!loaded) return <Page narrow={520}><p className="note">Loading…</p></Page>;
-  if (!user || !isAdminRole(user))
+  if (!user)
     return (
       <Page narrow={520}>
-        <Head title="Code room">Sign in as a trainer to open coding problems.</Head>
-        <Link className="btn" to="/trainer">
-          Trainer sign-in
+        <Head title="Code room">Sign in to open your coding problems.</Head>
+        <Link className="btn" to={`/login?next=/code-room/${id}`}>
+          Sign in
         </Link>
       </Page>
     );
+  const back = isAdminRole(user) ? { to: "/admin", label: "Coding problems" } : { to: "/dashboard#coding", label: "Your coding problems" };
   if (loadErr) return <Page narrow={560}><p className="note bad">{loadErr}</p></Page>;
   if (problem === undefined) return <Page narrow={520}><p className="note">Loading the problem…</p></Page>;
   if (!problem)
     return (
       <Page narrow={560}>
-        <Head title="Problem not found">It may have been deleted, belong to another trainer, or have been saved only in another browser.</Head>
-        <Link className="btn" to="/admin">
-          Back to the admin panel
+        <Head title="Problem not found">It may have been deleted, belong to someone else, or have been saved only in another browser.</Head>
+        <Link className="btn" to={back.to}>
+          Back to {back.label.toLowerCase()}
         </Link>
       </Page>
     );
-  return <Room key={problem.id} problem={problem} onChange={setProblem} />;
+  return <Room key={problem.id} problem={problem} onChange={setProblem} back={back} />;
 }
 
-function Room({ problem, onChange }) {
+function Room({ problem, onChange, back }) {
   const isDark = useIsDark();
   const [lang, setLang] = useState(() => {
     try {
@@ -175,8 +176,8 @@ function Room({ problem, onChange }) {
       <div className="wrap">
         <div className="problem-top">
           <div>
-            <Link className="linkish" to="/admin" style={{ fontSize: 14 }}>
-              <ArrowLeft className="h-4 w-4" style={{ display: "inline", verticalAlign: -3 }} /> Coding problems
+            <Link className="linkish" to={back.to} style={{ fontSize: 14 }}>
+              <ArrowLeft className="h-4 w-4" style={{ display: "inline", verticalAlign: -3 }} /> {back.label}
             </Link>
             <h1 style={{ marginTop: 6 }}>{problem.title}</h1>
           </div>

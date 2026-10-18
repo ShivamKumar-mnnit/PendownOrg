@@ -1,24 +1,32 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Code2, Download, Pencil, Plus, Trash2, UploadCloud } from "lucide-react";
-import { fmtWhen } from "../../../lib/dataService";
+import { fmtWhen, isAdminRole } from "../../../lib/dataService";
 import { deleteProblem, downloadServerExport, exportProblems, guessTitle, isLocalOnly, listProblems, localProblems, moveLocalToServer, saveProblem } from "../../../lib/codingProblems";
 import { Field, SectionTop } from "../shared";
 import { Empty, Loading, Modal, act, useDs } from "./common";
 
 /**
- * Coding problems pasted in by trainers, each opening in the code room (problem | compiler |
- * test cases). Trainers see and export their own; super admins see everyone's.
+ * Coding problems pasted in by trainers and students, each opening in the code room (problem |
+ * compiler | test cases). Everyone sees and exports their own; super admins see everyone's.
+ * `newSignal`: bump it to open the "Add coding problem" form from outside (the dashboard button).
  */
-export default function CodingProblems({ me }) {
+export default function CodingProblems({ me, newSignal = 0 }) {
   const nav = useNavigate();
   const isSuper = me?.role === "SUPERADMIN";
+  const student = !isAdminRole(me);
   const [q, setQ] = useState("");
   const [trainer, setTrainer] = useState("");
   const state = useDs(() => listProblems({ q: q.trim() || undefined }), [q]);
   const [modal, setModal] = useState(null); // null | {} (new) | problem (edit)
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
+  // Open the add form when the dashboard button bumps newSignal.
+  const [seenSignal, setSeenSignal] = useState(newSignal);
+  if (newSignal !== seenSignal) {
+    setSeenSignal(newSignal);
+    if (newSignal) setModal({});
+  }
 
   const list = useMemo(() => state.data || [], [state.data]);
   const trainers = useMemo(() => [...new Set(list.map((p) => p.createdByName).filter(Boolean))].sort(), [list]);
@@ -37,11 +45,13 @@ export default function CodingProblems({ me }) {
   return (
     <div>
       <SectionTop
-        title="Coding problems"
+        title={student ? "Your coding problems" : "Coding problems"}
         text={
           isSuper
-            ? "Problems trainers pasted in to solve in the compiler. Filter by trainer and export to Excel."
-            : "Paste a coding problem to solve it in the compiler, with your own test cases. Export your list to Excel any time."
+            ? "Problems trainers and students pasted in to solve in the compiler. Filter by person and export to Excel."
+            : student
+              ? "Got a problem from your trainer in an interview? Paste it here and solve it in the compiler with your own test cases. Every problem you add stays in this list."
+              : "Paste a coding problem to solve it in the compiler, with your own test cases. Export your list to Excel any time."
         }
       >
         <button type="button" className="btn" onClick={() => setModal({})}>
@@ -77,8 +87,8 @@ export default function CodingProblems({ me }) {
       <div className="row" style={{ gap: 10, marginBottom: 12, alignItems: "center", flexWrap: "wrap" }}>
         <input className="inp" style={{ flex: "1 1 240px" }} placeholder="Search problems" value={q} onChange={(e) => setQ(e.target.value)} />
         {isSuper && trainers.length > 0 && (
-          <select className="inp" style={{ width: "auto" }} value={trainer} onChange={(e) => setTrainer(e.target.value)} aria-label="Trainer">
-            <option value="">All trainers</option>
+          <select className="inp" style={{ width: "auto" }} value={trainer} onChange={(e) => setTrainer(e.target.value)} aria-label="Added by">
+            <option value="">Everyone</option>
             {trainers.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
@@ -87,7 +97,7 @@ export default function CodingProblems({ me }) {
       </div>
       {isLocalOnly() && (
         <p className="note" style={{ fontSize: 13 }}>
-          The data service can't store coding problems yet, so these are saved in this browser only. Once it can, you'll get a button here to move them to your account.
+          {student ? "For now your problems are saved in this browser only, so open them on this device. They move to your account once that's switched on." : "The data service can't store coding problems yet, so these are saved in this browser only. Once it can, you'll get a button here to move them to your account."}
         </p>
       )}
       {stranded.length > 0 && (
