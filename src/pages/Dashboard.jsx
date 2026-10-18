@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Award, Bell, CalendarClock, ClipboardList, ExternalLink, FileText, PlayCircle, Video } from "lucide-react";
 import { Head, Page } from "../components/ui";
@@ -8,6 +8,9 @@ import { REWARDS } from "../lib/student";
 import { useAccount } from "../lib/account";
 import { INTERVIEW_STATUS, fmtDay, fmtWhen, isAdminRole, ordinal, pct, studentApi, testWindow } from "../lib/dataService";
 import { usePageSEO } from "../lib/seo";
+
+// Trainers (ADMIN) see the interviews they take here; same table as Admin panel > Interviews.
+const TrainerInterviews = lazy(() => import("./admin/ds/TrainerInterviews"));
 
 /** Loads one student endpoint; `null` while loading, `{error}` on failure. */
 function useLoad(fn) {
@@ -42,10 +45,10 @@ export default function Dashboard() {
 
   const admin = isAdminRole(user);
   return (
-    <Page>
+    <Page narrow={admin ? 1240 : undefined}>
       <div className="admin-top">
         <div>
-          <span className="eyebrow">{user.college || "Dashboard"}</span>
+          <span className="eyebrow">{admin ? "Trainer dashboard" : user.college || "Dashboard"}</span>
           <h1 style={{ fontSize: "clamp(28px, 4vw, 38px)", marginTop: 6 }}>Welcome, {user.name.split(" ")[0]}</h1>
         </div>
         <div className="row">
@@ -60,17 +63,17 @@ export default function Dashboard() {
         </div>
       </div>
       {admin ? (
-        <p className="note">
-          You're signed in as a trainer. The interviews you take, their links, recordings and score cards are under Interviews in the{" "}
-          <Link className="linkish" to="/admin">
-            admin panel
-          </Link>
-          .
-        </p>
+        <div style={{ marginTop: 24 }}>
+          <Suspense fallback={<p className="note">Loading your interviews…</p>}>
+            <TrainerInterviews me={user} />
+          </Suspense>
+        </div>
       ) : (
-        <StudentArea />
+        <>
+          <StudentArea />
+          <PracticeProgress />
+        </>
       )}
-      <PracticeProgress />
     </Page>
   );
 }
