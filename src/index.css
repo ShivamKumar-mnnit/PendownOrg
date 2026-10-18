@@ -1321,5 +1321,16 @@ select option {
   .tc-card.fail, .tc-card.error { border-color: color-mix(in srgb, #e5484d 55%, var(--color-border)); }
   .tc-title { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; }
   .tc-card .run-out { margin-top: 10px; }
-  @media (max-width: 640px) { .tc-card .two { grid-template-columns: 1fr; } }
+  .tc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 8px; }
+  .tc-out-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .tc-out {
+    margin: 0; min-height: 84px; max-height: 220px; overflow: auto; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 10px;
+    background: var(--color-input, var(--color-card-alt)); font: 13px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-word;
+  }
+  .tc-out .faint { color: var(--color-fg-faint); }
+  .tc-out.pass { border-color: var(--color-accent-emerald); }
+  .tc-out.fail, .tc-out.error { border-color: #e5484d; }
+  .tc-out.error { color: #c4303a; }
+  .dark .tc-out.error { color: #ff8a8f; }
+  @media (max-width: 900px) { .tc-grid { grid-template-columns: 1fr; } }
 }

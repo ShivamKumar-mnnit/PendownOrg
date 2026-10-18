@@ -279,7 +279,7 @@ function Room({ problem, onChange, back }) {
                       </button>
                     </span>
                   </div>
-                  <div className="two" style={{ marginTop: 8 }}>
+                  <div className="tc-grid">
                     <label>
                       <span className="l" style={{ marginTop: 0 }}>Input</span>
                       <textarea className="inp code" rows={3} value={t.input} onChange={(e) => updateTest(t.id, "input", e.target.value)} spellCheck={false} placeholder="What your program reads" />
@@ -288,6 +288,31 @@ function Room({ problem, onChange, back }) {
                       <span className="l" style={{ marginTop: 0 }}>Expected output (optional)</span>
                       <textarea className="inp code" rows={3} value={t.expected} onChange={(e) => updateTest(t.id, "expected", e.target.value)} spellCheck={false} placeholder="Leave empty to just see the output" />
                     </label>
+                    <div>
+                      <span className="l tc-out-head" style={{ marginTop: 0 }}>
+                        Your output
+                        {r?.out?.stdout && r.verdict !== "pass" && (
+                          <button type="button" className="linkish" style={{ fontSize: 12 }} title="Copy your output into Expected output" onClick={() => {
+                              keepTests(tests.map((x) => (x.id === t.id ? { ...x, expected: r.out.stdout.replace(/\s+$/, "") } : x)));
+                              setResults((all) => ({ ...all, [t.id]: { ...all[t.id], verdict: "pass" } }));
+                            }}
+                          >
+                            Use as expected
+                          </button>
+                        )}
+                      </span>
+                      <pre className={`tc-out${r?.verdict ? ` ${r.verdict}` : ""}`} aria-live="polite">
+                        {r?.busy ? (
+                          <span className="faint">Running…</span>
+                        ) : !r?.out ? (
+                          <span className="faint">Run to see your output</span>
+                        ) : r.verdict === "error" ? (
+                          r.out.stderr || r.out.error || r.out.stdout || "Error"
+                        ) : (
+                          r.out.stdout || <span className="faint">(no output)</span>
+                        )}
+                      </pre>
+                    </div>
                   </div>
                   {r?.out && <RunOutput result={r.out} language={lang} />}
                 </div>
