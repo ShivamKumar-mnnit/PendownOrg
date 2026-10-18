@@ -314,6 +314,19 @@ export const interviewApi = {
   sendMeetingEmail: (id, b) => api(`/api/interviews/${enc(id)}/send-meeting-email`, { method: "POST", body: b }),
 };
 
+// ---- Email ----
+
+export const emailApi = {
+  /**
+   * Meeting email with a calendar invite, from explicit details (no interview id needed).
+   * Body: {studentName, studentEmail, trainerName, trainerEmail, meetingLink, meetingPlatform,
+   * startTime, durationMinutes, title, message?, sendTo?: ["STUDENT", "TRAINER"], calendarInvite?}.
+   */
+  meetingInvite: (b) => api("/api/email/meeting-invite", { method: "POST", body: b }),
+  /** Sends a test email to check the mail setup. */
+  test: (to) => api("/api/email/test", { method: "POST", body: { to } }),
+};
+
 // ---- Student ----
 
 export const studentApi = {

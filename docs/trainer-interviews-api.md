@@ -42,6 +42,9 @@ status, links and the score card; any other admin gets 403.
 | 12 | `GET /api/interviews/recordings?templateId=&interviewerId=&from=&to=&onlyWithRecording=` | Meeting links register |
 | 13 | `GET /api/interviews/recordings/export` | "Full register" Excel download |
 | 14 | `GET /api/templates/{id}/interview-scorecards/export` | "Export score cards" on a batch's Interviews tab |
+| 15 | `POST /api/interviews/{id}/send-meeting-email` | Meeting email and calendar invite to the student and trainer. Tried first; on a 404 the frontend uses #16. |
+| 16 | `POST /api/email/meeting-invite` | The same email, built from the interview's details (names, emails, link, start time, duration) |
+| 17 | `POST /api/email/test` `{to}` | "Send test email" on the super admin Overview |
 
 The trainer endpoint only returns the signed-in trainer's own interviews. When a super admin
 ticks "Every trainer", the page reads each batch's interview list instead.

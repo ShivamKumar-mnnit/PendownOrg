@@ -35,7 +35,7 @@ export default function BatchInterviews({ batch }) {
   async function emailRow(i) {
     if (!confirm(`Email the meeting link and a calendar invite to ${i.studentName} and ${i.mentorName || "the trainer"}?`)) return;
     setMsg("");
-    const r = await act(setErr, () => emailMeeting(i.id, { meetingLink: i.meetingLink, meetingPlatform: i.meetingPlatform }));
+    const r = await act(setErr, () => emailMeeting(i, { meetingLink: i.meetingLink, meetingPlatform: i.meetingPlatform }));
     if (r) (r.ok ? setMsg : setErr)(r.text);
   }
 
@@ -51,7 +51,7 @@ export default function BatchInterviews({ batch }) {
       const failed = [];
       for (const i of withLink) {
         try {
-          if ((await emailMeeting(i.id, { meetingLink: i.meetingLink, meetingPlatform: i.meetingPlatform })).ok) sent++;
+          if ((await emailMeeting(i, { meetingLink: i.meetingLink, meetingPlatform: i.meetingPlatform })).ok) sent++;
           else failed.push(i.studentName);
         } catch {
           failed.push(i.studentName);
@@ -388,7 +388,13 @@ function ScheduleForm({ batch, initial, onSaved }) {
     let note = editing ? "Interview updated." : "Interview scheduled.";
     if (f.sendEmail && link) {
       try {
-        note += ` ${(await emailMeeting(r.id || initial.id, { meetingLink: link, meetingPlatform: f.meetingPlatform, message: f.message })).text}`;
+        // The saved interview, with emails filled from the form in case the response leaves them out.
+        const saved = { ...initial, ...r };
+        saved.studentEmail ||= student?.email;
+        saved.studentName ||= student?.name;
+        saved.mentorEmail ||= trainer?.email || f.mentorEmail.trim() || undefined;
+        saved.mentorName ||= trainer?.name || f.mentorName.trim();
+        note += ` ${(await emailMeeting(saved, { meetingLink: link, meetingPlatform: f.meetingPlatform, message: f.message })).text}`;
       } catch (x) {
         note += ` The email failed: ${x.message} Use the send button on the row to try again.`;
       }
@@ -621,7 +627,7 @@ function MissingLinks({ rows, onChange }) {
     let shown = { text: "Saved", ok: true };
     if (email) {
       try {
-        const r = await emailMeeting(i.id, { meetingLink: link, meetingPlatform: "TEAMS" });
+        const r = await emailMeeting(i, { meetingLink: link, meetingPlatform: "TEAMS" });
         shown = { text: r.ok ? "Saved · emailed" : `Saved · ${r.text}`, ok: r.ok };
       } catch (e) {
         shown = { text: `Saved · email failed: ${e.message}`, ok: false };

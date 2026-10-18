@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Sparkles, Video } from "lucide-react";
-import { MEETING_PLATFORMS, adminApi, fmtWhen, interviewApi, isLegacyInterviews, ordinal } from "../../../lib/dataService";
+import { MEETING_PLATFORMS, adminApi, emailApi, fmtWhen, interviewApi, isLegacyInterviews, ordinal } from "../../../lib/dataService";
 import { INTEREST, SECTIONS, band, overallPercent, suggestAreas, toRequest } from "../../../lib/scorecard";
 import { createTeamsMeeting, meetingSubject, teamsConfigured } from "../../../lib/teams";
 import { Field } from "../shared";
@@ -60,18 +60,53 @@ export async function saveLinks(i, b) {
 
 const WHO = { STUDENT: "student", TRAINER: "trainer" };
 
-/**
- * Emails the meeting link and a calendar invite to the student and trainer, and returns a
- * one-line summary such as "Emailed the student and trainer." or what failed.
- */
-export async function emailMeeting(interviewId, { meetingLink, meetingPlatform, message } = {}) {
-  const r = await interviewApi.sendMeetingEmail(interviewId, {
-    meetingLink: meetingLink || undefined,
-    meetingPlatform: meetingPlatform || undefined,
-    sendTo: ["STUDENT", "TRAINER"],
+// Set once the server answers 404 for the per-interview endpoint, so later emails go straight
+// to the general meeting-invite endpoint.
+let noInterviewEmail = false;
+
+/** Same email from the interview's own details, for servers without the per-interview endpoint. */
+function meetingInvite(i, { meetingLink, meetingPlatform, message }) {
+  const sendTo = [i.studentEmail && "STUDENT", i.mentorEmail && "TRAINER"].filter(Boolean);
+  if (!sendTo.length) throw new Error("Neither the student nor the trainer has an email address.");
+  return emailApi.meetingInvite({
+    studentName: i.studentName || "Student",
+    studentEmail: i.studentEmail || undefined,
+    trainerName: i.mentorName || "Trainer",
+    trainerEmail: i.mentorEmail || undefined,
+    meetingLink: meetingLink || i.meetingLink,
+    meetingPlatform: meetingPlatform || i.meetingPlatform || "TEAMS",
+    startTime: i.scheduledAt,
+    durationMinutes: i.durationMinutes || 30,
+    title: `Anobyt mock interview${i.interviewNo ? ` #${i.interviewNo}` : ""}`,
     message: message?.trim() || undefined,
+    sendTo,
     calendarInvite: true,
   });
+}
+
+/**
+ * Emails the meeting link and a calendar invite to the student and trainer of interview `i`,
+ * and returns {text, ok}: a one-line summary such as "Emailed the student and trainer." or what failed.
+ */
+export async function emailMeeting(i, { meetingLink, meetingPlatform, message } = {}) {
+  const link = meetingLink || i.meetingLink;
+  if (!link) throw new Error("Add the meeting link first.");
+  let r;
+  if (!noInterviewEmail) {
+    try {
+      r = await interviewApi.sendMeetingEmail(i.id, {
+        meetingLink: link,
+        meetingPlatform: meetingPlatform || undefined,
+        sendTo: ["STUDENT", "TRAINER"],
+        message: message?.trim() || undefined,
+        calendarInvite: true,
+      });
+    } catch (e) {
+      if (!missing(e)) throw e;
+      noInterviewEmail = true;
+    }
+  }
+  if (!r) r = await meetingInvite(i, { meetingLink: link, meetingPlatform, message });
   const rows = r?.deliveries || [];
   const sent = rows.filter((d) => d.status === "SENT").map((d) => WHO[d.recipient] || d.name || d.email);
   const bad = rows.filter((d) => d.status !== "SENT").map((d) => `${WHO[d.recipient] || d.email} ${d.status === "SKIPPED" ? "skipped" : "failed"}${d.error ? ` (${d.error})` : ""}`);
@@ -129,7 +164,7 @@ export function LinksForm({ interview, onSaved }) {
     let note = r ? "Links saved." : "";
     if (r && upcoming && linkChanged && email) {
       try {
-        note = `Links saved. ${(await emailMeeting(interview.id, { meetingLink: link, meetingPlatform: f.meetingPlatform })).text}`;
+        note = `Links saved. ${(await emailMeeting({ ...interview, ...r }, { meetingLink: link, meetingPlatform: f.meetingPlatform })).text}`;
       } catch (x) {
         note = `Links saved, but the email failed: ${x.message}`;
       }

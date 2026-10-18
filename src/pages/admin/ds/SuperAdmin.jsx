@@ -1,8 +1,42 @@
 import { useState } from "react";
-import { ArrowLeft, KeyRound, Pencil, Plus, Trash2, UserPlus } from "lucide-react";
-import { ONBOARDING_STATUS, ROLE_LABELS, TEST_TYPES, adminApi, fmtDay, fmtWhen, listColleges, superApi } from "../../../lib/dataService";
+import { ArrowLeft, KeyRound, MailCheck, Pencil, Plus, Trash2, UserPlus } from "lucide-react";
+import { ONBOARDING_STATUS, ROLE_LABELS, TEST_TYPES, adminApi, emailApi, fmtDay, fmtWhen, listColleges, superApi } from "../../../lib/dataService";
+import { useAccount } from "../../../lib/account";
 import { Field, SectionTop } from "../shared";
 import { Credentials, Empty, Loading, Modal, Pager, act, tagFor, useDs } from "./common";
+
+/** Sends a test email, to check the data service can send mail before emailing students. */
+function EmailCheck() {
+  const { user } = useAccount();
+  const [to, setTo] = useState(user?.email || "");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null); // {ok, text}
+  async function send(e) {
+    e.preventDefault();
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await emailApi.test(to.trim());
+      setMsg({ ok: true, text: r?.message || `Test email sent to ${to.trim()}. Check the inbox (and spam).` });
+    } catch (x) {
+      setMsg({ ok: false, text: x.message });
+    }
+    setBusy(false);
+  }
+  return (
+    <form className="panel" onSubmit={send} style={{ marginBottom: 16 }}>
+      <div className="row" style={{ gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <MailCheck className="h-5 w-5" style={{ color: "var(--color-accent)" }} />
+        <b style={{ marginRight: "auto" }}>Check email sending</b>
+        <input className="inp" type="email" value={to} onChange={(e) => setTo(e.target.value)} required placeholder="you@example.com" style={{ flex: "1 1 220px", maxWidth: 320 }} aria-label="Send the test email to" />
+        <button className="btn ghost" disabled={busy}>
+          {busy ? "Sending…" : "Send test email"}
+        </button>
+      </div>
+      {msg && <p className={`note ${msg.ok ? "ok" : "bad"}`} style={{ marginBottom: 0 }}>{msg.text}</p>}
+    </form>
+  );
+}
 
 export function Overview({ onGo }) {
   const state = useDs(() => superApi.stats(), []);
@@ -29,6 +63,7 @@ export function Overview({ onGo }) {
                 </div>
               ))}
             </div>
+            <EmailCheck />
             {s.openOnboardingRequests > 0 && (
               <div className="panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 <span>
