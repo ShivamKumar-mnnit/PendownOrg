@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Award, CalendarPlus, ClipboardPen, Download, History, Link2, Pencil, Search, Send, Trash2, Video, X, XCircle } from "lucide-react";
 import Select from "../../../components/Select";
-import { INTERVIEW_STATUS, MEETING_PLATFORMS, adminApi, downloadSheetTemplate, fmtWhen, fromLocalInput, interviewApi, isLegacyInterviews, ordinal, toLocalInput } from "../../../lib/dataService";
+import { INTERVIEW_STATUS, MEETING_PLATFORMS, adminApi, downloadSheetTemplate, fmtWhen, fromLocalInput, interviewApi, isLegacyInterviews, ordinal, superApi, toLocalInput } from "../../../lib/dataService";
 import { downloadCertificate, generateCertificate } from "../../../lib/certificate";
 import { createTeamsMeeting, meetingSubject, microsoftToken, teamsConfigured } from "../../../lib/teams";
 import { Field } from "../shared";
@@ -286,14 +286,30 @@ export default function BatchInterviews({ batch }) {
 
 /** Trainer accounts for the interviewer picker: {list}, with list null when the server can't list them yet. */
 function useTrainers() {
-  return useDs(
-    () =>
-      interviewApi.trainers().then(
-        (list) => ({ list }),
-        (e) => (e.status === 404 || e.status === 403 ? { list: null } : Promise.reject(e)),
-      ),
-    [],
-  );
+  return useDs(() => loadTrainers(), []);
+}
+
+const asList = (r) => (Array.isArray(r) ? r : r?.items || r?.content || []);
+
+/**
+ * Trainer accounts: /api/trainers, or (super admins) the account list when that endpoint is
+ * missing or failing, e.g. on a server deployed without the trainer-interviews update.
+ * Resolves {list, error}: list is null only when neither source worked.
+ */
+async function loadTrainers() {
+  let error = "";
+  try {
+    return { list: asList(await interviewApi.trainers()), error };
+  } catch (e) {
+    error = e.status === 404 ? "the server has no trainer list (/api/trainers not found)" : e.message;
+  }
+  try {
+    const [admins, supers] = await Promise.all([superApi.users({ role: "ADMIN", size: 100, active: true }), superApi.users({ role: "SUPERADMIN", size: 100, active: true })]);
+    const list = [...asList(admins), ...asList(supers)].map((u) => ({ id: u.id, name: u.name, email: u.email, organization: u.organization }));
+    return { list: list.sort((a, b) => (a.name || "").localeCompare(b.name || "")), error: "" };
+  } catch {
+    return { list: null, error };
+  }
 }
 
 function ScheduleForm({ batch, initial, onSaved }) {
@@ -301,6 +317,13 @@ function ScheduleForm({ batch, initial, onSaved }) {
   const [student, setStudent] = useState(null);
   const trainers = useTrainers();
   const trainerList = trainers.data?.list?.length ? trainers.data.list : null;
+  const trainersLoading = trainers.data === null && !trainers.error;
+  // Why the dropdown is missing, shown under the manual fields.
+  const trainerNote = trainersLoading
+    ? ""
+    : trainers.data?.list?.length === 0
+      ? "No trainer accounts yet. Create one in Admin panel > Accounts (role Admin), or type the interviewer here."
+      : `Couldn't load the trainer list: ${trainers.data?.error || trainers.error || "unknown error"}. Type the interviewer here for now.`;
   const [f, setF] = useState({
     studentId: "",
     interviewerId: initial?.interviewerId || "",
@@ -403,9 +426,15 @@ function ScheduleForm({ batch, initial, onSaved }) {
             />
           </Field>
         ) : (
-          <Field label="Interviewer name">
+          trainersLoading ? (
+          <Field label="Interviewer (trainer)">
+            <input className="inp" disabled placeholder="Loading trainers…" />
+          </Field>
+        ) : (
+          <Field label="Interviewer name" hint={trainerNote}>
             <input className="inp" value={f.mentorName} onChange={set("mentorName")} required maxLength={100} />
           </Field>
+        )
         )}
         {trainerList ? (
           <Field label="Student's interview">
