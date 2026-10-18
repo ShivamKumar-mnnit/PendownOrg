@@ -4,9 +4,10 @@ Trainers paste coding problems into **Admin panel → Coding problems** and solv
 room at `/code-room/{id}`: the problem on the left, the compiler on the right and test cases
 below. The frontend stores them through the endpoints below, one list per trainer.
 
-Until these endpoints exist (the frontend gets a 404), problems are saved in the trainer's
-browser. Once they exist, a **Move to my account** button uploads those browser-saved problems
-with `POST /api/coding-problems`.
+These endpoints are live on the data service (2026-10-19). Against a server without them
+(a 404), problems are saved in the trainer's browser instead. Problems saved that way before the
+endpoints existed show a **Move to my account** button, which uploads them with
+`POST /api/coding-problems`.
 
 The frontend calls them from `src/lib/codingProblems.js`.
 
@@ -46,10 +47,11 @@ The frontend calls them from `src/lib/codingProblems.js`.
 | `POST /api/coding-problems` | ADMIN, SUPERADMIN | `{title, statement, difficulty?, tags?, testCases}` | The created problem. `createdById` is set to the caller. |
 | `PUT /api/coding-problems/{id}` | The owner, or SUPERADMIN | Same as POST (replaces the problem) | The updated problem |
 | `DELETE /api/coding-problems/{id}` | The owner, or SUPERADMIN | – | 204 |
-| `GET /api/coding-problems/export?createdBy=` *(optional)* | Same rules as the list | – | `.xlsx` file |
+| `GET /api/coding-problems/export?createdBy=` | Same rules as the list | – | `.xlsx` file ("Server export" button) |
 
-The Excel export already works in the browser from the list (trainer: their own, super admin:
-all or one trainer's), so the server export is optional.
+There are two Excel exports. **Export to Excel** builds the file in the browser from what's on
+screen, so it follows the search and trainer filters. **Server export** downloads the server's
+file: everything the user can see, or one trainer's when the super admin has a trainer selected.
 
 `createdByName` should be filled from the owner's account in list and get responses. The super
 admin's trainer filter and the Excel "Trainer" column use it.

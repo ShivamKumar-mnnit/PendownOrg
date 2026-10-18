@@ -6,7 +6,10 @@
 // createdByName, createdAt, updatedAt, local?}. The server calls the tests `testCases` with
 // `expectedOutput`.
 
-import { api } from "./dataService";
+import { api, download } from "./dataService";
+
+/** The server's Excel file of problems: the trainer's own, or for a super admin everyone's (or one trainer's). */
+export const downloadServerExport = (createdBy) => download("/api/coding-problems/export", "coding-problems.xlsx", { createdBy });
 
 const KEY = "anobyt_coding_problems";
 const enc = encodeURIComponent;
@@ -54,9 +57,19 @@ const toBody = (p) => ({
 export async function listProblems({ q, createdBy } = {}) {
   if (serverHas !== false) {
     try {
-      const r = await api("/api/coding-problems", { query: { q, createdBy, size: 200 } });
+      // Page through (100 at a time, at most 20 pages) so the whole list can be shown and exported.
+      const all = [];
+      for (let page = 0; page < 20; page++) {
+        const r = await api("/api/coding-problems", { query: { q, createdBy, page, size: 100 } });
+        if (Array.isArray(r)) {
+          all.push(...r);
+          break;
+        }
+        all.push(...(r?.items || []));
+        if (!r?.totalPages || page + 1 >= r.totalPages) break;
+      }
       serverHas = true;
-      return (Array.isArray(r) ? r : r?.items || []).map(fromServer);
+      return all.map(fromServer);
     } catch (e) {
       if (!missing(e)) throw e;
       serverHas = false;

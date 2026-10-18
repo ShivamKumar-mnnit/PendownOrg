@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Code2, Download, Pencil, Plus, Trash2, UploadCloud } from "lucide-react";
 import { fmtWhen } from "../../../lib/dataService";
-import { deleteProblem, exportProblems, guessTitle, isLocalOnly, listProblems, localProblems, moveLocalToServer, saveProblem } from "../../../lib/codingProblems";
+import { deleteProblem, downloadServerExport, exportProblems, guessTitle, isLocalOnly, listProblems, localProblems, moveLocalToServer, saveProblem } from "../../../lib/codingProblems";
 import { Field, SectionTop } from "../shared";
 import { Empty, Loading, Modal, act, useDs } from "./common";
 
@@ -62,6 +62,16 @@ export default function CodingProblems({ me }) {
         >
           <Download className="h-4 w-4" /> Export to Excel
         </button>
+        {state.data && !isLocalOnly() && (
+          <button
+            type="button"
+            className="btn ghost"
+            title={trainer ? `The server's export of ${trainer}'s problems` : "The server's export of every problem you can see"}
+            onClick={() => act(setErr, () => downloadServerExport(trainer ? list.find((p) => p.createdByName === trainer)?.createdById : undefined))}
+          >
+            <Download className="h-4 w-4" /> Server export
+          </button>
+        )}
       </SectionTop>
 
       <div className="row" style={{ gap: 10, marginBottom: 12, alignItems: "center", flexWrap: "wrap" }}>
