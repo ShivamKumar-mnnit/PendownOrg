@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Award, CalendarPlus, ClipboardPen, Download, History, Link2, Pencil, Send, Trash2, Video, XCircle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Award, CalendarPlus, ClipboardPen, Download, History, Link2, Pencil, Search, Send, Trash2, Video, X, XCircle } from "lucide-react";
+import Select from "../../../components/Select";
 import { INTERVIEW_STATUS, MEETING_PLATFORMS, adminApi, downloadSheetTemplate, fmtWhen, fromLocalInput, interviewApi, isLegacyInterviews, ordinal, toLocalInput } from "../../../lib/dataService";
 import { downloadCertificate, generateCertificate } from "../../../lib/certificate";
 import { createTeamsMeeting, meetingSubject, microsoftToken, teamsConfigured } from "../../../lib/teams";
@@ -270,8 +271,7 @@ function useTrainers() {
 
 function ScheduleForm({ batch, initial, onSaved }) {
   const editing = !!initial;
-  const [q, setQ] = useState("");
-  const students = useDs(() => (editing ? Promise.resolve({ items: [] }) : adminApi.students(batch.id, { q, size: 100 })), [batch.id, q, editing]);
+  const [student, setStudent] = useState(null);
   const trainers = useTrainers();
   const trainerList = trainers.data?.list?.length ? trainers.data.list : null;
   const [f, setF] = useState({
@@ -289,7 +289,7 @@ function ScheduleForm({ batch, initial, onSaved }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState("");
   const set = (k) => (e) => setF({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
-  const studentName = editing ? initial.studentName : (students.data?.items || []).find((s) => s.id === f.studentId)?.name;
+  const studentName = editing ? initial.studentName : student?.name;
   const trainer = trainerList?.find((t) => t.id === f.interviewerId);
 
   async function teams() {
@@ -340,32 +340,26 @@ function ScheduleForm({ batch, initial, onSaved }) {
       {!editing && (
         <>
           <Field label="Student">
-            <input className="inp" placeholder="Search the batch" value={q} onChange={(e) => setQ(e.target.value)} />
+            <StudentPicker
+              batchId={batch.id}
+              value={student}
+              onChange={(s) => {
+                setStudent(s);
+                setF((x) => ({ ...x, studentId: s?.id || "" }));
+              }}
+            />
           </Field>
-          <select className="inp" size={5} style={{ marginTop: 6, height: "auto" }} value={f.studentId} onChange={set("studentId")} aria-label="Student" required>
-            {(students.data?.items || []).map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-                {s.regNo ? ` · ${s.regNo}` : ""}
-                {s.domain ? ` · ${s.domain}` : ""}
-              </option>
-            ))}
-          </select>
-          {students.data && !students.data.items?.length && <p className="note" style={{ fontSize: 13 }}>No students found. Add students to the batch first.</p>}
         </>
       )}
       <div className="two">
         {trainerList ? (
           <Field label="Interviewer (trainer)" hint="The interview shows on this trainer's dashboard.">
-            <select className="inp" value={f.interviewerId} onChange={set("interviewerId")}>
-              <option value="">Choose a trainer…</option>
-              {trainerList.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                  {t.email ? ` · ${t.email}` : ""}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={f.interviewerId}
+              onChange={(v) => setF((x) => ({ ...x, interviewerId: v }))}
+              placeholder="Choose a trainer…"
+              options={trainerList.map((t) => ({ value: t.id, label: t.email ? `${t.name} · ${t.email}` : t.name }))}
+            />
           </Field>
         ) : (
           <Field label="Interviewer name">
@@ -374,12 +368,11 @@ function ScheduleForm({ batch, initial, onSaved }) {
         )}
         {trainerList ? (
           <Field label="Student's interview">
-            <select className="inp" value={f.studentInterviewNo} onChange={set("studentInterviewNo")}>
-              <option value="">Next one (automatic)</option>
-              {[1, 2, 3, 4].map((n) => (
-                <option key={n} value={n}>{ordinal(n)} interview</option>
-              ))}
-            </select>
+            <Select
+              value={String(f.studentInterviewNo)}
+              onChange={(v) => setF((x) => ({ ...x, studentInterviewNo: v }))}
+              options={[{ value: "", label: "Next one (automatic)" }, ...[1, 2, 3, 4].map((n) => ({ value: String(n), label: `${ordinal(n)} interview` }))]}
+            />
           </Field>
         ) : (
           <Field label="Interviewer email" hint="Use the trainer's login email so it shows on their dashboard.">
@@ -420,6 +413,119 @@ function ScheduleForm({ batch, initial, onSaved }) {
         {busy === "save" ? "Saving…" : editing ? "Save changes" : "Schedule interview"}
       </button>
     </form>
+  );
+}
+
+/**
+ * Search the batch and pick one student. The chosen student shows in the bar with an × to
+ * change it; arrow keys and Enter work in the list.
+ */
+function StudentPicker({ batchId, value, onChange }) {
+  const [q, setQ] = useState("");
+  const [debounced, setDebounced] = useState("");
+  const [open, setOpen] = useState(false);
+  const [hi, setHi] = useState(0);
+  const ref = useRef(null);
+  const inputRef = useRef(null);
+  const students = useDs(() => adminApi.students(batchId, { q: debounced, size: 50 }), [batchId, debounced]);
+  const items = students.data?.items || [];
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(q.trim()), 250);
+    return () => clearTimeout(t);
+  }, [q]);
+  useEffect(() => {
+    const away = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false);
+    document.addEventListener("mousedown", away);
+    return () => document.removeEventListener("mousedown", away);
+  }, []);
+
+  function pick(s) {
+    onChange(s);
+    setOpen(false);
+    setQ("");
+  }
+
+  function onKey(e) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      setOpen(true);
+      setHi((h) => Math.max(0, Math.min(items.length - 1, h + (e.key === "ArrowDown" ? 1 : -1))));
+    } else if (e.key === "Enter" && open && items[hi]) {
+      e.preventDefault();
+      pick(items[hi]);
+    } else if (e.key === "Escape" && open) {
+      e.stopPropagation();
+      setOpen(false);
+    }
+  }
+
+  if (value)
+    return (
+      <div className="inp picked">
+        <span>
+          <b>{value.name}</b>
+          {value.regNo && <span className="note"> · {value.regNo}</span>}
+          {value.domain && <span className="note"> · {value.domain}</span>}
+        </span>
+        <button
+          type="button"
+          className="ib"
+          title="Change student"
+          aria-label="Change student"
+          onClick={() => {
+            onChange(null);
+            setOpen(true);
+            setTimeout(() => inputRef.current?.focus(), 0);
+          }}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    );
+
+  return (
+    <div ref={ref} className={`picker${open ? " open" : ""}`}>
+      <div className="picker-bar">
+        <Search className="h-4 w-4" aria-hidden="true" />
+        <input
+          ref={inputRef}
+          className="inp"
+          placeholder="Search by name or reg no"
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setOpen(true);
+            setHi(0);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={onKey}
+          role="combobox"
+          aria-expanded={open}
+          aria-controls="student-options"
+          aria-autocomplete="list"
+          autoComplete="off"
+        />
+      </div>
+      {open && (
+        <ul id="student-options" role="listbox" className="picker-list">
+          {students.data === null ? (
+            <li className="note">Loading…</li>
+          ) : !items.length ? (
+            <li className="note">{debounced ? "No student matches that." : "No students in this batch yet."}</li>
+          ) : (
+            items.map((s, n) => (
+              <li key={s.id}>
+                <button type="button" role="option" aria-selected={n === hi} className={n === hi ? "on" : ""} onMouseEnter={() => setHi(n)} onClick={() => pick(s)}>
+                  <span>{s.name}</span>
+                  <small>{[s.regNo, s.domain].filter(Boolean).join(" · ")}</small>
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
   );
 }
 

@@ -1290,3 +1290,25 @@ select option {
   .report { border: none; padding: 0; }
   .report-bar .track, .report-bar .fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
+
+/* ---- Student picker (search, then choose one) ---- */
+@layer components {
+  .picker { position: relative; }
+  .picker.open { z-index: 20; }
+  .picker-bar { position: relative; }
+  .picker-bar svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-fg-faint); pointer-events: none; }
+  .picker-bar .inp { padding-left: 40px; }
+  .picker-list {
+    position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 30; max-height: 260px; overflow: auto; margin: 0; padding: 6px; list-style: none;
+    background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: 12px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+  }
+  .picker-list > li.note { padding: 10px 12px; margin: 0; font-size: 14px; }
+  .picker-list button {
+    display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 12px; border: 0; border-radius: 8px;
+    background: none; color: var(--color-fg); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+  }
+  .picker-list button small { color: var(--color-fg-muted); font-size: 12px; white-space: nowrap; }
+  .picker-list button.on { background: var(--ab-soft); color: var(--color-accent); }
+  .inp.picked { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-color: var(--color-accent); }
+  .inp.picked .ib { margin: -6px -6px -6px 0; flex-shrink: 0; }
+}
