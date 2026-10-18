@@ -1312,3 +1312,14 @@ select option {
   .inp.picked { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-color: var(--color-accent); }
   .inp.picked .ib { margin: -6px -6px -6px 0; flex-shrink: 0; }
 }
+
+/* ---- Code room test cases ---- */
+@layer components {
+  .tc-list { display: grid; gap: 12px; margin-top: 12px; }
+  .tc-card { border: 1px solid var(--color-border); border-radius: 12px; padding: 12px 14px; background: var(--color-card); }
+  .tc-card.pass { border-color: color-mix(in srgb, var(--color-accent-emerald) 55%, var(--color-border)); }
+  .tc-card.fail, .tc-card.error { border-color: color-mix(in srgb, #e5484d 55%, var(--color-border)); }
+  .tc-title { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; }
+  .tc-card .run-out { margin-top: 10px; }
+  @media (max-width: 640px) { .tc-card .two { grid-template-columns: 1fr; } }
+}

@@ -11,7 +11,7 @@ import { PasswordGate } from "./AuthForms";
 
 // Tool pages where the floating promo/chat buttons would sit on top of the
 // editor and its output.
-const NO_FLOATERS = ["/compiler", "/problem", "/problems/year", "/assessment", "/exam", "/admin", "/workspace", "/interview-report", "/trainer"];
+const NO_FLOATERS = ["/compiler", "/problem", "/problems/year", "/assessment", "/exam", "/admin", "/workspace", "/interview-report", "/trainer", "/code-room"];
 
 export default function Layout() {
   const { pathname } = useLocation();

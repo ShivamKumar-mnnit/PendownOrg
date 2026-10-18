@@ -15,6 +15,7 @@ const QuestionBank = lazy(() => import("./admin/ds/QuestionBank"));
 const TrainerInterviews = lazy(() => import("./admin/ds/TrainerInterviews"));
 const MeetingLinks = lazy(() => import("./admin/ds/MeetingLinks"));
 const InterviewSchedule = lazy(() => import("./admin/ds/InterviewSchedule"));
+const CodingProblems = lazy(() => import("./admin/ds/CodingProblems"));
 const superPanel = (name) => lazy(() => import("./admin/ds/SuperAdmin").then((m) => ({ default: m[name] })));
 const Overview = superPanel("Overview");
 const Onboarding = superPanel("Onboarding");
@@ -40,6 +41,7 @@ const TABS = [
   ["interviews", "Interviews", Video, TrainerInterviews, "admin"],
   ["batches", "Batches", Layers, Batches, "admin"],
   ["questions", "Question bank", FileQuestion, QuestionBank, "admin"],
+  ["coding", "Coding problems", Code2, CodingProblems, "admin"],
   ["schedule", "Interview schedule", CalendarRange, InterviewSchedule, "super"],
   ["meetings", "Meeting links", Link2, MeetingLinks, "super"],
   ["onboarding", "College requests", School, Onboarding, "super"],
