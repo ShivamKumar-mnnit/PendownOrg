@@ -24,8 +24,15 @@ student their password another way.
 
 ## How the email is sent
 
-The data service has no endpoint for an email with a custom subject and body, so this website
-sends it itself, from `netlify/functions/mail.js` at `POST /api/mail/send`:
+**Normally, by the data service:** `POST /api/email/student-credentials`
+`{students: [{name, email, regNo, password}]}` returns `{total, sent, failed, skipped, deliveries}`.
+It uses the server's own login-details template and mailbox. The page sends one student per
+request, right after that student's reset. When the dialog opens, it checks the endpoint exists
+by sending an empty list, which emails nobody.
+
+**Fallback, by this website:** only if the server answers 404 to that check. In that case the
+page shows the editable subject and body and sends through `netlify/functions/mail.js` at
+`POST /api/mail/send`:
 
 - **Who can call it:** only someone signed in as SUPERADMIN. The function checks the
   data-service token (`x-user-token`) against `/api/auth/me`.

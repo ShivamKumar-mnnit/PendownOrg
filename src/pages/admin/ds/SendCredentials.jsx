@@ -69,12 +69,20 @@ export default function SendCredentials({ batch, onDone, onRunning }) {
   const [err, setErr] = useState("");
   const stop = useRef(false);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  // "server": the data service's /api/email/student-credentials (its own template and mailbox).
+  // "netlify": this site's mail function with the editable subject and body, for servers without it.
+  const [mode, setMode] = useState(null);
 
   useEffect(() => {
     let on = true;
     allStudents(batch.id).then(
       (s) => on && setStudents(s),
       (e) => on && setErr(e.message),
+    );
+    // An empty list emails nobody; a 404 means the server doesn't have the endpoint.
+    emailApi.studentCredentials([]).then(
+      () => on && setMode("server"),
+      (e) => on && setMode(e.status === 404 || e.status === 405 ? "netlify" : "server"),
     );
     return () => {
       on = false;
@@ -114,27 +122,28 @@ export default function SendCredentials({ batch, onDone, onRunning }) {
 
   async function start() {
     setErr("");
-    if (!f.body.includes("{password}")) return setErr("Keep {password} in the email body, or students won't get their password.");
+    if (mode === "netlify" && !f.body.includes("{password}")) return setErr("Keep {password} in the email body, or students won't get their password.");
     if (!targets.length) return setErr("No students to email.");
     if (f.who === "all" && !confirm("This resets the password of EVERY student in the batch, including those who already chose their own. They'll have to use the emailed password. Continue?")) return;
     if (!confirm(`Reset and email login details to ${targets.length} student${targets.length === 1 ? "" : "s"}? It takes about ${minutes} minute${minutes === 1 ? "" : "s"}. Keep this tab open until it finishes.`)) return;
 
-    // Check email works before resetting anyone's password. An empty request is refused with a
-    // 400 when everything is set up; any other answer means emails can't go out yet.
-    try {
-      await emailApi.send("", "", "");
-      return setErr("The mail check gave an unexpected answer, so nothing was reset.");
-    } catch (e) {
-      if (e.status !== 400) {
-        const why =
-          e.status === 404 || e.status === 405
-            ? "the website's mail service isn't deployed here (it runs on the live site, not in local dev)"
-            : e.status === 401 || e.status === 403
-              ? "only a super admin can send these emails"
-              : e.message;
-        return setErr(`Can't send emails: ${why}. Nothing was reset.`);
+    // Netlify path: check its mailbox is set up before resetting anyone's password. An empty
+    // request is refused with a 400 when it is; any other answer means emails can't go out yet.
+    if (mode === "netlify")
+      try {
+        await emailApi.send("", "", "");
+        return setErr("The mail check gave an unexpected answer, so nothing was reset.");
+      } catch (e) {
+        if (e.status !== 400) {
+          const why =
+            e.status === 404 || e.status === 405
+              ? "the website's mail service isn't deployed here (it runs on the live site, not in local dev)"
+              : e.status === 401 || e.status === 403
+                ? "only a super admin can send these emails"
+                : e.message;
+          return setErr(`Can't send emails: ${why}. Nothing was reset.`);
+        }
       }
-    }
 
     stop.current = false;
     setLog([]);
@@ -148,8 +157,14 @@ export default function SendCredentials({ batch, onDone, onRunning }) {
         row.password = c?.temporaryPassword || "";
         if (!row.password) throw new Error("the server didn't return a password");
         try {
-          const vars = { name: s.name, rollNo: s.regNo || "", password: row.password, college: batch.college?.name || "" };
-          await emailApi.send(s.email, fill(f.subject, vars), fill(f.body, vars));
+          if (mode === "server") {
+            const r = await emailApi.studentCredentials([{ name: s.name, email: s.email, regNo: s.regNo || "", password: row.password }]);
+            const d = r?.deliveries?.[0];
+            if (!(r?.sent >= 1 || d?.status === "SENT")) throw new Error(d?.error || (d?.status ? `the server marked it ${d.status}` : "the server didn't send it"));
+          } else {
+            const vars = { name: s.name, rollNo: s.regNo || "", password: row.password, college: batch.college?.name || "" };
+            await emailApi.send(s.email, fill(f.subject, vars), fill(f.body, vars));
+          }
           row.ok = true;
           row.status = "Sent";
           markSent(batch.id, s.id);
@@ -201,14 +216,24 @@ export default function SendCredentials({ batch, onDone, onRunning }) {
             <b>{targets.length}</b> student{targets.length === 1 ? "" : "s"} will get a new temporary password by email
             {noEmail ? `; ${noEmail} skipped (no email address)` : ""}. About {minutes} minute{minutes === 1 ? "" : "s"}.
           </p>
-          <Field label="Subject">
-            <input className="inp" value={f.subject} onChange={set("subject")} maxLength={200} />
-          </Field>
-          <Field label="Email" hint="{password} becomes each student's new password. You can also use {name}, {rollNo} and {college}.">
-            <textarea className="inp" rows={16} value={f.body} onChange={set("body")} />
-          </Field>
+          {mode === null ? (
+            <p className="note">Checking how emails will be sent…</p>
+          ) : mode === "server" ? (
+            <p className="note" style={{ fontSize: 13 }}>
+              Emails are sent by the Anobyt server with its login-details template (website, user ID and each student's new password), from the Anobyt mailbox.
+            </p>
+          ) : (
+            <>
+              <Field label="Subject">
+                <input className="inp" value={f.subject} onChange={set("subject")} maxLength={200} />
+              </Field>
+              <Field label="Email" hint="{password} becomes each student's new password. You can also use {name}, {rollNo} and {college}.">
+                <textarea className="inp" rows={16} value={f.body} onChange={set("body")} />
+              </Field>
+            </>
+          )}
           {err && <p className="note bad">{err}</p>}
-          <button type="button" className="btn" style={{ marginTop: 14 }} onClick={start} disabled={!targets.length}>
+          <button type="button" className="btn" style={{ marginTop: 14 }} onClick={start} disabled={!targets.length || !mode}>
             <Send className="h-4 w-4" /> Reset and email {targets.length} student{targets.length === 1 ? "" : "s"}
           </button>
         </>

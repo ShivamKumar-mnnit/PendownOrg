@@ -326,6 +326,11 @@ export const emailApi = {
   /** Sends a test email to check the mail setup. */
   test: (to) => api("/api/email/test", { method: "POST", body: { to } }),
   /**
+   * Login-details emails written by the server's own template, through its mailbox.
+   * students: [{name, email, regNo, password}]. Returns {total, sent, failed, skipped, deliveries}.
+   */
+  studentCredentials: (students) => api("/api/email/student-credentials", { method: "POST", body: { students } }),
+  /**
    * One plain-text email with our own subject and body (super admin). Sent by this website's
    * Netlify function (netlify/functions/mail.js) through the same mailbox as the data service;
    * see docs/student-credentials-email.md.
