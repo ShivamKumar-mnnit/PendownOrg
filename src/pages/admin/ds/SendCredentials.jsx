@@ -23,6 +23,24 @@ If you face any issues accessing your account, please contact the concerned team
 Best regards,
 Team Anobyt`;
 
+// Students already emailed from this browser, per batch ({studentId: time}), so a second run
+// doesn't reset them again (which would make the password in their first email stop working).
+const sentKey = (batchId) => `anobyt_creds_sent:${batchId}`;
+function readSent(batchId) {
+  try {
+    return JSON.parse(localStorage.getItem(sentKey(batchId)) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+function markSent(batchId, studentId) {
+  try {
+    localStorage.setItem(sentKey(batchId), JSON.stringify({ ...readSent(batchId), [studentId]: Date.now() }));
+  } catch {
+    /* storage blocked: a re-run could include them again */
+  }
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const fill = (tpl, v) => tpl.replace(/\{(name|rollNo|password|college)\}/g, (_, k) => v[k] ?? "");
 
@@ -43,7 +61,8 @@ async function allStudents(batchId) {
  * created, so each one is reset first. The log (with the passwords) can be downloaded as a backup.
  */
 export default function SendCredentials({ batch, onDone, onRunning }) {
-  const [f, setF] = useState({ subject: SUBJECT, body: BODY, who: "pending", gap: 1 });
+  const [f, setF] = useState({ subject: SUBJECT, body: BODY, who: "pending", gap: 1, skipSent: true });
+  const [sentBefore, setSentBefore] = useState(() => readSent(batch.id));
   const [students, setStudents] = useState(null);
   const [log, setLog] = useState([]); // {name, regNo, email, password, status, ok}
   const [phase, setPhase] = useState("setup"); // setup | running | stopped | done
@@ -84,7 +103,9 @@ export default function SendCredentials({ batch, onDone, onRunning }) {
     return () => window.removeEventListener("beforeunload", warn);
   }, [phase]);
 
-  const pool = (students || []).filter((s) => s.active !== false && (f.who === "all" || s.mustChangePassword));
+  const eligible = (students || []).filter((s) => s.active !== false && (f.who === "all" || s.mustChangePassword));
+  const alreadySent = eligible.filter((s) => sentBefore[s.id]).length;
+  const pool = f.skipSent ? eligible.filter((s) => !sentBefore[s.id]) : eligible;
   const targets = pool.filter((s) => s.email);
   const noEmail = pool.length - targets.length;
   const gapMs = Math.max(0, Number(f.gap) || 0) * 1000;
@@ -98,13 +119,21 @@ export default function SendCredentials({ batch, onDone, onRunning }) {
     if (f.who === "all" && !confirm("This resets the password of EVERY student in the batch, including those who already chose their own. They'll have to use the emailed password. Continue?")) return;
     if (!confirm(`Reset and email login details to ${targets.length} student${targets.length === 1 ? "" : "s"}? It takes about ${minutes} minute${minutes === 1 ? "" : "s"}. Keep this tab open until it finishes.`)) return;
 
-    // Check the email endpoint exists before resetting anyone's password.
+    // Check email works before resetting anyone's password. An empty request is refused with a
+    // 400 when everything is set up; any other answer means emails can't go out yet.
     try {
       await emailApi.send("", "", "");
+      return setErr("The mail check gave an unexpected answer, so nothing was reset.");
     } catch (e) {
-      if (e.status === 404 || e.status === 405) return setErr("The data service can't send custom emails yet (POST /api/email/send is missing), so nothing was reset. See docs/student-credentials-email.md.");
-      if (e.status === 401 || e.status === 403) return setErr("Only a super admin can send these emails.");
-      // 400 (validation) means the endpoint is there.
+      if (e.status !== 400) {
+        const why =
+          e.status === 404 || e.status === 405
+            ? "the website's mail service isn't deployed here (it runs on the live site, not in local dev)"
+            : e.status === 401 || e.status === 403
+              ? "only a super admin can send these emails"
+              : e.message;
+        return setErr(`Can't send emails: ${why}. Nothing was reset.`);
+      }
     }
 
     stop.current = false;
@@ -123,6 +152,7 @@ export default function SendCredentials({ batch, onDone, onRunning }) {
           await emailApi.send(s.email, fill(f.subject, vars), fill(f.body, vars));
           row.ok = true;
           row.status = "Sent";
+          markSent(batch.id, s.id);
         } catch (e) {
           row.status = `Password reset, email failed: ${e.message}`;
           if (e.status === 404 || e.status === 401 || e.status === 403) stop.current = true;
@@ -133,6 +163,7 @@ export default function SendCredentials({ batch, onDone, onRunning }) {
       setLog((l) => [...l, row]);
       if (n < targets.length - 1 && !stop.current) await sleep(gapMs);
     }
+    setSentBefore(readSent(batch.id));
     setPhase(stop.current ? "stopped" : "done");
     onDone?.();
   }
@@ -160,6 +191,12 @@ export default function SendCredentials({ batch, onDone, onRunning }) {
               <input className="inp" type="number" min="0" max="60" step="0.5" value={f.gap} onChange={set("gap")} />
             </Field>
           </div>
+          {alreadySent > 0 && (
+            <label className="row" style={{ gap: 6, alignItems: "center", fontSize: 14, marginTop: 10 }}>
+              <input type="checkbox" checked={f.skipSent} onChange={(e) => setF({ ...f, skipSent: e.target.checked })} />
+              Skip the {alreadySent} student{alreadySent === 1 ? "" : "s"} already emailed from this browser (sending again gives them a new password)
+            </label>
+          )}
           <p className="note" style={{ fontSize: 13 }}>
             <b>{targets.length}</b> student{targets.length === 1 ? "" : "s"} will get a new temporary password by email
             {noEmail ? `; ${noEmail} skipped (no email address)` : ""}. About {minutes} minute{minutes === 1 ? "" : "s"}.

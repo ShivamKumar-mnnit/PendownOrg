@@ -326,10 +326,25 @@ export const emailApi = {
   /** Sends a test email to check the mail setup. */
   test: (to) => api("/api/email/test", { method: "POST", body: { to } }),
   /**
-   * One plain-text email with our own subject and body (super admin).
-   * Needs POST /api/email/send on the data service; see docs/student-credentials-email.md.
+   * One plain-text email with our own subject and body (super admin). Sent by this website's
+   * Netlify function (netlify/functions/mail.js) through the same mailbox as the data service;
+   * see docs/student-credentials-email.md.
    */
-  send: (to, subject, text) => api("/api/email/send", { method: "POST", body: { to, subject, text } }),
+  async send(to, subject, text) {
+    let res;
+    try {
+      res = await fetch("/api/mail/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-user-token": token },
+        body: JSON.stringify({ to, subject, text }),
+      });
+    } catch {
+      throw new ApiError("Could not reach the website's mail service. Check your connection.", 0);
+    }
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new ApiError(data?.error || data?.message || `Email failed (${res.status}).`, res.status);
+    return data;
+  },
 };
 
 // ---- Student ----

@@ -112,7 +112,8 @@ const DS_URL = ENV.DATA_SERVICE_URL || "https://dataservice.anobyt.in";
 const DS_KEY = ENV.DATA_SERVICE_KEY || "9cf3f911e5c7ac0bde2826a82359248e537fd8aa8b5af41d98135c9dbf147803";
 const dsCache = new Map(); // token -> { me, until }
 
-async function dataServiceUser(token) {
+/** The data-service account behind a sign-in token (cached for a minute), or null. */
+export async function dataServiceUser(token) {
   const hit = dsCache.get(token);
   if (hit && hit.until > Date.now()) return hit.me;
   let me = null;

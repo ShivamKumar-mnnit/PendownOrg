@@ -7,9 +7,10 @@ admin sees this button.
 
 For each student in the batch, one at a time:
 
-1. Resets the password with `POST /api/templates/{batchId}/students/{studentId}/reset-password`.
-   This endpoint already exists and returns `{temporaryPassword}`. Resetting is the only way to
-   get a password the server can show again: existing passwords are stored hashed.
+1. Resets the password with the data service's existing
+   `POST /api/templates/{batchId}/students/{studentId}/reset-password`, which returns
+   `{temporaryPassword}`. Resetting is the only way to get a password that can be shown again:
+   the server stores passwords hashed.
 2. Emails the student with the subject and body from the form, with `{password}` replaced by that
    new password. `{name}`, `{rollNo}` and `{college}` work too.
 3. Waits the chosen gap (1 second by default), then moves on to the next student.
@@ -17,33 +18,42 @@ For each student in the batch, one at a time:
 "Who gets it" defaults to students who haven't signed in yet (`mustChangePassword: true`), so
 nobody who already chose their own password is reset. Students without an email are skipped.
 
-The run happens in the browser tab. Closing the tab or the dialog stops it. The log can be
-downloaded as a CSV, and it includes every password that was reset. If an email fails after its
-reset, the CSV is how to give that student their password another way.
+The run happens in the browser tab. Closing the tab or the dialog stops it. **Download log** gives
+a CSV with every reset password. If an email fails after its reset, the CSV is how to give that
+student their password another way.
 
-Before resetting anyone, the page checks that the email endpoint below exists. If it doesn't,
-nothing is reset.
+## How the email is sent
 
-## Endpoint the data service needs
+The data service has no endpoint for an email with a custom subject and body, so this website
+sends it itself, from `netlify/functions/mail.js` at `POST /api/mail/send`:
 
-There is no endpoint yet for an email with a custom subject and body. `/api/email/meeting-invite`
-requires a meeting link and start time and renders the interview-invite layout.
-`/api/email/test` sends a fixed message.
+- **Who can call it:** only someone signed in as SUPERADMIN. The function checks the
+  data-service token (`x-user-token`) against `/api/auth/me`.
+- **How it sends:** as plain text, through the same Hostinger mailbox the data service uses.
 
-```
-POST /api/email/send            (SUPERADMIN only)
-{ "to": "student@example.com", "subject": "…", "text": "…plain text, with line breaks…" }
+**Setup (once):** in Netlify, go to Site configuration → Environment variables and add the same
+values as `MAIL_*` in the data service's `.env.prod`. Then redeploy.
 
-200 → { "status": "SENT" }
-400 → validation error (blank or invalid `to`, blank `subject` / `text`)
-```
+| Variable | Value |
+| --- | --- |
+| `MAIL_HOST` | `smtp.hostinger.com` |
+| `MAIL_PORT` | `465` |
+| `MAIL_SMTP_SSL` | `true` |
+| `MAIL_USERNAME` | `contact@anobyt.in` |
+| `MAIL_PASSWORD` | the mailbox password (the `MAIL_PASSWORD` in `.env.prod`) |
+| `MAIL_FROM` | `contact@anobyt.in` |
+| `MAIL_FROM_NAME` | `Anobyt` |
 
-- `to`: `@NotBlank @Email`, at most 200 characters.
-- `subject`: `@NotBlank`, at most 200.
-- `text`: `@NotBlank`, at most 10,000. Send it as plain text, keeping the line breaks.
-- It should reuse the existing mail sender in `EmailService`, the same one `/api/email/test` uses.
-- The frontend sends one request per student, about one per second, so rate limiting needs to
-  allow at least 60 requests a minute for the super admin.
-- The page checks the endpoint exists by sending an empty body first. It expects a **400** back
-  (validation), not an email. So keep the validation annotations: with them, an empty request
-  never sends anything.
+Before resetting anyone, the page sends the function an empty request:
+
+- **400** means email is ready (the empty request is rejected, so nothing is sent).
+- **503** means the variables above are missing.
+- **404** means the function isn't deployed. It only runs on the Netlify site, not in
+  `npm run dev`.
+
+On anything except 400, nothing is reset.
+
+Hostinger mailboxes have sending limits per hour and per day. If emails start failing partway
+through, the log shows it. Wait, then run it again. The page remembers, per batch and in this
+browser, who it already emailed, and skips them by default. Sending to them again would reset
+their password once more and make the first email's password stop working.
