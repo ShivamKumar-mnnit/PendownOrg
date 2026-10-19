@@ -325,6 +325,11 @@ export const emailApi = {
   meetingInvite: (b) => api("/api/email/meeting-invite", { method: "POST", body: b }),
   /** Sends a test email to check the mail setup. */
   test: (to) => api("/api/email/test", { method: "POST", body: { to } }),
+  /**
+   * One plain-text email with our own subject and body (super admin).
+   * Needs POST /api/email/send on the data service; see docs/student-credentials-email.md.
+   */
+  send: (to, subject, text) => api("/api/email/send", { method: "POST", body: { to, subject, text } }),
 };
 
 // ---- Student ----

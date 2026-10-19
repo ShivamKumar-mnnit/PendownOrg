@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Download, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
+import { useAccount } from "../../../lib/account";
+import SendCredentials from "./SendCredentials";
+import { Download, KeyRound, Mail, Pencil, Plus, Trash2 } from "lucide-react";
 import { adminApi, downloadSheetTemplate, fmtDay } from "../../../lib/dataService";
 import { Field } from "../shared";
 import { Credentials, Empty, FilePick, Loading, Modal, Pager, RowErrors, act, useDs } from "./common";
@@ -15,6 +17,9 @@ export default function BatchStudents({ batch, onChange }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const code = batch.college?.code;
+  const { user } = useAccount();
+  const [mailing, setMailing] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const refresh = () => {
     state.reload();
@@ -46,7 +51,24 @@ export default function BatchStudents({ batch, onChange }) {
         <button type="button" className="btn ghost" onClick={() => act(setErr, () => adminApi.exportStudents(batch.id))}>
           <Download className="h-4 w-4" /> Export
         </button>
+        {user?.role === "SUPERADMIN" && (
+          <button type="button" className="btn ghost" onClick={() => setMailing(true)}>
+            <Mail className="h-4 w-4" /> Email login details
+          </button>
+        )}
       </div>
+      {mailing && (
+        <Modal
+          title="Email login details to students"
+          wide={760}
+          onClose={() => {
+            if (sending && !confirm("Emails are still being sent. Closing this stops the sending. Close anyway?")) return;
+            setMailing(false);
+          }}
+        >
+          <SendCredentials batch={batch} onRunning={setSending} onDone={refresh} />
+        </Modal>
+      )}
       {err && <p className="note bad">{err}</p>}
       {bulk && (
         <div className="panel" style={{ marginBottom: 12 }}>
