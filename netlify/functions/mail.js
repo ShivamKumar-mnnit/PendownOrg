@@ -41,7 +41,15 @@ export default async function handler(request) {
   // Before validating: the page sends an empty request to check this, and must hear 503 (not 400)
   // when the mailbox isn't configured.
   const t = mailer();
-  if (!t) return fail(503, "Email isn't set up on the website yet. Add MAIL_HOST, MAIL_USERNAME and MAIL_PASSWORD in Netlify environment variables.");
+  if (!t) {
+    // Names only, never values: tells the admin exactly what Netlify isn't passing to functions.
+    const missing = ["MAIL_HOST", "MAIL_USERNAME", "MAIL_PASSWORD"].filter((k) => !process.env[k]);
+    return fail(
+      503,
+      `Email isn't set up on the website yet: ${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} missing or empty for functions. ` +
+        "In Netlify, give these variables the Functions scope and the Production context, then trigger a new deploy.",
+    );
+  }
 
   let body;
   try {
