@@ -42,6 +42,10 @@ export function generateCertificate({ name, domain, mentor, dateLabel }) {
   ctx.font = "20px Arial, sans-serif";
   wrapCenteredText(ctx, "Mock Interviews & Mentorship", canvas.width / 2, 198);
 
+  ctx.fillStyle = "#4338ca";
+  ctx.font = "bold 20px Arial, sans-serif";
+  wrapCenteredText(ctx, "In collaboration with Anobyt for CSE students", canvas.width / 2, 234);
+
   // Title
   ctx.fillStyle = "#18181b";
   ctx.font = "bold 56px Georgia, serif";
@@ -106,6 +110,12 @@ export function generateCertificate({ name, domain, mentor, dateLabel }) {
   ctx.fillStyle = "#a1a1aa";
   ctx.font = "16px Arial, sans-serif";
   ctx.fillText("Issued by", canvas.width - 150, footerY + 30);
+
+  // Contact, centred along the bottom (same addresses as the score card).
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#52525b";
+  ctx.font = "18px Arial, sans-serif";
+  ctx.fillText("Contact: anobyt@anobyt.in  ·  contact@anobyt.in", canvas.width / 2, footerY + 78);
 
   return canvas.toDataURL("image/png");
 }
