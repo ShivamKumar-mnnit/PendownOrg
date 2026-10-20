@@ -1,6 +1,9 @@
 import { fmtDay, ordinal } from "../lib/dataService";
 import { INTEREST, SECTIONS, band, overallPercent, scoreTone, strengths, suggestAreas } from "../lib/scorecard";
 
+// Shown on every score card, on screen and when printed or saved as PDF.
+const CONTACTS = ["anobyt@anobyt.in", "contact@anobyt.in"];
+
 /** A published interview scorecard (ScorecardView from the data service), as the student reads it. */
 export default function ScorecardReport({ card }) {
   const overall = card.overallPercent ?? overallPercent(card.sections);
@@ -13,6 +16,7 @@ export default function ScorecardReport({ card }) {
       <div className="report-head">
         <div>
           <span className="eyebrow">Mock interview score card</span>
+          <p className="report-collab">In collaboration with Anobyt for CSE students</p>
           <h2 style={{ margin: "6px 0 2px" }}>{card.studentName || "Student"}</h2>
           <p className="note" style={{ margin: 0 }}>{[card.regNo, card.templateName].filter(Boolean).join(" · ")}</p>
         </div>
@@ -80,7 +84,18 @@ export default function ScorecardReport({ card }) {
           <p style={{ marginTop: 0, whiteSpace: "pre-wrap" }}>{card.remarks}</p>
         </>
       )}
-      {card.publishedAt && <p className="note" style={{ fontSize: 12, marginTop: 18 }}>Published {fmtDay(card.publishedAt)}</p>}
+      <div className="report-foot">
+        <span>{card.publishedAt ? `Published ${fmtDay(card.publishedAt)}` : ""}</span>
+        <span>
+          Contact:{" "}
+          {CONTACTS.map((m, i) => (
+            <span key={m}>
+              {i > 0 && " · "}
+              <a href={`mailto:${m}`}>{m}</a>
+            </span>
+          ))}
+        </span>
+      </div>
     </div>
   );
 }
