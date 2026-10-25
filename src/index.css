@@ -1340,3 +1340,15 @@ select option {
   .dark .tc-out.error { color: #ff8a8f; }
   @media (max-width: 900px) { .tc-grid { grid-template-columns: 1fr; } }
 }
+
+/* ---- Pre-built page text (scripts/prerender.mjs): what crawlers read, shown until the app loads ---- */
+@layer components {
+  .prerendered nav { font-size: 13px; color: var(--color-fg-muted); margin-bottom: 18px; line-height: 2; }
+  .prerendered nav a { color: var(--color-fg-muted); }
+  .prerendered h1 { font-size: clamp(28px, 4vw, 38px); margin-bottom: 14px; }
+  .prerendered h2 { font-size: 21px; margin: 26px 0 8px; }
+  .prerendered h3 { font-size: 16px; margin: 16px 0 4px; }
+  .prerendered p, .prerendered li { color: var(--color-fg-muted); line-height: 1.65; }
+  .prerendered ul, .prerendered ol { padding-left: 20px; }
+  .prerendered a { color: var(--color-accent); }
+}

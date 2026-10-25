@@ -22,10 +22,10 @@
 # frontend connects straight to wss://api.anobyt.in/ws/execute instead (see
 # src/lib/interactiveCompiler.js).
 
-# Client-side routing (React Router) — without this, refreshing or
-# directly linking to /book, /colleges, /admin returns a 404 since those
-# aren't real files on the server, only routes React handles in the browser.
+# Client-side routing (React Router). Public pages are pre-built as real files by
+# scripts/prerender.mjs (dist/<path>/index.html, served before this rule); every other route
+# (dashboards, problems, tests …) gets app.html, the same app without a home-page canonical.
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/app.html"
   status = 200

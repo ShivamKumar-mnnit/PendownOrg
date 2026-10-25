@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Layout from "./components/Layout";
 import ScrollToTop from "./components/ScrollToTop";
 import { Head, Page } from "./components/ui";
+import { usePageSEO } from "./lib/seo";
 import Home from "./pages/Home";
 import Book from "./pages/Book";
 import Colleges from "./pages/Colleges";
@@ -43,6 +44,8 @@ const ResetPassword = lazy(() => import("./pages/Login").then((m) => ({ default:
 const lazyPage = (el) => <Suspense fallback={<Page narrow={620}><p className="note">Loading…</p></Page>}>{el}</Suspense>;
 
 function NotFound() {
+  // Served with HTTP 200 by the SPA fallback, so tell search engines not to index it.
+  usePageSEO({ title: "Page not found", description: "This page doesn't exist on Anobyt.", path: "/404", noindex: true });
   return (
     <Page narrow={520}>
       <Head title="Page not found">That page doesn't exist.</Head>
