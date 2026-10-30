@@ -21,6 +21,8 @@ import Problem from "./pages/Problem";
 import Dashboard from "./pages/Dashboard";
 import Talks from "./pages/Talks";
 import Faq from "./pages/Faq";
+import About from "./pages/About";
+import Junior from "./pages/Junior";
 import CourseDetail from "./pages/CourseDetail";
 import EventDetail from "./pages/EventDetail";
 
@@ -102,6 +104,8 @@ export default function App() {
           <Route path="/talks" element={<Talks />} />
           <Route path="/talks/:id" element={<EventDetail />} />
           <Route path="/faq" element={<Faq />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/junior" element={<Junior />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
