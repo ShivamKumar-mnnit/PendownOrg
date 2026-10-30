@@ -31,9 +31,11 @@ const MENU = [
     "Colleges",
     [
       ["/colleges", "For colleges", "Onboard a whole batch"],
+      ["/junior", "Anobyt Junior", "Workshops for schools, classes 6 to 12"],
       ["/workspace", "College panel", "Batches, tests, interviews, scorecards"],
       ["/talks", "Tech talks and events", "Mock sessions for campuses"],
       ["/faq", "FAQ", "Common questions"],
+      ["/about", "About and contact", "Who we are, how to reach us"],
     ],
   ],
   ["/premium", "Premium"],
@@ -41,7 +43,7 @@ const MENU = [
 ];
 
 // Detail pages light up the dropdown their list page lives in.
-const SECTION_OF = { "/companies": "Prepare", "/courses": "Prepare", "/take": "Practice", "/problems": "Practice", "/problem": "Practice", "/tests": "Practice", "/workspace": "Colleges" };
+const SECTION_OF = { "/junior": "Colleges", "/companies": "Prepare", "/courses": "Prepare", "/take": "Practice", "/problems": "Practice", "/problem": "Practice", "/tests": "Practice", "/workspace": "Colleges" };
 
 function sectionFor(pathname) {
   const root = "/" + (pathname.split("/")[1] || "");

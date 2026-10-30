@@ -32,11 +32,14 @@ const COMPILER_LINKS = [
 
 const SITE_LINKS = [
   ["/", "Home"],
+  ["/about", "About Anobyt"],
+  ["/about#contact", "Contact us"],
   ["/book", "Book a session"],
   ["/tests", "Create tests"],
   ["/placement", "Placement guide"],
   ["/talks", "Tech talks"],
   ["/colleges", "For colleges"],
+  ["/junior", "Anobyt Junior (schools)"],
   ["/faq", "FAQ"],
 ];
 
@@ -60,6 +63,14 @@ export default function Footer() {
               <b>Chat with us</b>
               <span>Slot openings and prep tips</span>
             </a>
+            <Link className="fbox" to="/about#contact">
+              <b>Contact us</b>
+              <span>Questions, feedback or partnerships</span>
+            </Link>
+            <Link className="fbox" to="/junior">
+              <b>Anobyt Junior</b>
+              <span>Workshops for schools, classes 6 to 12</span>
+            </Link>
             <Link className="fbox" to="/compiler">
               <b>Try the online compiler</b>
               <span>Practice code in your browser</span>

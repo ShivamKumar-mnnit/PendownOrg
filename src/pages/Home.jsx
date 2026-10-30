@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, Building2, Check, ClipboardCheck, Code2, Crown, Lock, SquareTerminal } from "lucide-react";
+import { ArrowRight, Blocks, BookOpen, Bot, Building2, Check, ClipboardCheck, Code2, Crown, Globe, Lock, ShieldCheck, Sparkles, SquareTerminal } from "lucide-react";
 import { Head } from "../components/ui";
 import { COMPANIES } from "../lib/companyPrep";
 import { usePractice } from "../lib/problemBank";
@@ -32,6 +32,8 @@ const EXPLORE = [
   ["/tests", "Create tests", "Build tests for your students"],
   ["/dashboard", "Student dashboard", "Track solves, rank and rewards"],
   ["/colleges", "For colleges", "Onboard a whole batch"],
+  ["/junior", "Anobyt Junior", "Workshops for schools, classes 6 to 12"],
+  ["/about", "About Anobyt", "Who we are and how to contact us"],
 ];
 
 const PLATFORM = [
@@ -290,6 +292,45 @@ export default function Home() {
             </Link>
           </div>
           <FreeVsPremium />
+        </div>
+      </section>
+
+      <section className="sec">
+        <div className="wrap">
+          <div className="jr-teaser">
+            <div>
+              <span className="jr-badge">
+                <Sparkles className="h-4 w-4" /> New · Anobyt Junior
+              </span>
+              <h2>Tech workshops for schools, classes 6 to 12</h2>
+              <p>Hands-on coding, AI, web design and cyber safety sessions, on campus or online. Every student builds something and gets a certificate.</p>
+              <div className="row">
+                <Link className="btn" to="/junior#book-workshop">
+                  Book a school workshop <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link className="btn ghost" to="/junior">
+                  Explore Anobyt Junior
+                </Link>
+              </div>
+            </div>
+            <ul>
+              <li>
+                <Blocks className="h-5 w-5" /> Coding with blocks and games
+              </li>
+              <li>
+                <Code2 className="h-5 w-5" /> Python from zero
+              </li>
+              <li>
+                <Globe className="h-5 w-5" /> Build your first website
+              </li>
+              <li>
+                <Bot className="h-5 w-5" /> AI and ChatGPT, explained
+              </li>
+              <li>
+                <ShieldCheck className="h-5 w-5" /> Cyber safety
+              </li>
+            </ul>
+          </div>
         </div>
       </section>
 
