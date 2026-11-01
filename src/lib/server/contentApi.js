@@ -21,7 +21,7 @@ const COLLECTIONS = ["courses", "events", "faqs"];
 const MAX_ITEMS = 300;
 const MAX_LEADS = 5000;
 const MAX_REGS = 5000;
-const LEAD_KINDS = ["booking", "college", "premium", "contact"];
+const LEAD_KINDS = ["booking", "college", "premium", "contact", "school"];
 
 const slug = (s) =>
   String(s || "")

@@ -92,6 +92,8 @@ const NAV = [
   ["/colleges", "For colleges"],
   ["/talks", "Tech talks"],
   ["/premium", "Plans"],
+  ["/junior", "Anobyt Junior (schools)"],
+  ["/about", "About and contact"],
   ["/faq", "FAQ"],
 ];
 
@@ -289,6 +291,31 @@ function pages({ faqs, courses, events }) {
     h1: "Frequently asked questions",
     body: faqs.map((f) => `<h2>${esc(f.q)}</h2>${p(f.a)}`),
     ld: [faqLd(faqs)],
+  });
+
+  add({
+    path: "/about",
+    title: "About Anobyt and Contact Us",
+    description: "Anobyt helps college students prepare for placements with year-wise coding practice, courses, tests and mock interviews. Contact the Anobyt team.",
+    h1: "About Anobyt",
+    priority: "0.8",
+    body: [
+      p("Anobyt (anobyt.in) helps college students prepare for placements and internships with year-wise coding practice, learning modules, tests, company hiring guides and 1:1 mock interviews with working professionals. Colleges use Anobyt to run tests and mock interviews for whole batches, and Anobyt Junior brings coding and AI workshops to schools."),
+      `<h2 id="contact">Contact us</h2>${p(`Email ${EMAILS.join(" or ")} for questions, feedback or partnerships.`)}`,
+    ],
+  });
+
+  add({
+    path: "/junior",
+    title: "Anobyt Junior | Coding & AI Workshops for Schools (Classes 6 to 12)",
+    description:
+      "Anobyt Junior runs fun, hands-on coding, AI, game design, web design and cyber safety workshops for schools, for classes 6 to 12. On campus or online, with certificates for every student.",
+    h1: "Anobyt Junior: coding and AI workshops for schools",
+    priority: "0.8",
+    body: [
+      p("Anobyt Junior runs hands-on workshops for school students in classes 6 to 12: coding, AI, game design, web design and cyber safety. Workshops run on campus or online, and every student gets a certificate."),
+      p(`Schools can book a workshop from this page. For questions, email ${EMAILS.join(" or ")}.`),
+    ],
   });
 
   add({

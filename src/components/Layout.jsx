@@ -19,6 +19,8 @@ export default function Layout() {
   // Also hidden on course and event pages, where they would cover the unlock and registration forms.
   const showFloaters =
     !NO_FLOATERS.some((p) => pathname === p || pathname.startsWith(p + "/")) && !/^\/(courses|talks)\/./.test(pathname);
+  // Anobyt Junior is for schools, so the college-student promos stay off it.
+  const forSchools = pathname === "/junior";
   useReveal(pathname);
   const { user } = useAccount();
   // Accounts created with a temporary password must choose their own before anything else.
@@ -33,9 +35,9 @@ export default function Layout() {
         <ErrorBoundary key={pathname}>{mustChange ? <PasswordGate user={user} /> : <Outlet />}</ErrorBoundary>
       </main>
       <Footer />
-      {showFloaters && <PlacementAssist />}
+      {showFloaters && !forSchools && <PlacementAssist />}
       {showFloaters && <WhatsAppButton />}
-      <InterviewPopup />
+      {!forSchools && <InterviewPopup />}
     </div>
   );
 }

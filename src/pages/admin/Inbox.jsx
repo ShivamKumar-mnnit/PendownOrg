@@ -6,8 +6,8 @@ import { buildWaLink, normalizePhone } from "../../lib/whatsapp";
 import { Gate, SectionTop } from "./shared";
 import { downloadCsv, fmtDate, useAdminData } from "./adminUtils";
 
-const KINDS = { booking: "Booking", college: "College", premium: "Premium", contact: "Contact" };
-const DATA_LABELS = { sessionType: "Session", domain: "Domain", company: "Company", resume: "Resume", college: "College", students: "Students", file: "File", rows: "Rows in file", course: "Course" };
+const KINDS = { booking: "Booking", college: "College", premium: "Premium", contact: "Contact", school: "School" };
+const DATA_LABELS = { sessionType: "Session", domain: "Domain", company: "Company", resume: "Resume", college: "College", students: "Students", file: "File", rows: "Rows in file", course: "Course", school: "School", city: "City", role: "Role", classes: "Classes", topic: "Topic", mode: "Where", when: "When", message: "Message" };
 
 export default function Inbox() {
   const state = useAdminData(listLeads);
