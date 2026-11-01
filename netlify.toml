@@ -22,6 +22,18 @@
 # frontend connects straight to wss://api.anobyt.in/ws/execute instead (see
 # src/lib/interactiveCompiler.js).
 
+# Common guesses for the sitemap address. Without these they fall through to the app's HTML,
+# which Search Console reports as "Sitemap is HTML".
+[[redirects]]
+  from = "/sitemap"
+  to = "/sitemap.xml"
+  status = 301
+
+[[redirects]]
+  from = "/sitemap_index.xml"
+  to = "/sitemap.xml"
+  status = 301
+
 # Client-side routing (React Router). Public pages are pre-built as real files by
 # scripts/prerender.mjs (dist/<path>.html, served before this rule); every other route
 # (dashboards, problems, tests …) gets app.html, the same app without a home-page canonical.
