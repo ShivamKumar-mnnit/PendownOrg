@@ -23,7 +23,7 @@
 # src/lib/interactiveCompiler.js).
 
 # Client-side routing (React Router). Public pages are pre-built as real files by
-# scripts/prerender.mjs (dist/<path>/index.html, served before this rule); every other route
+# scripts/prerender.mjs (dist/<path>.html, served before this rule); every other route
 # (dashboards, problems, tests …) gets app.html, the same app without a home-page canonical.
 [[redirects]]
   from = "/*"

@@ -2,7 +2,7 @@
 // the same empty <div id="root"> with canonical = the home page: Google saw every page as a copy
 // of the home page, and AI crawlers (which don't run JavaScript) saw nothing at all.
 //
-// For every public page this writes dist/<path>/index.html with its own title, description,
+// For every public page this writes dist/<path>.html with its own title, description,
 // canonical URL, Open Graph tags, structured data (JSON-LD) and the page's real text inside
 // #root. React replaces that text with the app as soon as it loads (createRoot().render), so
 // visitors see the same site as before. It also writes sitemap.xml, robots.txt, llms.txt,
@@ -425,7 +425,9 @@ const list = pages({ faqs, courses, events });
 // The shell first (from the untouched template), then the pages, which overwrite index.html.
 await writeFile(join(DIST, "app.html"), shell(template));
 for (const pg of list) {
-  const file = pg.path === "/" ? join(DIST, "index.html") : join(DIST, pg.path, "index.html");
+  // /companies/tcs -> companies/tcs.html: Netlify serves it at the same address with a 200.
+  // (A companies/tcs/index.html folder makes Netlify 301 to a trailing-slash URL instead.)
+  const file = pg.path === "/" ? join(DIST, "index.html") : join(DIST, `${pg.path}.html`);
   await mkdir(dirname(file), { recursive: true });
   await writeFile(file, render(template, pg));
 }
