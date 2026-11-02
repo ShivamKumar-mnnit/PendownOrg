@@ -32,9 +32,12 @@ function setLink(rel, href) {
  * runs" limitation for crawlers/link-preview bots that don't run JS.
  * @param {{ title: string, description: string, path?: string, noindex?: boolean }} opts
  */
-export function usePageSEO({ title, description, path = "/", noindex = false }) {
+export function usePageSEO({ title, description: rawDescription, path = "/", noindex = false }) {
   useEffect(() => {
-    const fullTitle = title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`;
+    // Same limits as scripts/prerender.mjs: titles up to 60 characters, descriptions up to 155.
+    const withName = title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`;
+    const fullTitle = withName.length <= 60 ? withName : title.length <= 60 ? title : clip(title, 60);
+    const description = clip(rawDescription || "", 155);
     const url = `${SITE_URL}${path}`;
 
     document.title = fullTitle;
@@ -53,5 +56,11 @@ export function usePageSEO({ title, description, path = "/", noindex = false }) 
     setMeta("name", "twitter:title", fullTitle);
     setMeta("name", "twitter:description", description);
     setMeta("name", "twitter:image", OG_IMAGE);
-  }, [title, description, path, noindex]);
+  }, [title, rawDescription, path, noindex]);
+}
+
+/** Shortens to at most `n` characters at a word boundary, ending with an ellipsis. */
+function clip(s, n) {
+  const t = String(s).replace(/\s+/g, " ").trim();
+  return t.length <= n ? t : `${t.slice(0, n - 1).replace(/\s+\S*$/, "")}…`;
 }

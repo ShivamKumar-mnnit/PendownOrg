@@ -105,7 +105,7 @@ function pages({ faqs, courses, events }) {
     path: "/",
     title: "Anobyt | Mock Interviews & Mentorship for College Students",
     description:
-      "Anobyt (anobyt.in): 1:1 mock interviews and mentorship with industry professionals, year-wise coding practice, an online compiler, tests and company hiring guides for college students.",
+      "Anobyt helps college students crack placements: 1:1 mock interviews with industry mentors, coding practice, an online compiler, tests and hiring guides.",
     h1: "Anobyt: mock interviews and mentorship for college students",
     priority: "1.0",
     body: [
@@ -149,7 +149,7 @@ function pages({ faqs, courses, events }) {
   add({
     path: "/colleges",
     title: "For Colleges & Placement Cells: Bulk Onboarding",
-    description: "Onboard your college's students on Anobyt for proctored tests, mock interviews and section-wise score cards. Upload a student list; we create logins and schedule every student.",
+    description: "Onboard your college's students on Anobyt for proctored tests, 1:1 mock interviews and section-wise score cards. Upload a list; we create the logins.",
     h1: "Anobyt for colleges and placement cells",
     body: [
       p("Placement cells and colleges can onboard a whole batch at once. Upload your student list and Anobyt creates logins, runs proctored MCQ and coding tests, schedules 1:1 mock interviews with trainers, and shares section-wise score cards."),
@@ -220,7 +220,7 @@ function pages({ faqs, courses, events }) {
   for (const c of COMPANIES)
     add({
       path: `/companies/${c.id}`,
-      title: `${c.name} Hiring Process, Rounds and Preparation`,
+      title: `${c.name} Hiring Process and Interview Rounds`,
       description: clip(`${c.name} hiring process for freshers: ${c.rounds.map((r) => r.title).join(", ")}. ${c.summary}`),
       h1: `${c.name} hiring process`,
       priority: "0.6",
@@ -337,9 +337,18 @@ function setTag(html, re, replacement) {
   return html.replace(re, replacement);
 }
 
+/** "<title> | Anobyt", dropping the suffix (then trimming) when it would go past 60 characters. */
+export function fitTitle(t) {
+  const withName = t.includes(NAME) ? t : `${t} | ${NAME}`;
+  if (withName.length <= 60) return withName;
+  return t.length <= 60 ? t : clip(t, 60);
+}
+
 function render(template, pg) {
   const url = `${SITE}${pg.path}`;
-  const title = pg.title.includes(NAME) ? pg.title : `${pg.title} | ${NAME}`;
+  const title = fitTitle(pg.title);
+  // Search results show about 155 characters of the description.
+  pg = { ...pg, description: clip(pg.description, 155) };
   const ld = { "@context": "https://schema.org", "@graph": [ORG, WEBSITE, { "@type": "WebPage", "@id": `${url}#webpage`, url, name: title, description: pg.description, isPartOf: { "@id": `${SITE}/#website` }, about: { "@id": `${SITE}/#organization` } }, ...(pg.ld || [])] };
 
   let html = template;

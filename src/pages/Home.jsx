@@ -193,7 +193,7 @@ export default function Home() {
   usePageSEO({
     title: "Anobyt | Mock Interviews & Mentorship for College Students",
     description:
-      "Book 1:1 mock interviews and mentorship with industry professionals, matched to your domain (SDE, Data/AI, Product, Consulting) and confirmed over WhatsApp.",
+      "Anobyt helps college students crack placements: 1:1 mock interviews with industry mentors, coding practice, an online compiler, tests and hiring guides.",
     path: "/",
   });
 
