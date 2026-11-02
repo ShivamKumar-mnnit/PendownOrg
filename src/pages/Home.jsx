@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Blocks, BookOpen, Bot, Building2, Check, ClipboardCheck, Code2, Crown, Globe, Lock, ShieldCheck, Sparkles, SquareTerminal } from "lucide-react";
 import { Head } from "../components/ui";
+import { useCollection } from "../lib/contentApi";
 import { COMPANIES } from "../lib/companyPrep";
 import { usePractice } from "../lib/problemBank";
 import { FREE_PERKS, MEMBER_PERKS, PRACTICE_PERKS } from "../lib/plans";
@@ -105,7 +106,7 @@ function Pipeline() {
         ))}
       </ol>
       <div className="pinfo sw" key={active}>
-        <h3>{title}</h3>
+        <p className="pinfo-h">{title}</p>
         <p>{text}</p>
         <div className="row">
           {topics.split(", ").map((t) => (
@@ -383,6 +384,8 @@ export default function Home() {
             </div>
           </div>
 
+          <HomeFaq />
+
           <Head title="Explore more" style={{ marginTop: 72 }} />
           <div className="more">
             {EXPLORE.map(([to, title, text]) => (
@@ -395,5 +398,27 @@ export default function Home() {
         </div>
       </section>
     </>
+  );
+}
+
+/** Common questions, answered on the page (the same list as /faq). */
+function HomeFaq() {
+  const { items } = useCollection("faqs");
+  if (!items.length) return null;
+  return (
+    <section className="home-faq">
+      <Head title="Frequently asked questions" style={{ marginTop: 72 }} />
+      {items.slice(0, 6).map((f) => (
+        <details className="faq-item" key={f.id}>
+          <summary>
+            <h3>{f.q}</h3>
+          </summary>
+          <p style={{ whiteSpace: "pre-wrap" }}>{f.a}</p>
+        </details>
+      ))}
+      <Link className="linkish" to="/faq">
+        All questions
+      </Link>
+    </section>
   );
 }

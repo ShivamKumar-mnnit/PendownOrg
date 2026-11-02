@@ -21,6 +21,7 @@ const EMAILS = ["contact@anobyt.in", "anobyt@anobyt.in"];
 const PHONE = "+91-70179-03175";
 const DIST = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 const TODAY = new Date().toISOString().slice(0, 10);
+const UPDATED = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
 
 // ---------------------------------------------------------------- helpers
 
@@ -349,7 +350,7 @@ function render(template, pg) {
   const title = fitTitle(pg.title);
   // Search results show about 155 characters of the description.
   pg = { ...pg, description: clip(pg.description, 155) };
-  const ld = { "@context": "https://schema.org", "@graph": [ORG, WEBSITE, { "@type": "WebPage", "@id": `${url}#webpage`, url, name: title, description: pg.description, isPartOf: { "@id": `${SITE}/#website` }, about: { "@id": `${SITE}/#organization` } }, ...(pg.ld || [])] };
+  const ld = { "@context": "https://schema.org", "@graph": [ORG, WEBSITE, { "@type": "WebPage", "@id": `${url}#webpage`, url, name: title, description: pg.description, isPartOf: { "@id": `${SITE}/#website` }, about: { "@id": `${SITE}/#organization` }, dateModified: TODAY, inLanguage: "en-IN" }, ...(pg.ld || [])] };
 
   let html = template;
   html = setTag(html, /<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`);
@@ -363,7 +364,7 @@ function render(template, pg) {
   html = setTag(html, /<script type="application\/ld\+json">[\s\S]*?<\/script>/, `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`);
 
   const nav = `<nav aria-label="Anobyt">${NAV.map(([href, text]) => a(href, text)).join(" · ")}</nav>`;
-  const content = `<main class="page prerendered"><div class="wrap" style="max-width:860px">${nav}<h1>${esc(pg.h1)}</h1>${pg.body.filter(Boolean).join("")}</div></main>`;
+  const content = `<main class="page prerendered"><div class="wrap">${nav}<h1>${esc(pg.h1)}</h1>${pg.body.filter(Boolean).join("")}<p class="updated">Last updated ${UPDATED}</p></div></main>`;
   return setTag(html, /<div id="root"><\/div>/, `<div id="root">${content}</div>`);
 }
 

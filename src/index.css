@@ -435,7 +435,7 @@ select option {
   .pl li.done i { background: var(--color-accent-emerald); border-color: var(--color-accent-emerald); }
   .pinfo { margin-top: 16px; padding: 16px; border: 1px dashed var(--color-border); border-radius: 14px; min-height: 158px; }
   .pinfo.sw { animation: ab-swap 0.5s ease; }
-  .pinfo h3 { font-size: 18px; margin-bottom: 6px; }
+  .pinfo h3, .pinfo .pinfo-h { font-size: 18px; margin-bottom: 6px; font-family: var(--font-display); font-weight: 600; color: var(--color-fg); }
   .pinfo p { margin: 0 0 12px; color: var(--color-fg-muted); font-size: 15px; }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; text-align: center; }
   .stats b { display: block; font: 600 30px var(--font-display); color: var(--color-accent); }
@@ -504,6 +504,8 @@ select option {
     margin-bottom: 12px;
   }
   .faq-item summary { cursor: pointer; font-weight: 600; font-size: 17px; }
+  .faq-item summary h3 { display: inline; font: inherit; margin: 0; color: inherit; }
+  .home-faq .linkish { display: inline-block; margin-top: 14px; }
   .faq-item p { color: var(--color-fg-muted); margin: 12px 0 0; }
   .cta {
     position: relative; overflow: hidden; color: #fff; border-radius: 24px; padding: 60px 32px; text-align: center;
@@ -552,7 +554,7 @@ select option {
     padding: 56px 0 28px; color: var(--color-fg-muted); font-size: 15px; margin-top: 84px;
   }
   .fgrid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr; gap: 32px; }
-  .fgrid h4 { margin: 0 0 14px; color: var(--color-fg); font: 600 16px var(--font-display); }
+  .fgrid h3, .fgrid h4 { margin: 0 0 14px; color: var(--color-fg); font: 600 16px var(--font-display); }
   .fgrid a { display: block; padding: 4px 0; }
   .fgrid a:hover { color: var(--color-accent); }
   .fgrid p { margin: 14px 0 18px; max-width: 300px; }
@@ -1430,6 +1432,9 @@ select option {
 
 /* ---- Pre-built page text (scripts/prerender.mjs): what crawlers read, shown until the app loads ---- */
 @layer components {
+  .js .prerendered { display: none; }
+  .prerendered .wrap { max-width: 860px; }
+  .prerendered .updated { font-size: 12px; color: var(--color-fg-faint); margin-top: 28px; }
   .prerendered nav { font-size: 13px; color: var(--color-fg-muted); margin-bottom: 18px; line-height: 2; }
   .prerendered nav a { color: var(--color-fg-muted); }
   .prerendered h1 { font-size: clamp(28px, 4vw, 38px); margin-bottom: 14px; }

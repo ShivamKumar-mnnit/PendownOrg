@@ -5,27 +5,30 @@ import ScrollToTop from "./components/ScrollToTop";
 import { Head, Page } from "./components/ui";
 import { usePageSEO } from "./lib/seo";
 import Home from "./pages/Home";
-import Book from "./pages/Book";
-import Colleges from "./pages/Colleges";
-import Admin from "./pages/Admin";
-import Compiler from "./pages/Compiler";
-import Mentors from "./pages/Mentors";
-import Companies from "./pages/Companies";
-import CompanyDetail from "./pages/CompanyDetail";
-import Courses from "./pages/Courses";
-import Placement from "./pages/Placement";
-import PracticeTests from "./pages/PracticeTests";
-import TakeTest from "./pages/TakeTest";
-import CreateTest from "./pages/CreateTest";
-import Problems from "./pages/Problems";
-import Problem from "./pages/Problem";
-import Dashboard from "./pages/Dashboard";
-import Talks from "./pages/Talks";
-import Faq from "./pages/Faq";
-import About from "./pages/About";
-import Junior from "./pages/Junior";
-import CourseDetail from "./pages/CourseDetail";
-import EventDetail from "./pages/EventDetail";
+
+// Every page except the home page loads on demand, so the first visit downloads only what the
+// home page needs (mobile PageSpeed). Public pages also have pre-built HTML (scripts/prerender.mjs).
+const Book = lazy(() => import("./pages/Book"));
+const Colleges = lazy(() => import("./pages/Colleges"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Compiler = lazy(() => import("./pages/Compiler"));
+const Mentors = lazy(() => import("./pages/Mentors"));
+const Companies = lazy(() => import("./pages/Companies"));
+const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
+const Courses = lazy(() => import("./pages/Courses"));
+const Placement = lazy(() => import("./pages/Placement"));
+const PracticeTests = lazy(() => import("./pages/PracticeTests"));
+const TakeTest = lazy(() => import("./pages/TakeTest"));
+const CreateTest = lazy(() => import("./pages/CreateTest"));
+const Problems = lazy(() => import("./pages/Problems"));
+const Problem = lazy(() => import("./pages/Problem"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Talks = lazy(() => import("./pages/Talks"));
+const Faq = lazy(() => import("./pages/Faq"));
+const About = lazy(() => import("./pages/About"));
+const Junior = lazy(() => import("./pages/Junior"));
+const CourseDetail = lazy(() => import("./pages/CourseDetail"));
+const EventDetail = lazy(() => import("./pages/EventDetail"));
 
 // Loaded on demand: only students taking a server-hosted test need it.
 const Assessment = lazy(() => import("./pages/Assessment"));
@@ -65,15 +68,15 @@ export default function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/book" element={<Book />} />
-          <Route path="/colleges" element={<Colleges />} />
-          <Route path="/compiler" element={<Compiler />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/mentors" element={<Mentors />} />
-          <Route path="/companies" element={<Companies />} />
-          <Route path="/companies/:id" element={<CompanyDetail />} />
-          <Route path="/courses" element={<Courses />} />
-          <Route path="/courses/:id" element={<CourseDetail />} />
+          <Route path="/book" element={lazyPage(<Book />)} />
+          <Route path="/colleges" element={lazyPage(<Colleges />)} />
+          <Route path="/compiler" element={lazyPage(<Compiler />)} />
+          <Route path="/admin" element={lazyPage(<Admin />)} />
+          <Route path="/mentors" element={lazyPage(<Mentors />)} />
+          <Route path="/companies" element={lazyPage(<Companies />)} />
+          <Route path="/companies/:id" element={lazyPage(<CompanyDetail />)} />
+          <Route path="/courses" element={lazyPage(<Courses />)} />
+          <Route path="/courses/:id" element={lazyPage(<CourseDetail />)} />
           <Route path="/courses/:id/learn/:lessonId" element={lazyPage(<Lesson />)} />
           <Route path="/account" element={lazyPage(<Account />)} />
           <Route path="/login" element={lazyPage(<Login />)} />
@@ -84,9 +87,9 @@ export default function App() {
           <Route path="/results/:attemptId" element={lazyPage(<ExamResult />)} />
           <Route path="/premium" element={lazyPage(<Premium />)} />
           <Route path="/workspace" element={lazyPage(<Workspace />)} />
-          <Route path="/placement" element={<Placement />} />
-          <Route path="/practice" element={<PracticeTests />} />
-          <Route path="/take" element={<TakeTest />} />
+          <Route path="/placement" element={lazyPage(<Placement />)} />
+          <Route path="/practice" element={lazyPage(<PracticeTests />)} />
+          <Route path="/take" element={lazyPage(<TakeTest />)} />
           <Route
             path="/assessment/:id"
             element={
@@ -95,20 +98,20 @@ export default function App() {
               </Suspense>
             }
           />
-          <Route path="/tests" element={<CreateTest />} />
-          <Route path="/problems" element={<Problems />} />
-          <Route path="/problems/:bookId" element={<Problems />} />
+          <Route path="/tests" element={lazyPage(<CreateTest />)} />
+          <Route path="/problems" element={lazyPage(<Problems />)} />
+          <Route path="/problems/:bookId" element={lazyPage(<Problems />)} />
           <Route path="/problems/year/:year" element={lazyPage(<YearPractice />)} />
-          <Route path="/problem/:id" element={<Problem />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/problem/:id" element={lazyPage(<Problem />)} />
+          <Route path="/dashboard" element={lazyPage(<Dashboard />)} />
           <Route path="/trainer" element={lazyPage(<Trainer />)} />
           <Route path="/code-room/:id" element={lazyPage(<CodeRoom />)} />
           <Route path="/interview-report/:id" element={lazyPage(<InterviewReport />)} />
-          <Route path="/talks" element={<Talks />} />
-          <Route path="/talks/:id" element={<EventDetail />} />
-          <Route path="/faq" element={<Faq />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/junior" element={<Junior />} />
+          <Route path="/talks" element={lazyPage(<Talks />)} />
+          <Route path="/talks/:id" element={lazyPage(<EventDetail />)} />
+          <Route path="/faq" element={lazyPage(<Faq />)} />
+          <Route path="/about" element={lazyPage(<About />)} />
+          <Route path="/junior" element={lazyPage(<Junior />)} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

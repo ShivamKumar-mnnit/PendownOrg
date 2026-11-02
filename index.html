@@ -7,7 +7,10 @@
     <meta name="theme-color" content="#26327e" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500..700;1,9..144,400..600&family=Instrument+Sans:wght@400;500;600&display=swap" />
+    <!-- Fonts load without blocking the first paint (they swap in when ready). -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500..700;1,9..144,400..600&family=Instrument+Sans:wght@400;500;600&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500..700;1,9..144,400..600&family=Instrument+Sans:wght@400;500;600&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500..700;1,9..144,400..600&family=Instrument+Sans:wght@400;500;600&display=swap" /></noscript>
     <meta name="google-site-verification" content="nnq3MqfXj3cQ8O26DFc_K7gG96kV4Vvd9pUlCLIxpOo" />
     <meta name="google-site-verification" content="7FyR4pgtrpvky8XAtEfV3BlhUmHVvvbpYdbPT62zsYI" />
 
@@ -46,6 +49,9 @@
     <script>
       // Applied before React mounts so the page never flashes the wrong
       // theme on load. Kept in sync with src/lib/theme.js.
+      // Visitors running the app don't see the pre-built page text (it's for crawlers and
+      // no-JavaScript readers); hiding it stops the page jumping when the app replaces it.
+      document.documentElement.classList.add("js");
       (function () {
         try {
           var stored = localStorage.getItem("algomate_theme");

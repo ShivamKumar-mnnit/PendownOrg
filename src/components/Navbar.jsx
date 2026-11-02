@@ -269,7 +269,7 @@ function MobileMenu({ pathname, current, user, onClose }) {
       <nav className="mob" id="mobile-nav" aria-label="Main menu">
         <div className="mob-top">
           <Link className="brand" to="/" onClick={onClose}>
-            <img src="/anobyt-icon.svg" alt="" />
+            <img src="/anobyt-icon.svg" alt="Anobyt" />
             Anobyt
           </Link>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close menu">
@@ -402,7 +402,7 @@ export default function Navbar() {
       <header className={`site-header${open ? " menu-open" : ""}`}>
         <div className="wrap bar">
           <Link className="brand" to="/">
-            <img src="/anobyt-icon.svg" alt="" />
+            <img src="/anobyt-icon.svg" alt="Anobyt" />
             Anobyt
           </Link>
           <nav id="site-nav" className="site-nav" ref={navRef} aria-label="Main">

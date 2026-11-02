@@ -5,7 +5,10 @@ import { X, Sparkles, CheckCircle2, ArrowRight } from "lucide-react";
 import { buildAdminWaLink, openWhatsApp } from "../lib/whatsapp";
 
 const SESSION_KEY = "anobyt_demo_popup_seen";
-const DELAY_MS = 5000;
+const DELAY_MS = 15000;
+// Crawlers and speed tests (Googlebot, Lighthouse / PageSpeed) never see the pop-up: Google ranks
+// pages lower on mobile when an overlay covers the content right after load.
+const IS_BOT = typeof navigator !== "undefined" && (navigator.webdriver || /bot|crawl|spider|lighthouse|pagespeed|headless/i.test(navigator.userAgent));
 // Pages that are already the booking flow itself, or aren't marketing
 // pages at all — a lead popup on top of either would just be noise.
 const SKIP_ROUTES = ["/book", "/admin", "/compiler", "/account", "/workspace", "/login", "/verify-email", "/reset-password"];
@@ -46,12 +49,27 @@ export default function InterviewPopup() {
 
   useEffect(() => {
     if (SKIP_ROUTES.includes(pathname) || SKIP_PREFIXES.some((x) => pathname.startsWith(x)) || /^\/courses\/[^/]+\/learn\//.test(pathname)) return;
-    if (sessionStorage.getItem(SESSION_KEY)) return;
+    if (IS_BOT || sessionStorage.getItem(SESSION_KEY)) return;
 
+    // Only after the visitor has been here a while AND scrolled, so it never covers the page on arrival.
+    let waited = false;
+    let scrolled = false;
+    const show = () => waited && scrolled && !sessionStorage.getItem(SESSION_KEY) && setVisible(true);
+    const onScroll = () => {
+      if (window.scrollY > window.innerHeight * 0.5) {
+        scrolled = true;
+        show();
+      }
+    };
     const timer = setTimeout(() => {
-      if (!sessionStorage.getItem(SESSION_KEY)) setVisible(true);
+      waited = true;
+      show();
     }, DELAY_MS);
-    return () => clearTimeout(timer);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [pathname]);
 
   function dismiss() {

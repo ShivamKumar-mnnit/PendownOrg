@@ -50,7 +50,7 @@ export default function Footer() {
         <div className="fgrid">
           <div>
             <Link className="brand" to="/">
-              <img src="/anobyt-icon.svg" alt="" />
+              <img src="/anobyt-icon.svg" alt="Anobyt" width="26" height="26" />
               Anobyt
             </Link>
             <p>1:1 mock interviews and mentorship for college students. Real mentors, honest feedback, no clunky dashboards.</p>
@@ -77,7 +77,7 @@ export default function Footer() {
             </Link>
           </div>
           <div>
-            <h4>Prep by domain</h4>
+            <h3>Prep by domain</h3>
             {DOMAIN_LINKS.map(([label, domain]) => (
               <Link key={label} to={`/book?domain=${encodeURIComponent(domain)}`}>
                 {label}
@@ -85,7 +85,7 @@ export default function Footer() {
             ))}
           </div>
           <div>
-            <h4>Company-wise prep</h4>
+            <h3>Company-wise prep</h3>
             {COMPANY_LINKS.map(([id, name]) => (
               <Link key={id} to={`/companies/${id}`}>
                 {name}
@@ -93,7 +93,7 @@ export default function Footer() {
             ))}
           </div>
           <div>
-            <h4>Online compilers</h4>
+            <h3>Online compilers</h3>
             {COMPILER_LINKS.map(([id, label]) => (
               <Link key={id} to={`/compiler?lang=${id}`}>
                 {label}
@@ -101,7 +101,7 @@ export default function Footer() {
             ))}
           </div>
           <div>
-            <h4>Company</h4>
+            <h3>Company</h3>
             {SITE_LINKS.map(([to, label]) => (
               <Link key={label} to={to}>
                 {label}
