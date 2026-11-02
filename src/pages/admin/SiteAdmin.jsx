@@ -44,9 +44,6 @@ function SettingsFields({ initial }) {
   return (
     <form className="panel" onSubmit={save}>
       <div className="two">
-        <Field label="Top strip text">
-          <input className="inp" value={s.topbar} onChange={(e) => setS({ ...s, topbar: e.target.value })} />
-        </Field>
         <Field label="Contact email">
           <input className="inp" value={s.contactEmail} onChange={(e) => setS({ ...s, contactEmail: e.target.value })} />
         </Field>
