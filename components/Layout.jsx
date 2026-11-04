@@ -1,0 +1,43 @@
+import { Outlet, useLocation } from "react-router-dom";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+import WhatsAppButton from "./WhatsAppButton";
+import PlacementAssist from "./PlacementAssist";
+import InterviewPopup from "./InterviewPopup";
+import StudyBackground from "./StudyBackground";
+import { useReveal } from "../lib/useReveal";
+import { useAccount } from "../lib/account";
+import { PasswordGate } from "./AuthForms";
+import ErrorBoundary from "./ErrorBoundary";
+
+// Tool pages where the floating promo/chat buttons would sit on top of the
+// editor and its output.
+const NO_FLOATERS = ["/compiler", "/problem", "/problems/year", "/assessment", "/exam", "/admin", "/workspace", "/interview-report", "/trainer", "/code-room", "/codevita"];
+
+export default function Layout() {
+  const { pathname } = useLocation();
+  // Also hidden on course and event pages, where they would cover the unlock and registration forms.
+  const showFloaters =
+    !NO_FLOATERS.some((p) => pathname === p || pathname.startsWith(p + "/")) && !/^\/(courses|talks)\/./.test(pathname);
+  // Anobyt Junior is for schools, so the college-student promos stay off it.
+  const forSchools = pathname === "/junior";
+  useReveal(pathname);
+  const { user } = useAccount();
+  // Accounts created with a temporary password must choose their own before anything else.
+  const mustChange = user?.mustChangePassword && pathname !== "/reset-password";
+
+  return (
+    <div className="min-h-screen flex flex-col text-(--color-fg)">
+      <StudyBackground />
+
+      <Navbar />
+      <main className="flex-1">
+        <ErrorBoundary key={pathname}>{mustChange ? <PasswordGate user={user} /> : <Outlet />}</ErrorBoundary>
+      </main>
+      <Footer />
+      {showFloaters && !forSchools && <PlacementAssist />}
+      {showFloaters && <WhatsAppButton />}
+      {!forSchools && <InterviewPopup />}
+    </div>
+  );
+}

@@ -87,6 +87,7 @@ const NAV = [
   ["/problems", "Coding practice"],
   ["/compiler", "Online compiler"],
   ["/practice", "Tests"],
+  ["/codevita", "CodeVita practice"],
   ["/companies", "Company hiring guides"],
   ["/courses", "Courses"],
   ["/placement", "Placement guide"],
@@ -184,6 +185,14 @@ function pages({ faqs, courses, events }) {
       body: [p(`Coding problems for ${yr} year students, grouped by topic, with sample tests and an editor that runs your code.`), p(a("/problems", "All years"))],
       ld: [crumbs([["Coding practice", "/problems"], [`${yr} year`, `/problems/year/${y}`]])],
     });
+  });
+
+  add({
+    path: "/codevita",
+    title: "TCS CodeVita Practice: Problems, Judge, Scorecards",
+    description: "Prepare for TCS CodeVita with CodeVita-style problems, a contest-style judge with hidden tests, editorials in C++, Java and Python, and scorecards.",
+    h1: "CodeVita crash course practice",
+    body: [p("Practise CodeVita-style coding problems in a contest-style environment: problem on the left, editor on the right, C, C++, Java or Python, custom input, sample and hidden test cases, time and memory, and a scorecard after every submission."), p("Anobyt is an independent practice platform and is not affiliated with TCS. Practice scores are not official CodeVita results.")],
   });
 
   add({
