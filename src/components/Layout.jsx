@@ -4,6 +4,7 @@ import Footer from "./Footer";
 import WhatsAppButton from "./WhatsAppButton";
 import PlacementAssist from "./PlacementAssist";
 import InterviewPopup from "./InterviewPopup";
+import PromoPopup from "./codevita/PromoPopup";
 import StudyBackground from "./StudyBackground";
 import { useReveal } from "../lib/useReveal";
 import { useAccount } from "../lib/account";
@@ -37,6 +38,7 @@ export default function Layout() {
       <Footer />
       {showFloaters && !forSchools && <PlacementAssist />}
       {showFloaters && <WhatsAppButton />}
+      {!forSchools && <PromoPopup />}
       {!forSchools && <InterviewPopup />}
     </div>
   );
