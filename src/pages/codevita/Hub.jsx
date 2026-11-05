@@ -1,17 +1,43 @@
-import { useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { BookOpen, CheckCircle2, Circle, CircleDot, Crown, Filter, Lock, PlayCircle, Search, Sparkles, Trophy, X } from "lucide-react";
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import {
+  BarChart3,
+  BookOpen,
+  CheckCircle2,
+  Circle,
+  ClipboardList,
+  Code2,
+  Crown,
+  FileCode2,
+  GraduationCap,
+  History,
+  LayoutGrid,
+  ListChecks,
+  PlayCircle,
+  Sparkles,
+  Timer,
+  Trophy,
+} from "lucide-react";
 import UpgradeModal from "../../components/codevita/UpgradeModal";
-import { CV_LANG_NAMES, DIFFICULTIES, STATUS_TONE } from "../../lib/codevita/common";
+import { rupees } from "../../lib/account";
 import { useCv } from "../../lib/codevita/api";
 import { usePageSEO } from "../../lib/seo";
+import { LearnSection, MocksSection, PerformanceSection, PracticeSection, PyqSection } from "./HubSections";
 import "./codevita.css";
 
-const dClass = (d) => (d === "Easy" ? "easy" : d === "Medium" ? "med" : "hard");
-const when = (ts) => new Date(ts).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+const TABS = [
+  ["overview", "Overview", LayoutGrid],
+  ["learn", "Learn", BookOpen],
+  ["practice", "Practise", Code2],
+  ["pyq", "PYQs", History],
+  ["mocks", "Mock tests", Timer],
+  ["progress", "Performance", BarChart3],
+];
+// Old links (?tab=bank, ?tab=subs) still land in the right place.
+const ALIASES = { bank: "practice", subs: "progress", about: "overview" };
 
 function Ring({ value, total, label }) {
-  const pct = total ? value / total : 0;
+  const pct = total ? Math.min(1, value / total) : 0;
   const r = 34;
   const c = 2 * Math.PI * r;
   return (
@@ -21,389 +47,296 @@ function Ring({ value, total, label }) {
         <circle cx="40" cy="40" r={r} className="fill" strokeDasharray={`${c * pct} ${c}`} transform="rotate(-90 40 40)" />
       </svg>
       <div>
-        <b>{value}</b>
-        <small>/ {total}</small>
+        <b>{Math.round(pct * 100)}%</b>
         <span>{label}</span>
       </div>
     </div>
   );
 }
 
+/** /codevita: the TCS CodeVita Crash Course. */
 export default function Hub() {
   usePageSEO({
-    title: "TCS CodeVita crash course practice",
-    description: "CodeVita-style coding problems with a contest-style judge, hidden tests, scorecards and editorials in C++, Java and Python.",
+    title: "TCS CodeVita Crash Course",
+    description: "A complete TCS CodeVita preparation course: lessons on every topic, CodeVita-style problems with hidden tests, mock tests, solutions in C++, Java and Python, and scorecards.",
     path: "/codevita",
   });
   const [bump, setBump] = useState(0);
   const home = useCv("/api/cv/home", bump);
-  const bank = useCv("/api/cv/problems", bump);
   const [params, setParams] = useSearchParams();
-  const tab = params.get("tab") || "bank";
+  const raw = params.get("tab") || "overview";
+  const tab = ALIASES[raw] || (TABS.some(([k]) => k === raw) ? raw : "overview");
   const [upgrade, setUpgrade] = useState(null);
   const h = home.data;
 
   const setTab = (t) => {
     const next = new URLSearchParams(params);
-    if (t === "bank") next.delete("tab");
+    if (t === "overview") next.delete("tab");
     else next.set("tab", t);
+    ["access", "topic"].forEach((k) => next.delete(k));
     setParams(next, { replace: true });
+    document.getElementById("cv-sections")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+  const onUpgrade = (problem) => setUpgrade({ problem });
 
+  if (home.error)
+    return (
+      <section className="page cv-page">
+        <div className="wrap" style={{ maxWidth: 640 }}>
+          <div className="cv-empty">
+            <Trophy className="h-6 w-6" />
+            <p>{home.error}</p>
+            <Link className="btn ghost" to="/">
+              Back to Anobyt
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+
+  const price = h?.offer?.price;
   return (
     <section className="page cv-page">
       <div className="wrap">
-        <header className="cv-hero">
-          <div className="cv-hero-main">
-            <p className="cv-eyebrow">
-              <Trophy className="h-4 w-4" /> TCS CodeVita crash course
-            </p>
-            <h1>Practise CodeVita-style problems the way the contest runs</h1>
-            <p className="cv-muted cv-lead">
-              {h?.settings?.intro ||
-                "Read the problem, pick C, C++, Java or Python, test on your own input and submit against hidden test cases. Every submission gets a scorecard with time, memory and what to improve."}
-            </p>
-            <div className="cv-hero-cta">
-              {h?.startHere && (
-                <Link className="btn" to={`/codevita/solve/${h.startHere.id}`}>
-                  <PlayCircle className="h-4 w-4" /> Try a free problem
-                </Link>
-              )}
-              {h && !h.premium && (
-                <button type="button" className="btn ghost" onClick={() => setUpgrade({})}>
-                  <Crown className="h-4 w-4" /> See premium
-                </button>
-              )}
-              {h?.premium && (
-                <span className="cv-pill good">
-                  <Crown className="h-3.5 w-3.5" /> Premium active
-                </span>
-              )}
-              {h?.settings?.courseId && (
-                <Link className="btn ghost" to={`/courses/${h.settings.courseId}`}>
-                  <BookOpen className="h-4 w-4" /> Course lessons
-                </Link>
-              )}
-            </div>
-            {h && (
-              <div className="cv-stats">
-                <span>
-                  <b>{h.totals.problems}</b> problems
-                </span>
-                {DIFFICULTIES.map((d) => (
-                  <span key={d} className={dClass(d)}>
-                    <b>{h.totals.byDifficulty[d] || 0}</b> {d.toLowerCase()}
-                  </span>
-                ))}
-                <span>
-                  <b>{h.totals.topics.length}</b> topics
-                </span>
-                <span>
-                  <b>{h.totals.free}</b> free
-                </span>
-              </div>
-            )}
-          </div>
-          <aside className="cv-hero-side">
-            {h?.me ? (
-              <>
-                <Ring value={h.me.solved} total={h.totals.problems} label="solved" />
-                <div className="cv-side-facts">
-                  <div>
-                    <small>Practice score</small>
-                    <b>{h.me.score}</b>
-                  </div>
-                  <div>
-                    <small>Attempted</small>
-                    <b>{h.me.attempted}</b>
-                  </div>
-                </div>
-                {h.me.recent[0] && (
-                  <Link className="cv-last" to={`/codevita/report/${h.me.recent[0].id}`}>
-                    Last: {h.me.recent[0].title} · <span className={`tone-${STATUS_TONE[h.me.recent[0].status] || "warn"}`}>{h.me.recent[0].status}</span>
-                  </Link>
-                )}
-              </>
-            ) : (
-              <div className="cv-side-guest">
-                <Sparkles className="h-5 w-5" />
-                <b>Track your progress</b>
-                <p className="cv-muted">Sign in to save submissions, get a scorecard for each one and see which topics need work.</p>
-                <Link className="btn ghost" to="/account?next=/codevita">
-                  Sign in
-                </Link>
-              </div>
-            )}
-          </aside>
-        </header>
+        <Hero h={h} price={price} onUpgrade={() => onUpgrade(null)} setTab={setTab} />
 
         {h?.settings?.announcement && <p className="cv-announce">{h.settings.announcement}</p>}
 
-        <div className="cv-tabs" role="tablist">
-          {[
-            ["bank", "Question bank"],
-            ["subs", "My submissions"],
-            ["about", "How the contest works"],
-          ].map(([k, l]) => (
-            <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
-              {l}
+        <nav className="cv-secnav" id="cv-sections" aria-label="Course sections">
+          {TABS.map(([k, l, Icon]) => (
+            <button key={k} type="button" aria-current={tab === k ? "page" : undefined} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
+              <Icon className="h-4 w-4" /> {l}
             </button>
           ))}
-        </div>
+        </nav>
 
-        {tab === "bank" && <Bank data={bank.data} error={bank.error} onLocked={(p) => setUpgrade({ problem: p })} />}
-        {tab === "subs" && <MySubs signedIn={h?.signedIn} />}
-        {tab === "about" && <About />}
+        {tab === "overview" && <Overview h={h} price={price} setTab={setTab} onUpgrade={() => onUpgrade(null)} />}
+        {tab === "learn" && <LearnSection onUpgrade={() => onUpgrade(null)} />}
+        {tab === "practice" && <PracticeSection onLocked={onUpgrade} />}
+        {tab === "pyq" && <PyqSection onLocked={onUpgrade} />}
+        {tab === "mocks" && <MocksSection onUpgrade={() => onUpgrade(null)} />}
+        {tab === "progress" && <PerformanceSection signedIn={h?.signedIn} />}
 
         <p className="cv-disclaimer">{h?.disclaimer || "Anobyt practice scores are not official TCS CodeVita results. Anobyt is not affiliated with TCS."}</p>
       </div>
-      {upgrade && <UpgradeModal plan={h?.plan} totals={h?.totals} problem={upgrade.problem} onClose={() => setUpgrade(null)} onDone={() => (setUpgrade(null), setBump((n) => n + 1))} />}
+      {upgrade && <UpgradeModal plan={h?.plan} totals={h?.totals} learn={h?.learn} mocks={h?.mocks} problem={upgrade.problem} onClose={() => setUpgrade(null)} onDone={() => (setUpgrade(null), setBump((n) => n + 1))} />}
     </section>
   );
 }
 
-function Bank({ data, error, onLocked }) {
-  const nav = useNavigate();
-  const [q, setQ] = useState("");
-  const [diff, setDiff] = useState([]);
-  const [topic, setTopic] = useState("");
-  const [pattern, setPattern] = useState("");
-  const [season, setSeason] = useState("");
-  const [status, setStatus] = useState("all");
-  const [access, setAccess] = useState("all");
-  const [sort, setSort] = useState("default");
-  const [showFilters, setShowFilters] = useState(false);
-
-  const items = useMemo(() => data?.items || [], [data]);
-  const topics = useMemo(() => [...new Set(items.flatMap((p) => p.topics))].sort(), [items]);
-  const patterns = useMemo(() => [...new Set(items.flatMap((p) => p.patterns))].sort(), [items]);
-  const seasons = useMemo(() => [...new Set(items.map((p) => p.season).filter(Boolean))].sort().reverse(), [items]);
-
-  if (error) return <p className="note bad">{error}</p>;
-  if (!data) return <p className="note">Loading the question bank…</p>;
-
-  const s = q.trim().toLowerCase();
-  let shown = items.filter(
-    (p) =>
-      (!s || `${p.title} ${p.topics.join(" ")} ${p.patterns.join(" ")} ${p.summary}`.toLowerCase().includes(s)) &&
-      (!diff.length || diff.includes(p.difficulty)) &&
-      (!topic || p.topics.includes(topic)) &&
-      (!pattern || p.patterns.includes(pattern)) &&
-      (!season || p.season === season) &&
-      (status === "all" || (status === "solved" ? p.solved : status === "attempted" ? p.attempted && !p.solved : !p.attempted)) &&
-      (access === "all" || p.access === access),
-  );
-  if (sort === "difficulty") shown = [...shown].sort((a, b) => DIFFICULTIES.indexOf(a.difficulty) - DIFFICULTIES.indexOf(b.difficulty));
-  if (sort === "popular") shown = [...shown].sort((a, b) => b.solvers - a.solvers);
-  const solvedCount = items.filter((p) => p.solved).length;
-  const filtersOn = diff.length + (topic ? 1 : 0) + (pattern ? 1 : 0) + (season ? 1 : 0) + (status !== "all") + (access !== "all");
-  const clear = () => (setDiff([]), setTopic(""), setPattern(""), setSeason(""), setStatus("all"), setAccess("all"));
-  const open = (p) => (p.locked ? onLocked(p) : nav(`/codevita/solve/${p.id}`));
-
+function Hero({ h, price, onUpgrade, setTab }) {
+  const lessons = h?.learn?.total || 0;
   return (
-    <div className="cv-bank">
-      <aside className={`cv-filters${showFilters ? " open" : ""}`}>
-        <div className="cv-filter-head">
-          <b>Filters</b>
-          {filtersOn > 0 && (
-            <button type="button" className="linkish" onClick={clear}>
-              Clear
-            </button>
-          )}
-          <button type="button" className="cv-x only-sm" onClick={() => setShowFilters(false)} aria-label="Close filters">
-            <X className="h-4 w-4" />
-          </button>
+    <header className="cv-hero cv-hero2">
+      <div className="cv-hero-main">
+        <p className="cv-eyebrow">
+          <Trophy className="h-4 w-4" /> TCS CodeVita Crash Course
+        </p>
+        <h1>Prepare for TCS CodeVita with a complete, structured course</h1>
+        <p className="cv-muted cv-lead">
+          {h?.settings?.intro ||
+            "Learn every topic CodeVita tests, practise CodeVita-style problems on a real judge with hidden test cases, sit timed mock tests, and see exactly where to improve after every submission."}
+        </p>
+        <div className="cv-hero-facts">
+          <span>
+            <BookOpen className="h-4 w-4" /> <b>{lessons || "—"}</b> lessons
+          </span>
+          <span>
+            <Code2 className="h-4 w-4" /> <b>{h?.totals?.problems ?? "—"}</b> problems
+          </span>
+          <span>
+            <Timer className="h-4 w-4" /> <b>{h?.mocks ?? "—"}</b> mock tests
+          </span>
+          <span>
+            <FileCode2 className="h-4 w-4" /> C++, Java, Python solutions
+          </span>
         </div>
-        <fieldset>
-          <legend>Difficulty</legend>
-          {DIFFICULTIES.map((d) => (
-            <label key={d} className="cv-check">
-              <input type="checkbox" checked={diff.includes(d)} onChange={() => setDiff(diff.includes(d) ? diff.filter((x) => x !== d) : [...diff, d])} />
-              <span className={`cv-diff ${dClass(d)}`}>{d}</span>
-              <small>{items.filter((p) => p.difficulty === d).length}</small>
-            </label>
-          ))}
-        </fieldset>
-        <fieldset>
-          <legend>Status</legend>
-          <select className="inp" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="all">All problems</option>
-            <option value="todo">Not attempted</option>
-            <option value="attempted">Attempted, not solved</option>
-            <option value="solved">Solved</option>
-          </select>
-        </fieldset>
-        <fieldset>
-          <legend>Access</legend>
-          <select className="inp" value={access} onChange={(e) => setAccess(e.target.value)}>
-            <option value="all">Free and premium</option>
-            <option value="free">Free only</option>
-            <option value="premium">Premium only</option>
-          </select>
-        </fieldset>
-        <fieldset>
-          <legend>Topic</legend>
-          <div className="cv-chips">
-            {topics.map((t) => (
-              <button key={t} type="button" className={topic === t ? "on" : ""} onClick={() => setTopic(topic === t ? "" : t)}>
-                {t}
-              </button>
-            ))}
+        <div className="cv-hero-cta">
+          <button type="button" className="btn" onClick={() => setTab("learn")}>
+            <GraduationCap className="h-4 w-4" /> Start learning free
+          </button>
+          {h?.startHere && (
+            <Link className="btn ghost" to={`/codevita/solve/${h.startHere.id}`}>
+              <PlayCircle className="h-4 w-4" /> Try a free problem
+            </Link>
+          )}
+        </div>
+      </div>
+
+      <aside className="cv-hero-side">
+        {h?.premium ? (
+          <>
+            <span className="cv-pill good" style={{ alignSelf: "flex-start" }}>
+              <Crown className="h-3.5 w-3.5" /> Full course unlocked
+            </span>
+            {h.me ? <Progress h={h} /> : null}
+          </>
+        ) : (
+          <div className="cv-buybox">
+            <small>Complete TCS CodeVita Crash Course</small>
+            <div className="cv-buy-price">
+              {price ? rupees(price) : "Free"}
+              {price ? <span>one-time</span> : null}
+            </div>
+            <ul>
+              <li>
+                <CheckCircle2 className="h-4 w-4" /> All {lessons || ""} lessons and patterns
+              </li>
+              <li>
+                <CheckCircle2 className="h-4 w-4" /> All {h?.totals?.problems || ""} problems with editorials
+              </li>
+              <li>
+                <CheckCircle2 className="h-4 w-4" /> Every mock test with reports
+              </li>
+              <li>
+                <CheckCircle2 className="h-4 w-4" /> Scorecards and progress tracking
+              </li>
+            </ul>
+            <button type="button" className="btn" onClick={onUpgrade}>
+              <Crown className="h-4 w-4" /> Get full access{price ? ` · ${rupees(price)}` : ""}
+            </button>
+            {h?.me ? <Progress h={h} compact /> : <p className="cv-fine">Free: {h?.learn?.free || 0} lessons, {h?.totals?.free || 0} problems and the demo mock test.</p>}
           </div>
-        </fieldset>
-        {patterns.length > 0 && (
-          <fieldset>
-            <legend>Pattern</legend>
-            <select className="inp" value={pattern} onChange={(e) => setPattern(e.target.value)}>
-              <option value="">Any pattern</option>
-              {patterns.map((t) => (
-                <option key={t}>{t}</option>
-              ))}
-            </select>
-          </fieldset>
-        )}
-        {seasons.length > 0 && (
-          <fieldset>
-            <legend>Year</legend>
-            <select className="inp" value={season} onChange={(e) => setSeason(e.target.value)}>
-              <option value="">Any year</option>
-              {seasons.map((t) => (
-                <option key={t}>{t}</option>
-              ))}
-            </select>
-          </fieldset>
         )}
       </aside>
-
-      <div className="cv-list">
-        <div className="cv-list-bar">
-          <label className="cv-search">
-            <Search className="h-4 w-4" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search problems, topics or patterns" aria-label="Search problems" />
-          </label>
-          <button type="button" className="btn ghost only-sm" onClick={() => setShowFilters(true)}>
-            <Filter className="h-4 w-4" /> Filters{filtersOn ? ` (${filtersOn})` : ""}
-          </button>
-          <select className="inp cv-sort" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort">
-            <option value="default">Recommended order</option>
-            <option value="difficulty">Easiest first</option>
-            <option value="popular">Most solved</option>
-          </select>
-          <span className="cv-count">
-            {shown.length} shown · {solvedCount} solved
-          </span>
-        </div>
-
-        <div className="cv-table" role="table" aria-label="Problems">
-          <div className="cv-tr cv-head" role="row">
-            <span role="columnheader">Status</span>
-            <span role="columnheader">Problem</span>
-            <span role="columnheader">Difficulty</span>
-            <span role="columnheader">Points</span>
-            <span role="columnheader">Access</span>
-          </div>
-          {shown.map((p, i) => (
-            <button key={p.id} type="button" className={`cv-tr${p.locked ? " locked" : ""}`} role="row" onClick={() => open(p)}>
-              <span className="cv-st" role="cell" title={p.solved ? "Solved" : p.attempted ? "Attempted" : "Not attempted"}>
-                {p.solved ? <CheckCircle2 className="h-5 w-5 good" /> : p.attempted ? <CircleDot className="h-5 w-5 warn" /> : <Circle className="h-5 w-5 faint" />}
-              </span>
-              <span className="cv-ti" role="cell">
-                <b>
-                  {i + 1}. {p.title}
-                </b>
-                <small>
-                  {p.topics.join(" · ")}
-                  {p.season ? ` · ${p.season}` : ""}
-                  {p.solvers ? ` · solved by ${p.solvers}` : ""}
-                </small>
-              </span>
-              <span role="cell">
-                <span className={`cv-diff ${dClass(p.difficulty)}`}>{p.difficulty}</span>
-              </span>
-              <span className="cv-pts" role="cell">
-                {p.best ? `${p.best}/` : ""}
-                {p.points}
-              </span>
-              <span role="cell">
-                {p.access === "free" ? (
-                  <span className="cv-pill good">Free</span>
-                ) : p.locked ? (
-                  <span className="cv-pill gold">
-                    <Lock className="h-3 w-3" /> Premium
-                  </span>
-                ) : (
-                  <span className="cv-pill gold-soft">
-                    <Crown className="h-3 w-3" /> Premium
-                  </span>
-                )}
-              </span>
-            </button>
-          ))}
-          {!shown.length && <p className="note" style={{ padding: 16 }}>No problems match these filters.</p>}
-        </div>
-      </div>
-    </div>
+    </header>
   );
 }
 
-function MySubs({ signedIn }) {
-  const subs = useCv(signedIn ? "/api/cv/me" : null);
-  if (!signedIn)
+function Progress({ h, compact }) {
+  const totalItems = (h.learn?.total || 0) + (h.totals?.problems || 0);
+  const doneItems = (h.learn?.done || 0) + (h.me?.solved || 0);
+  if (compact)
     return (
-      <div className="cv-empty">
-        <p>Sign in to see your submissions and scorecards.</p>
-        <Link className="btn" to="/account?next=/codevita?tab=subs">
-          Sign in
-        </Link>
-      </div>
+      <p className="cv-fine">
+        Your progress: {h.learn?.done || 0} {h.learn?.done === 1 ? "lesson" : "lessons"} done · {h.me.solved} solved
+      </p>
     );
-  if (subs.error) return <p className="note bad">{subs.error}</p>;
-  if (!subs.data) return <p className="note">Loading…</p>;
-  if (!subs.data.subs.length) return <div className="cv-empty"><p>No submissions yet. Pick a free problem and submit to get your first scorecard.</p></div>;
   return (
-    <div className="cv-table subs">
-      <div className="cv-tr cv-head">
-        <span>When</span>
-        <span>Problem</span>
-        <span>Language</span>
-        <span>Result</span>
-        <span>Score</span>
+    <>
+      <Ring value={doneItems} total={totalItems} label="course complete" />
+      <div className="cv-side-facts">
+        <div>
+          <small>Lessons done</small>
+          <b>
+            {h.learn?.done || 0}
+            <em>/{h.learn?.total || 0}</em>
+          </b>
+        </div>
+        <div>
+          <small>Problems solved</small>
+          <b>
+            {h.me.solved}
+            <em>/{h.totals.problems}</em>
+          </b>
+        </div>
       </div>
-      {subs.data.subs.map((s) => (
-        <Link key={s.id} className="cv-tr" to={`/codevita/report/${s.id}`}>
-          <span className="cv-faint">{when(s.at)}</span>
-          <span className="cv-ti">
-            <b>{s.title}</b>
-          </span>
-          <span>{CV_LANG_NAMES[s.language]}</span>
-          <span className={`tone-${STATUS_TONE[s.status] || "warn"}`}>{s.status}</span>
-          <span className="cv-pts">
-            {s.score}/{s.maxScore}
-          </span>
-        </Link>
-      ))}
-    </div>
+    </>
   );
 }
 
-function About() {
+function Overview({ h, price, setTab, onUpgrade }) {
+  const me = h?.me;
   const steps = [
-    ["Read carefully", "CodeVita problems are long and story-based. Underline the input format, the output format and the limits before you think about code."],
-    ["Standard input, standard output", "Your program reads from stdin and prints to stdout, exactly in the format asked. Extra spaces at line ends are ignored here; extra words or debug prints are not."],
-    ["Hidden test cases", "Passing the samples is not enough. Your code is judged on hidden tests, including the smallest and largest inputs the constraints allow."],
-    ["Time and memory limits", "Each problem has a time limit (Java and Python get extra time). A correct but slow solution scores TLE, so check the constraints to see which complexity fits."],
-    ["Partial credit", "Here you earn points for every test case you pass, so a solution that handles most cases still counts. Aim for all of them."],
-    ["Practise under time", "Turn on the timer in the coding screen to practise against the clock, the way the contest round feels."],
+    { done: (h?.learn?.done || 0) > 0, title: "Read the CodeVita guide", text: "Format, rules, judging and a 4-week plan.", action: () => setTab("learn"), cta: "Open lessons" },
+    { done: (me?.attempted || 0) > 0, title: "Solve your first free problem", text: "Write code, run it on your own input and submit.", to: h?.startHere ? `/codevita/solve/${h.startHere.id}` : null, action: () => setTab("practice"), cta: "Practise" },
+    { done: false, title: "Take the free demo mock test", text: "Three problems against the clock, with a report at the end.", action: () => setTab("mocks"), cta: "Mock tests" },
+    { done: false, title: "Track and fix weak topics", text: "Your performance page shows which topics need work.", action: () => setTab("progress"), cta: "Performance" },
+  ];
+  const pillars = [
+    [BookOpen, "Learn", `${h?.learn?.total || 0} lessons: exam guide, every major topic and the patterns behind CodeVita problems, with code in C++, Java and Python.`, "learn"],
+    [Code2, "Practise", `${h?.totals?.problems || 0} CodeVita-style problems with hidden test cases, time and memory limits, and step-by-step editorials.`, "practice"],
+    [History, "PYQs", "Previous-year CodeVita questions, organised by year, topic and difficulty as they are added.", "pyq"],
+    [Timer, "Mock tests", `${h?.mocks || 0} timed rounds that feel like the real contest, with a report and leaderboard.`, "mocks"],
+    [BarChart3, "Performance", "Scorecards for every submission, topic mastery and your mock-test history.", "progress"],
   ];
   return (
-    <div className="cv-about">
-      {steps.map(([t, d], i) => (
-        <div key={t} className="cv-about-card">
-          <span>{i + 1}</span>
-          <b>{t}</b>
-          <p>{d}</p>
-        </div>
-      ))}
+    <div className="cv-overview">
+      <section className="cv-pillars">
+        {pillars.map(([Icon, t, d, k]) => (
+          <button key={k} type="button" className="cv-pillar" onClick={() => setTab(k)}>
+            <span>
+              <Icon className="h-5 w-5" />
+            </span>
+            <b>{t}</b>
+            <p>{d}</p>
+          </button>
+        ))}
+      </section>
+
+      <div className="cv-two">
+        <section className="cv-panel">
+          <h2>
+            <ListChecks className="h-5 w-5" /> Start here
+          </h2>
+          <ol className="cv-steps">
+            {steps.map((s, i) => (
+              <li key={s.title} className={s.done ? "done" : ""}>
+                {s.done ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
+                <div>
+                  <b>
+                    {i + 1}. {s.title}
+                  </b>
+                  <span>{s.text}</span>
+                </div>
+                {s.to ? (
+                  <Link className="btn ghost sm" to={s.to}>
+                    {s.cta}
+                  </Link>
+                ) : (
+                  <button type="button" className="btn ghost sm" onClick={s.action}>
+                    {s.cta}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section className="cv-panel">
+          <h2>
+            <ClipboardList className="h-5 w-5" /> Free and full access
+          </h2>
+          <table className="cv-compare">
+            <thead>
+              <tr>
+                <th />
+                <th>Free</th>
+                <th>Full course{price ? ` · ${rupees(price)}` : ""}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Lessons</td>
+                <td>{h?.learn?.free ?? "—"} (guide and basics)</td>
+                <td>All {h?.learn?.total ?? ""}</td>
+              </tr>
+              <tr>
+                <td>Practice problems</td>
+                <td>{h?.totals?.free ?? "—"} with editorials</td>
+                <td>All {h?.totals?.problems ?? ""}</td>
+              </tr>
+              <tr>
+                <td>Mock tests</td>
+                <td>Demo round</td>
+                <td>All {h?.mocks ?? ""}</td>
+              </tr>
+              <tr>
+                <td>Judge, scorecards, progress</td>
+                <td>Yes</td>
+                <td>Yes</td>
+              </tr>
+            </tbody>
+          </table>
+          {h && !h.premium ? (
+            <button type="button" className="btn" onClick={onUpgrade} style={{ marginTop: 12 }}>
+              <Sparkles className="h-4 w-4" /> Unlock everything{price ? ` for ${rupees(price)}` : ""}
+            </button>
+          ) : (
+            <p className="cv-fine">You have full access. Everything is unlocked.</p>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

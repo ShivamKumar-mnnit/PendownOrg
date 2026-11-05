@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import CodeMirror from "@uiw/react-codemirror";
 import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
 import {
   AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Clock, Code2, Copy, Crown, FileText, History, Loader2, Lock, Maximize2, Minimize2,
-  Play, RotateCcw, Send, Timer, XCircle,
+  Flag, Play, RotateCcw, Send, Timer, XCircle,
 } from "lucide-react";
 import Logo from "../../components/Logo";
 import ThemeToggle from "../../components/ThemeToggle";
@@ -43,6 +43,9 @@ export default function Arena() {
   const { id } = useParams();
   const [bump, setBump] = useState(0);
   const { data, error } = useCv(`/api/cv/problems/${encodeURIComponent(id)}`, bump);
+  const [params] = useSearchParams();
+  const mockId = params.get("mock") || "";
+  const mockRes = useCv(mockId ? `/api/cv/mocks/${encodeURIComponent(mockId)}` : null, bump);
   usePageSEO({ title: data?.item?.title ? `${data.item.title} · CodeVita practice` : "CodeVita practice", description: "Solve a CodeVita-style problem.", path: `/codevita/solve/${id}`, noindex: true });
 
   if (error)
@@ -54,14 +57,18 @@ export default function Arena() {
         </Link>
       </div>
     );
-  if (!data)
+  if (!data || (mockId && mockRes.loading && !mockRes.error))
     return (
       <div className="cv-arena-msg">
         <Loader2 className="h-5 w-5 animate-spin" /> Loading the problem…
       </div>
     );
   if (data.locked) return <LockedProblem d={data} onUnlocked={() => setBump((n) => n + 1)} />;
-  return <Round key={data.item.id} d={data} />;
+  // Mock mode only while that test is running and this problem is part of it.
+  const md = mockRes.data;
+  const live = md?.attempt && !md.attempt.finishedAt && md.attempt.endsAt > md.now && md.problems.some((x) => x.id === data.item.id);
+  const mock = live ? { id: mockId, title: md.mock.title, endsAt: md.attempt.endsAt, offset: md.now - Date.now(), problems: md.problems } : null;
+  return <Round key={data.item.id + (mock ? ":" + mock.id : "")} d={data} mock={mock} />;
 }
 
 function LockedProblem({ d, onUnlocked }) {
@@ -73,7 +80,7 @@ function LockedProblem({ d, onUnlocked }) {
       <h1>{p.title}</h1>
       <p className="cv-muted">{p.teaser}…</p>
       <p>
-        <Lock className="h-4 w-4" style={{ display: "inline", verticalAlign: -2 }} /> This problem is part of CodeVita premium.
+        <Lock className="h-4 w-4" style={{ display: "inline", verticalAlign: -2 }} /> This problem is part of the full crash course.
       </p>
       <div className="row" style={{ justifyContent: "center", gap: 10 }}>
         <button type="button" className="btn" onClick={() => setOpen(true)}>
@@ -88,7 +95,7 @@ function LockedProblem({ d, onUnlocked }) {
   );
 }
 
-function Round({ d }) {
+function Round({ d, mock }) {
   const p = d.item;
   const { user } = useAccount();
   const isDark = useIsDark();
@@ -138,10 +145,10 @@ function Round({ d }) {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  const left = timed ? Math.max(0, Math.round((timed.endAt - now) / 1000)) : null;
+  const left = mock ? Math.max(0, Math.round((mock.endsAt - (now + mock.offset)) / 1000)) : timed ? Math.max(0, Math.round((timed.endAt - now) / 1000)) : null;
   useEffect(() => {
-    if (timed && left === 0 && !timeUp) setTimeUp(true);
-  }, [timed, left, timeUp]);
+    if ((timed || mock) && left === 0 && !timeUp) setTimeUp(true);
+  }, [timed, mock, left, timeUp]);
   const elapsedSec = Math.round((now - (timed ? timed.endAt - timed.minutes * 60000 : startedAt)) / 1000);
   function startTimed(minutes) {
     const t = { minutes, endAt: Date.now() + minutes * 60000 };
@@ -248,10 +255,10 @@ function Round({ d }) {
     setSampleOut(null);
     setSub({ pending: true, cases: [] });
     try {
-      const done = await submitAndJudge({ id: p.id, language: lang, code, elapsedSec, timedMinutes: timed?.minutes || 0 }, (s) => setSub(s));
+      const done = await submitAndJudge({ id: p.id, language: lang, code, elapsedSec, timedMinutes: mock ? 0 : timed?.minutes || 0, ...(mock ? { mock: mock.id } : {}) }, (s) => setSub(s));
       setSub(done);
       setSubsBump((n) => n + 1);
-      if (timed) stopTimed();
+      if (timed && !mock) stopTimed();
     } catch (e) {
       setErr(e.message);
       setSub(null);
@@ -274,27 +281,49 @@ function Round({ d }) {
 
   const leftTabs = [
     ["problem", "Problem", FileText],
-    ["editorial", "Editorial", Code2],
+    !mock && !p.inMock && ["editorial", "Editorial", Code2],
     ["subs", "Submissions", History],
-  ];
+  ].filter(Boolean);
+  // Previous / Next stay inside the mock test while one is running.
+  const mi = mock ? mock.problems.findIndex((x) => x.id === p.id) : -1;
+  const mockLink = (x) => x && { to: `/codevita/solve/${x.id}?mock=${encodeURIComponent(mock.id)}`, title: x.title };
+  const nav = mock
+    ? { prev: mockLink(mock.problems[mi - 1]), next: mockLink(mock.problems[mi + 1]) }
+    : { prev: d.prev && { to: `/codevita/solve/${d.prev.id}`, title: d.prev.title }, next: d.next && { to: `/codevita/solve/${d.next.id}`, title: d.next.title } };
+  const back = mock ? `/codevita/mock/${encodeURIComponent(mock.id)}` : "/codevita";
 
   return (
     <div ref={rootRef} className={`cv-arena${fs ? " is-fs" : ""}`} style={{ "--cv-split": `${split}%`, "--cv-console": `${consoleH}%` }}>
       <header className="cv-topbar">
         <div className="cv-top-left">
-          <Link to="/codevita" className="cv-back" title="Back to the question bank">
+          <Link to={back} className="cv-back" title={mock ? "Back to the mock test" : "Back to the course"}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <Link to="/" className="cv-brand" aria-label="Anobyt home">
             <Logo showText={false} badgeClassName="h-7 w-7" />
           </Link>
           <div className="cv-top-title">
-            <small>CodeVita practice</small>
+            <small>{mock ? mock.title : "CodeVita practice"}</small>
             <b title={p.title}>{p.title}</b>
           </div>
           <span className={`cv-diff ${dClass(p.difficulty)} hide-sm`}>{p.difficulty}</span>
         </div>
         <div className="cv-top-right">
+          {mock && (
+            <nav className="cv-mock-chips hide-sm" aria-label="Mock test problems">
+              {mock.problems.map((x, i) => (
+                <Link key={x.id} to={`/codevita/solve/${x.id}?mock=${encodeURIComponent(mock.id)}`} className={`${x.id === p.id ? "on" : ""}${x.status === "Accepted" ? " ok" : ""}`} title={x.title}>
+                  {String.fromCharCode(65 + i)}
+                </Link>
+              ))}
+            </nav>
+          )}
+          {mock ? (
+            <Link to={back} className={`cv-timer on${left < 600 ? " low" : ""}`} title="Time left in the mock test">
+              <Timer className="h-4 w-4" />
+              <span>{clock(left)}</span>
+            </Link>
+          ) : (
           <div className="cv-timer-wrap">
             <button type="button" className={`cv-timer${timed ? " on" : ""}${left !== null && left < 300 ? " low" : ""}`} onClick={() => setTimerMenu(!timerMenu)} title={timed ? "Timed practice" : "Time on this problem"}>
               {timed ? <Timer className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
@@ -316,6 +345,7 @@ function Round({ d }) {
               </div>
             )}
           </div>
+          )}
           <ThemeToggle className="cv-icon-btn" />
           <button type="button" className="cv-icon-btn hide-sm" onClick={toggleFs} title={fs ? "Exit full screen" : "Full screen"} aria-label={fs ? "Exit full screen" : "Full screen"}>
             {fs ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -349,15 +379,15 @@ function Round({ d }) {
             {leftTab === "subs" && <ProblemSubs pid={p.id} signedIn={Boolean(user)} bump={subsBump} />}
           </div>
           <div className="cv-left-foot">
-            {d.prev ? (
-              <Link to={`/codevita/solve/${d.prev.id}`} title={d.prev.title}>
+            {nav.prev ? (
+              <Link to={nav.prev.to} title={nav.prev.title}>
                 <ChevronLeft className="h-4 w-4" /> Previous
               </Link>
             ) : (
               <span />
             )}
-            {d.next && (
-              <Link to={`/codevita/solve/${d.next.id}`} title={d.next.title}>
+            {nav.next && (
+              <Link to={nav.next.to} title={nav.next.title}>
                 Next <ChevronRight className="h-4 w-4" />
               </Link>
             )}
@@ -434,7 +464,21 @@ function Round({ d }) {
         </section>
       </div>
 
-      {timeUp && (
+      {timeUp && mock && (
+        <div className="cv-modal-back">
+          <div className="cv-modal small" role="alertdialog" aria-labelledby="cv-tu">
+            <Flag className="h-6 w-6" />
+            <h2 id="cv-tu">The mock test is over</h2>
+            <p className="cv-muted">Time ran out on {mock.title}. Your best submissions are scored and your report is ready. Editorials for these problems are open now.</p>
+            <div className="row" style={{ gap: 10, justifyContent: "center" }}>
+              <Link className="btn" to={back}>
+                <Flag className="h-4 w-4" /> See my report
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+      {timeUp && !mock && (
         <div className="cv-modal-back">
           <div className="cv-modal small" role="alertdialog" aria-labelledby="cv-tu">
             <Timer className="h-6 w-6" />
@@ -544,7 +588,7 @@ function SamplePre({ text }) {
 function Editorial({ p }) {
   const [shown, setShown] = useState(false);
   const [solLang, setSolLang] = useState(p.solutionLangs.includes("cpp") ? "cpp" : p.solutionLangs[0]);
-  if (!p.editorial) return <p className="cv-note">The editorial for this problem is part of CodeVita premium.</p>;
+  if (!p.editorial) return <p className="cv-note">The editorial for this problem is part of the full crash course.</p>;
   const e = p.editorial;
   if (!shown)
     return (
