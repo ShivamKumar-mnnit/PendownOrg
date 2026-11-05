@@ -16,7 +16,7 @@ export const FEATURES = {
   studentData: { title: "Student records", text: "Add, update, import and export student records in one place." },
   collegePanel: { title: "College panel", text: "A dashboard for colleges: manage your students, follow their practice progress, create tests and see results." },
   allCourses: { title: "All premium courses", text: "Every paid module of every course, unlocked." },
-  codevita: { title: "CodeVita premium", text: "The full CodeVita-style question bank with editorials and C++, Java and Python solutions, timed practice, scorecards and progress tracking." },
+  codevita: { title: "Complete TCS CodeVita Crash Course", text: "The full CodeVita-style question bank, every lesson, mock tests, editorials with C++, Java and Python solutions, scorecards and progress tracking." },
 };
 // The college panel includes the two smaller tools.
 // Premium membership includes practice, courses and the test builder.
@@ -29,14 +29,16 @@ export const DEFAULT_ACCESS = {
   studentData: { enabled: true, paid: true, price: 299, days: 365 },
   collegePanel: { enabled: true, paid: true, price: 4999, days: 365 },
   allCourses: { enabled: true, paid: true, price: 1999, days: 365 },
-  codevita: { enabled: true, paid: true, price: 999, days: 365 },
+  codevita: { enabled: true, paid: true, price: 21, days: 365 },
 };
 
 export function cleanAccess(input) {
   const out = {};
   for (const id of Object.keys(FEATURES)) {
-    const f = input?.[id] || {};
+    let f = input?.[id] || {};
     const d = DEFAULT_ACCESS[id];
+    // The crash course launched at ₹999 and moved to ₹21. A saved ₹999 is that old default, not a choice.
+    if (id === "codevita" && Number(f.price) === 999) f = { ...f, price: d.price };
     out[id] = {
       enabled: f.enabled === undefined ? d.enabled : bool(f.enabled),
       paid: f.paid === undefined ? d.paid : bool(f.paid),

@@ -32,7 +32,8 @@ import { readProbe, withProbe } from "../codevita/probe.js";
 import { explainResult } from "../compiler.js";
 import { handleCompile } from "../compileHandler.js";
 import { adminState, bool, fail, json, mapLimit, needAdmin, newId, num, readBody, str } from "./http.js";
-import { courseUnlocks, hasFeature, readAccess, readRunner, readUser } from "./auth.js";
+import { cleanAccess, courseUnlocks, hasFeature, readAccess, readRunner, readUser } from "./auth.js";
+import { activeAttempt, learnAdminApi, learnApi, loadLessons, loadMocks, problemsInActiveMocks, promoFrom, recordMockResult } from "./codevitaLearn.js";
 
 const BATCH = 3;
 const MAX_CODE = 64_000;
@@ -49,6 +50,18 @@ export const DEFAULT_CV_SETTINGS = {
   probe: true,
   intro: "",
   announcement: "",
+  visible: true,
+  cardTitle: "TCS CodeVita Crash Course",
+  cardSummary: "Lessons on every CodeVita topic, CodeVita-style problems with hidden tests, detailed solutions in C++, Java and Python, mock tests and scorecards.",
+  promo: {
+    enabled: true,
+    headline: "🚀 TCS CodeVita Preparation Starts Here!",
+    text: "Prepare for TCS CodeVita with CodeVita-style problems, realistic coding practice, detailed solutions, mock tests and performance tracking.",
+    priceText: "Get Complete Access for Just {price}!",
+    cta: "Explore Crash Course",
+    later: "Maybe Later",
+    delaySec: 3,
+  },
 };
 
 const list = (v, max = 50) => (Array.isArray(v) ? v.slice(0, max) : []);
@@ -81,6 +94,24 @@ export function cleanSettings(s) {
     probe: s?.probe === undefined ? true : bool(s.probe),
     intro: str(s?.intro, 4000),
     announcement: str(s?.announcement, 400),
+    visible: s?.visible === undefined ? true : bool(s.visible),
+    cardTitle: str(s?.cardTitle, 120).trim() || DEFAULT_CV_SETTINGS.cardTitle,
+    cardSummary: str(s?.cardSummary, 400).trim() || DEFAULT_CV_SETTINGS.cardSummary,
+    promo: cleanPromo(s?.promo),
+  };
+}
+
+function cleanPromo(p) {
+  const d = DEFAULT_CV_SETTINGS.promo;
+  const t = (v, max, def) => str(v, max).trim() || def;
+  return {
+    enabled: p?.enabled === undefined ? d.enabled : bool(p.enabled),
+    headline: t(p?.headline, 140, d.headline),
+    text: t(p?.text, 400, d.text),
+    priceText: t(p?.priceText, 140, d.priceText),
+    cta: t(p?.cta, 40, d.cta),
+    later: t(p?.later, 40, d.later),
+    delaySec: Math.min(60, Math.max(0, Math.round(num(p?.delaySec, d.delaySec)))),
   };
 }
 const readSettings = async (store) => cleanSettings((await store.get("cv:settings")) || {});
@@ -353,8 +384,9 @@ async function finalize(store, sub, p, user) {
     difficulty: p.difficulty,
     topics: p.topics,
   };
-  const summary = { id: sub.id, pid: sub.pid, title: sub.title, difficulty: p.difficulty, language: sub.language, status: r.status, score: r.score, maxScore: r.maxScore, accuracy: r.accuracy, at: sub.finishedAt, elapsedSec: sub.elapsedSec };
+  const summary = { id: sub.id, pid: sub.pid, title: sub.title, difficulty: p.difficulty, language: sub.language, status: r.status, score: r.score, maxScore: r.maxScore, accuracy: r.accuracy, at: sub.finishedAt, elapsedSec: sub.elapsedSec, ...(sub.mock ? { mock: sub.mock } : {}) };
   mine.subs = [summary, ...(mine.subs || [])].slice(0, 300);
+  if (sub.mock) recordMockResult(mine, sub);
   mine.name = user?.name || mine.name || "";
   mine.email = user?.email || mine.email || "";
   await store.set("cv:u:" + uid, mine);
@@ -381,8 +413,18 @@ export async function handleCodevitaApi(request, store, content, env, compile = 
   try {
     if (area === "admin") return await adminApi({ request, store, content, env, method, parts: parts.slice(1), body, compile, url });
 
+    // The launch popup and the course card: cheap, no sign-in needed, called on every page of the site.
+    if (area === "promo" && method === "GET") {
+      const [settings, access] = await Promise.all([readSettings(store), readAccess(content)]);
+      return json(promoFrom(settings, access));
+    }
+
     const ctx = await context(request, store, content, env);
+    if (!ctx.settings.visible && !ctx.admin) return fail(404, "The CodeVita crash course isn't open yet. Please check back soon.");
     const mine = ctx.user ? await store.get("cv:u:" + ctx.user.id) : null;
+
+    const learned = await learnApi({ area, a, b, method, body, ctx, store, mine, deps: { loadBank, accessMap, row } });
+    if (learned) return learned;
 
     // ---------- hub ----------
     if (area === "home" && method === "GET") {
@@ -412,6 +454,13 @@ export async function handleCodevitaApi(request, store, content, env, compile = 
         signedIn: Boolean(ctx.user),
         plan: await planFor(ctx, content),
         settings: { intro: ctx.settings.intro, announcement: ctx.settings.announcement, courseId: ctx.settings.courseId },
+        offer: promoFrom(ctx.settings, ctx.access),
+        learn: await (async () => {
+          const ls = await loadLessons(store);
+          const done = mine?.lessons || {};
+          return { total: ls.length, free: ls.filter((l) => l.access === "free").length, done: ls.filter((l) => done[l.id]).length };
+        })(),
+        mocks: (await loadMocks(store)).length,
         startHere: firstFree ? { id: firstFree.id, title: firstFree.title } : null,
         disclaimer: DISCLAIMER,
       });
@@ -441,9 +490,13 @@ export async function handleCodevitaApi(request, store, content, env, compile = 
           next: near(bank[i + 1]),
         });
       const cases = await casesOf(store, p);
+      // During a mock test the editorial, solutions and hints stay hidden, as in the real round.
+      const inMock = problemsInActiveMocks(mine).has(p.id);
+      const item = { ...publicProblem(p, { full: (ctx.premium || acc === "free") && !inMock, caseCount: cases.length }), access: acc };
+      if (inMock) Object.assign(item, { hints: [], hasEditorial: false, solutionLangs: [], inMock: true });
       return json({
         locked: false,
-        item: { ...publicProblem(p, { full: ctx.premium || acc === "free", caseCount: cases.length }), access: acc },
+        item,
         mine: mine?.problems?.[p.id] || null,
         premium: ctx.premium,
         signedIn: Boolean(ctx.user),
@@ -460,7 +513,7 @@ export async function handleCodevitaApi(request, store, content, env, compile = 
       const p = bank.find((x) => x.id === id);
       if (!p) return { err: fail(404, "Problem not found.") };
       const acc = accessMap(bank.filter((x) => x.published !== false && !x.hidden), ctx.settings).get(p.id) || "premium";
-      if (acc === "premium" && !ctx.premium) return { err: fail(403, "This is a premium problem. Unlock CodeVita premium to solve it.") };
+      if (acc === "premium" && !ctx.premium) return { err: fail(403, "This is a premium problem. Unlock the Complete TCS CodeVita Crash Course to solve it.") };
       if (!CV_LANGS.includes(body?.language)) return { err: fail(400, "Pick C, C++, Java or Python.") };
       const code = str(body?.code, MAX_CODE + 1);
       if (!code.trim()) return { err: fail(400, "Write some code first.") };
@@ -490,6 +543,14 @@ export async function handleCodevitaApi(request, store, content, env, compile = 
       const { p, code, err } = await openProblem(str(body?.id, 80));
       if (err) return err;
       if (mine?.lastSubmitAt && Date.now() - mine.lastSubmitAt < 5000 && !validate) return fail(429, "Please wait a few seconds between submissions.");
+      let mock = null;
+      if (body?.mock && !validate) {
+        const mid = str(body.mock, 80);
+        const att = activeAttempt(mine, mid);
+        if (!att) return fail(409, "This mock test has ended. Open its report to see your result.");
+        if (!(att.pids || []).includes(p.id)) return fail(400, "This problem is not part of the mock test.");
+        mock = { mock: mid, attempt: att.id };
+      }
       const cases = await casesOf(store, p);
       const total = p.samples.length + cases.length;
       if (!total) return fail(400, "This problem has no test cases yet.");
@@ -513,6 +574,7 @@ export async function handleCodevitaApi(request, store, content, env, compile = 
         cases: Array(total).fill(null),
         status: "judging",
         createdAt: Date.now(),
+        ...(mock || {}),
       };
       await store.set("cv:sub:" + sub.id, sub);
       if (ctx.user && !validate) await store.set("cv:u:" + ctx.user.id, { problems: {}, subs: [], ...(mine || {}), lastSubmitAt: Date.now() });
@@ -611,11 +673,27 @@ async function adminApi({ request, store, content, env, method, parts, body, url
       order: order || [],
       courses,
       topics: TOPICS,
+      price: (await readAccess(content)).codevita,
     });
   }
 
+  const learnt = await learnAdminApi({ what, id, extra: parts[2], method, body, store });
+  if (learnt) return learnt;
+
+  // The crash course price lives with the other premium prices (Admin → Prices and features); this edits just its row.
+  if (what === "price" && method === "PUT") {
+    const access = await readAccess(content);
+    const cur = access.codevita;
+    const next = cleanAccess({
+      ...access,
+      codevita: { enabled: body?.enabled ?? cur.enabled, paid: body?.paid ?? cur.paid, price: body?.price ?? cur.price, days: body?.days ?? cur.days },
+    });
+    await content.set("access", next);
+    return json({ price: next.codevita });
+  }
+
   if (what === "settings" && method === "PUT") {
-    const settings = cleanSettings(body);
+    const settings = cleanSettings({ ...(await readSettings(store)), ...body });
     await store.set("cv:settings", settings);
     return json({ settings });
   }
