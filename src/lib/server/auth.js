@@ -16,10 +16,11 @@ export const FEATURES = {
   studentData: { title: "Student records", text: "Add, update, import and export student records in one place." },
   collegePanel: { title: "College panel", text: "A dashboard for colleges: manage your students, follow their practice progress, create tests and see results." },
   allCourses: { title: "All premium courses", text: "Every paid module of every course, unlocked." },
+  codevita: { title: "CodeVita premium", text: "The full CodeVita-style question bank with editorials and C++, Java and Python solutions, timed practice, scorecards and progress tracking." },
 };
 // The college panel includes the two smaller tools.
 // Premium membership includes practice, courses and the test builder.
-const INCLUDED = { createTests: ["collegePanel", "allAccess"], studentData: ["collegePanel"], practice: ["allAccess"], allCourses: ["allAccess"] };
+const INCLUDED = { createTests: ["collegePanel", "allAccess"], studentData: ["collegePanel"], practice: ["allAccess"], allCourses: ["allAccess"], codevita: ["allAccess"] };
 
 export const DEFAULT_ACCESS = {
   allAccess: { enabled: true, paid: true, price: 1499, days: 365 },
@@ -28,6 +29,7 @@ export const DEFAULT_ACCESS = {
   studentData: { enabled: true, paid: true, price: 299, days: 365 },
   collegePanel: { enabled: true, paid: true, price: 4999, days: 365 },
   allCourses: { enabled: true, paid: true, price: 1999, days: 365 },
+  codevita: { enabled: true, paid: true, price: 999, days: 365 },
 };
 
 export function cleanAccess(input) {

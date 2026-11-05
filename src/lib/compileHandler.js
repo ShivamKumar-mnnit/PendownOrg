@@ -28,7 +28,7 @@ const JUDGE0_LANGS = { python: 71, javascript: 63, java: 62, c: 50, cpp: 54 };
  * @param {{ judge0Url?: string, judge0Key?: string, judge0Host?: string, prefer?: string }} [runner]
  * @returns {Promise<{ statusCode: number, body: object }>}
  */
-export async function handleCompile(body, runner) {
+export async function handleCompile(body, runner, opts = {}) {
   const { language, code, stdin } = body || {};
   if (typeof code !== "string" || !code.trim()) {
     return { statusCode: 400, body: { error: "Missing code." } };
@@ -40,17 +40,17 @@ export async function handleCompile(body, runner) {
     return { statusCode: 413, body: { error: "Code or input is too large." } };
   }
   const backup = runner && runner.judge0Url ? runner : null;
-  if (backup && runner.prefer === "judge0") return runJudge0({ language, code, stdin }, backup);
-  const first = await runPrimary({ language, code, stdin });
+  if (backup && runner.prefer === "judge0") return runJudge0({ language, code, stdin }, backup, fetch, opts);
+  const first = await runPrimary({ language, code, stdin }, opts);
   if (backup && first.statusCode >= 500) {
-    const second = await runJudge0({ language, code, stdin }, backup);
+    const second = await runJudge0({ language, code, stdin }, backup, fetch, opts);
     if (second.statusCode < 500) return second;
   }
   return first;
 }
 
 /** Calls a Judge0 server (self-hosted, or RapidAPI with a key) and maps its answer to our shape. */
-export async function runJudge0({ language, code, stdin }, runner, fetchImpl = fetch) {
+export async function runJudge0({ language, code, stdin }, runner, fetchImpl = fetch, opts = {}) {
   const b64 = (s) => Buffer.from(String(s ?? ""), "utf8").toString("base64");
   const unb64 = (s) => (s ? Buffer.from(s, "base64").toString("utf8") : "");
   const headers = { "Content-Type": "application/json" };
@@ -65,8 +65,15 @@ export async function runJudge0({ language, code, stdin }, runner, fetchImpl = f
     res = await fetchImpl(`${runner.judge0Url.replace(/\/+$/, "")}/submissions?base64_encoded=true&wait=true`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ source_code: b64(code), language_id: JUDGE0_LANGS[language], stdin: b64(stdin) }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      body: JSON.stringify({
+        source_code: b64(code),
+        language_id: JUDGE0_LANGS[language],
+        stdin: b64(stdin),
+        // Per-problem limits (CodeVita judge); Judge0's own defaults otherwise.
+        ...(opts.cpuLimitSec ? { cpu_time_limit: opts.cpuLimitSec, wall_time_limit: Math.min(20, opts.cpuLimitSec * 3) } : {}),
+        ...(opts.memoryLimitKb ? { memory_limit: opts.memoryLimitKb } : {}),
+      }),
+      signal: AbortSignal.timeout(opts.timeoutMs || TIMEOUT_MS),
     });
   } catch (err) {
     const timedOut = err?.name === "TimeoutError" || err?.name === "AbortError";
@@ -89,13 +96,14 @@ export async function runJudge0({ language, code, stdin }, runner, fetchImpl = f
       stderr: compileOut || unb64(d.stderr) || (statusId !== 3 ? d.status?.description || "" : ""),
       exitCode: typeof d.exit_code === "number" ? d.exit_code : statusId === 3 ? 0 : 1,
       executionTimeMs: d.time ? Math.round(Number(d.time) * 1000) : undefined,
+      memoryKb: typeof d.memory === "number" ? d.memory : undefined,
       verdict: d.status?.description,
       runner: "backup",
     },
   };
 }
 
-async function runPrimary({ language, code, stdin }) {
+async function runPrimary({ language, code, stdin }, opts = {}) {
   // Before, a slow, unreachable or non-JSON response from the compile
   // service threw here, so the function crashed with an empty 500 and the
   // page showed a confusing JSON parse error. Every failure now comes back
@@ -109,7 +117,7 @@ async function runPrimary({ language, code, stdin }) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ language, code, stdin: typeof stdin === "string" ? stdin : "" }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(opts.timeoutMs || TIMEOUT_MS),
     });
   } catch (err) {
     const timedOut = err?.name === "TimeoutError" || err?.name === "AbortError";

@@ -15,6 +15,7 @@ import {
   Mic,
   School,
   Terminal,
+  Trophy,
   UserRound,
   Users,
 } from "lucide-react";
@@ -50,7 +51,7 @@ export const MENUS = [
   },
   {
     label: "Practice",
-    match: ["/problems", "/problem", "/practice", "/take", "/tests", "/compiler", "/assessment"],
+    match: ["/problems", "/problem", "/practice", "/take", "/tests", "/compiler", "/assessment", "/codevita"],
     columns: [
       [
         {
@@ -65,6 +66,10 @@ export const MENUS = [
         },
       ],
       [
+        {
+          title: "Contest prep",
+          items: [{ to: "/codevita", icon: Trophy, title: "CodeVita crash course", desc: "CodeVita-style problems, judge and scorecards", tags: ["New"] }],
+        },
         {
           title: "Tests",
           items: [

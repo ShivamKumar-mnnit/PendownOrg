@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Layout from "./components/Layout";
 import ScrollToTop from "./components/ScrollToTop";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { Head, Page } from "./components/ui";
 import { usePageSEO } from "./lib/seo";
 import Home from "./pages/Home";
@@ -43,6 +44,9 @@ const Trainer = lazy(() => import("./pages/Trainer"));
 const CodeRoom = lazy(() => import("./pages/CodeRoom"));
 const InterviewReport = lazy(() => import("./pages/InterviewReport"));
 const Login = lazy(() => import("./pages/Login"));
+const CodevitaHub = lazy(() => import("./pages/codevita/Hub"));
+const CodevitaArena = lazy(() => import("./pages/codevita/Arena"));
+const CodevitaReport = lazy(() => import("./pages/codevita/Report"));
 const VerifyEmail = lazy(() => import("./pages/Login").then((m) => ({ default: m.VerifyEmail })));
 const ResetPassword = lazy(() => import("./pages/Login").then((m) => ({ default: m.ResetPassword })));
 
@@ -112,8 +116,12 @@ export default function App() {
           <Route path="/faq" element={lazyPage(<Faq />)} />
           <Route path="/about" element={lazyPage(<About />)} />
           <Route path="/junior" element={lazyPage(<Junior />)} />
+          <Route path="/codevita" element={lazyPage(<CodevitaHub />)} />
+          <Route path="/codevita/report/:sid" element={lazyPage(<CodevitaReport />)} />
           <Route path="*" element={<NotFound />} />
         </Route>
+        {/* The coding round fills the screen, without the site header and footer. */}
+        <Route path="/codevita/solve/:id" element={<ErrorBoundary>{lazyPage(<CodevitaArena />)}</ErrorBoundary>} />
       </Routes>
     </BrowserRouter>
   );

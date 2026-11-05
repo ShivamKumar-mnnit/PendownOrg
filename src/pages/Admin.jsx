@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import {
   BadgeIndianRupee, BookOpen, Building2, CalendarRange, ClipboardList, Code2, Cpu, CreditCard, FileQuestion, Gauge, Inbox as Inbox_, KeyRound, Layers, Link2, LogOut, Mic,
-  School, Settings2, UserCog, UsersRound, Video,
+  School, Settings2, Trophy, UserCog, UsersRound, Video,
 } from "lucide-react";
 import { Page } from "../components/ui";
 import { ForgotForm, SignInForm } from "../components/AuthForms";
@@ -34,6 +34,7 @@ const AccessAdmin = lazy(() => import("./admin/AccessAdmin"));
 const UsersAdmin = lazy(() => import("./admin/UsersAdmin"));
 const ProblemsAdmin = lazy(() => import("./admin/ProblemsAdmin"));
 const RunnerAdmin = lazy(() => import("./admin/RunnerAdmin"));
+const CodevitaAdmin = lazy(() => import("./admin/CodevitaAdmin"));
 
 // [id, label, icon, component, who]: "admin" = every admin, "super" = super admins only.
 const TABS = [
@@ -51,6 +52,7 @@ const TABS = [
   ["tests", "Coding tests", ClipboardList, TestsAdmin, "super", true],
   ["courses", "Courses", BookOpen, CoursesAdmin, "super", true],
   ["problems", "Problems", Code2, ProblemsAdmin, "super", true],
+  ["codevita", "CodeVita", Trophy, CodevitaAdmin, "super", true],
   ["events", "Events", Mic, EventsAdmin, "super", true],
   ["users", "Purchases and users", UsersRound, UsersAdmin, "super", true],
   ["payments", "Payments", CreditCard, PaymentsAdmin, "super", true],
