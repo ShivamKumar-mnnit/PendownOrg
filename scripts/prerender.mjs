@@ -87,7 +87,7 @@ const NAV = [
   ["/problems", "Coding practice"],
   ["/compiler", "Online compiler"],
   ["/practice", "Tests"],
-  ["/codevita", "CodeVita practice"],
+  ["/codevita", "TCS CodeVita Crash Course"],
   ["/companies", "Company hiring guides"],
   ["/courses", "Courses"],
   ["/placement", "Placement guide"],
@@ -189,10 +189,10 @@ function pages({ faqs, courses, events }) {
 
   add({
     path: "/codevita",
-    title: "TCS CodeVita Practice: Problems, Judge, Scorecards",
-    description: "Prepare for TCS CodeVita with CodeVita-style problems, a contest-style judge with hidden tests, editorials in C++, Java and Python, and scorecards.",
-    h1: "CodeVita crash course practice",
-    body: [p("Practise CodeVita-style coding problems in a contest-style environment: problem on the left, editor on the right, C, C++, Java or Python, custom input, sample and hidden test cases, time and memory, and a scorecard after every submission."), p("Anobyt is an independent practice platform and is not affiliated with TCS. Practice scores are not official CodeVita results.")],
+    title: "TCS CodeVita Crash Course: Lessons, Practice, Mock Tests",
+    description: "A complete TCS CodeVita preparation course: lessons on every topic, CodeVita-style problems with hidden tests, solutions in C++, Java and Python, timed mock tests and scorecards.",
+    h1: "TCS CodeVita Crash Course",
+    body: [p("Learn every topic CodeVita tests with structured lessons and coding patterns, then practise and sit timed mock tests."), p("Practise CodeVita-style coding problems in a contest-style environment: problem on the left, editor on the right, C, C++, Java or Python, custom input, sample and hidden test cases, time and memory, and a scorecard after every submission."), p("Anobyt is an independent practice platform and is not affiliated with TCS. Practice scores are not official CodeVita results.")],
   });
 
   add({
