@@ -5,6 +5,7 @@ import { CV_LANGS, CV_LANG_NAMES, DIFFICULTIES, STATUS_TONE, fmtKb, fmtMs } from
 import { submitAndJudge } from "../../lib/codevita/api";
 import { Field, Gate, SectionTop } from "./shared";
 import { downloadCsv, fmtDate, useAdminData } from "./adminUtils";
+import { CourseAdmin, LessonsAdmin, MocksAdmin } from "./CodevitaCourseAdmin";
 import "../codevita/codevita.css";
 
 const adm = (path, opts = {}) => call(path, { ...opts, admin: true });
@@ -33,7 +34,7 @@ export default function CodevitaAdmin() {
     <div>
       <SectionTop
         title="CodeVita crash course"
-        text="The CodeVita question bank, the coding round at /codevita, free vs premium, and every student's submissions. Built-in problems can be edited or hidden; your own problems and real PYQs can be added one by one or uploaded in bulk."
+        text="The TCS CodeVita Crash Course at /codevita: its price, course card and launch popup, the lessons, the question bank and PYQs, mock tests and every student's submissions. Add real PYQs one by one or in bulk with a Season (year) so they appear under PYQs."
       >
         <button type="button" className="btn" onClick={() => setEditing({})}>
           <Plus className="h-4 w-4" /> New problem
@@ -41,21 +42,27 @@ export default function CodevitaAdmin() {
       </SectionTop>
       <div className="seg tabs" role="tablist" style={{ marginBottom: 14 }}>
         {[
-          ["problems", "Problems"],
+          ["course", "Course, price and popup"],
+          ["learn", "Lessons"],
+          ["problems", "Problems and PYQs"],
+          ["mocks", "Mock tests"],
           ["bulk", "Bulk upload"],
           ["subs", "Submissions"],
-          ["settings", "Settings"],
+          ["settings", "Judge settings"],
         ].map(([k, l]) => (
           <button key={k} type="button" className={view === k ? "on" : ""} onClick={() => setView(k)}>
             {l}
           </button>
         ))}
       </div>
+      {view === "learn" && <LessonsAdmin />}
       <Gate state={state}>
         {state.data && view === "problems" && <Problems data={state.data} reload={state.reload} onEdit={setEditing} />}
         {state.data && view === "bulk" && <Bulk onDone={state.reload} />}
         {state.data && view === "subs" && <Submissions items={state.data.items} />}
         {state.data && view === "settings" && <Settings data={state.data} onSaved={state.reload} />}
+        {state.data && view === "course" && <CourseAdmin data={state.data} onSaved={state.reload} />}
+        {state.data && view === "mocks" && <MocksAdmin bank={state.data.items.filter((p) => !p.hidden && p.published !== false)} />}
       </Gate>
     </div>
   );
@@ -704,7 +711,7 @@ function Settings({ data, onSaved }) {
       <Field label="Free share of the question bank (%)" hint="At least one problem is always free. Problems you mark Free or Premium keep that.">
         <input className="inp" type="number" min="0" max="100" value={s.freePercent} onChange={(e) => set("freePercent", e.target.value)} />
       </Field>
-      <Field label="Linked course" hint="Students who bought this course also get CodeVita premium, and the hub links to its lessons. CodeVita premium itself is priced in Prices and features.">
+      <Field label="Linked course" hint="Students who bought this course also get the crash course. The crash course itself is priced in the Course, price and popup tab.">
         <select className="inp" value={s.courseId} onChange={(e) => set("courseId", e.target.value)}>
           <option value="">No linked course</option>
           {data.courses.map((c) => (
