@@ -58,3 +58,28 @@ export function useCv(path, bump = 0) {
   const fresh = state.key === key;
   return { data: fresh ? state.data : null, error: fresh ? state.error : "", loading: !fresh };
 }
+
+export const cvLearnDone = (id, done) => post(`/api/cv/learn/${enc(id)}/done`, { done });
+export const cvMockStart = (id) => post(`/api/cv/mocks/${enc(id)}/start`, {});
+export const cvMockFinish = (id) => post(`/api/cv/mocks/${enc(id)}/finish`, {});
+export const cvPromo = () => call("/api/cv/promo");
+
+// One fetch of /api/cv/promo per page load, shared by the popup, the Courses card and course pages.
+let promoCache = null;
+export function loadPromo() {
+  if (!promoCache) promoCache = cvPromo().catch(() => ((promoCache = null), null));
+  return promoCache;
+}
+export function useCvPromo() {
+  const [d, setD] = useState(null);
+  useEffect(() => {
+    let on = true;
+    loadPromo().then((x) => on && setD(x));
+    return () => {
+      on = false;
+    };
+  }, []);
+  return d;
+}
+/** True for a CMS course that is really the CodeVita course (the linked course, or one with "codevita" in its id). */
+export const isCodevitaCourse = (id, promo) => Boolean(id && ((promo?.courseId && id === promo.courseId) || /codevita/i.test(id)));
