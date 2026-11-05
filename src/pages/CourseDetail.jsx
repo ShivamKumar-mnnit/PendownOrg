@@ -11,6 +11,7 @@ import { doneLessons } from "../lib/lessons";
 import { rupees, useAccount } from "../lib/account";
 import { buildAdminWaLink } from "../lib/whatsapp";
 import { usePageSEO } from "../lib/seo";
+import { isCodevitaCourse, useCvPromo } from "../lib/codevita/api";
 
 const TYPE_ICON = { video: PlayCircle, article: FileText, link: Link2, pdf: FileText };
 
@@ -63,6 +64,7 @@ function Unlock({ course, onUnlocked }) {
 export default function CourseDetail() {
   const { id } = useParams();
   const nav = useNavigate();
+  const cvPromo = useCvPromo();
   const fallback = DEFAULT_COURSES.find((c) => c.id === id);
   const [course, setCourse] = useState(fallback ? { ...fallback, unlocked: fallback.tier === "free" } : null);
   const [error, setError] = useState("");
@@ -119,6 +121,11 @@ export default function CourseDetail() {
       <Link to="/courses" className="linkish back">
         <ArrowLeft className="h-4 w-4" style={{ display: "inline", verticalAlign: -3 }} /> All courses
       </Link>
+      {cvPromo?.visible && isCodevitaCourse(course.id, cvPromo) && (
+        <p className="note" style={{ margin: "10px 0 0" }}>
+          The full TCS CodeVita Crash Course, with lessons, practice, PYQs and mock tests, is here: <Link to="/codevita">open the crash course</Link>.
+        </p>
+      )}
       <div className="course-hero">
         <div>
           <div className="row" style={{ gap: 8, alignItems: "center" }}>
