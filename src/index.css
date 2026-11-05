@@ -1757,3 +1757,24 @@ select option {
 @media (prefers-reduced-motion: reduce) {
   .jr-stickers span, .jr-cta-stickers span, .jr-bh-overlay span, .jr-strip > div { animation: none; }
 }
+
+/* Featured TCS CodeVita Crash Course card on /courses */
+.cv-course-card { display: grid !important; grid-template-columns: 300px minmax(0, 1fr); gap: 0; padding: 0 !important; overflow: hidden; margin-bottom: 22px; text-decoration: none; color: inherit; }
+.cv-course-thumb { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 26px; color: #fff; background: radial-gradient(120% 100% at 0% 0%, #4352cf 0%, #26327e 55%, #141b4d 100%); min-height: 200px; }
+.cv-course-thumb svg { color: #ffd166; margin-bottom: 8px; }
+.cv-course-thumb b { font-size: 28px; line-height: 1.05; letter-spacing: -0.01em; }
+.cv-course-thumb span { font-size: 17px; color: #c9d1ff; font-weight: 600; }
+.cv-course-thumb code { margin-top: 16px; align-self: flex-start; font-size: 12px; padding: 5px 9px; border-radius: 8px; background: rgba(255, 255, 255, 0.1); color: #9fffd0; }
+.cv-course-info { padding: 22px 24px; display: flex; flex-direction: column; gap: 8px; }
+.cv-course-info h3 { margin: 4px 0 0; font-size: 22px; }
+.cv-course-info p { margin: 0; color: var(--color-fg-muted); line-height: 1.6; }
+.cv-course-feats { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.cv-course-feats li { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--ab-soft); color: var(--color-accent); }
+.cv-course-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: auto; padding-top: 8px; }
+.cv-course-price { font-size: 26px; font-weight: 800; }
+.cv-course-price small { font-size: 13px; font-weight: 600; color: var(--color-fg-faint); }
+@media (max-width: 760px) {
+  .cv-course-card { grid-template-columns: 1fr; }
+  .cv-course-thumb { min-height: 0; padding: 20px; }
+  .cv-course-info { padding: 18px; }
+}

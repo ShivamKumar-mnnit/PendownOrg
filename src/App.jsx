@@ -47,6 +47,8 @@ const Login = lazy(() => import("./pages/Login"));
 const CodevitaHub = lazy(() => import("./pages/codevita/Hub"));
 const CodevitaArena = lazy(() => import("./pages/codevita/Arena"));
 const CodevitaReport = lazy(() => import("./pages/codevita/Report"));
+const CodevitaLesson = lazy(() => import("./pages/codevita/LessonPage"));
+const CodevitaMock = lazy(() => import("./pages/codevita/MockPage"));
 const VerifyEmail = lazy(() => import("./pages/Login").then((m) => ({ default: m.VerifyEmail })));
 const ResetPassword = lazy(() => import("./pages/Login").then((m) => ({ default: m.ResetPassword })));
 
@@ -118,6 +120,8 @@ export default function App() {
           <Route path="/junior" element={lazyPage(<Junior />)} />
           <Route path="/codevita" element={lazyPage(<CodevitaHub />)} />
           <Route path="/codevita/report/:sid" element={lazyPage(<CodevitaReport />)} />
+          <Route path="/codevita/learn/:id" element={lazyPage(<CodevitaLesson />)} />
+          <Route path="/codevita/mock/:id" element={lazyPage(<CodevitaMock />)} />
           <Route path="*" element={<NotFound />} />
         </Route>
         {/* The coding round fills the screen, without the site header and footer. */}
