@@ -118,14 +118,14 @@ export default function App() {
           <Route path="/faq" element={lazyPage(<Faq />)} />
           <Route path="/about" element={lazyPage(<About />)} />
           <Route path="/junior" element={lazyPage(<Junior />)} />
-          <Route path="/codevita" element={lazyPage(<CodevitaHub />)} />
-          <Route path="/codevita/report/:sid" element={lazyPage(<CodevitaReport />)} />
-          <Route path="/codevita/learn/:id" element={lazyPage(<CodevitaLesson />)} />
-          <Route path="/codevita/mock/:id" element={lazyPage(<CodevitaMock />)} />
+          <Route path="/courses/tcs-codevita" element={lazyPage(<CodevitaHub />)} />
+          <Route path="/courses/tcs-codevita/report/:sid" element={lazyPage(<CodevitaReport />)} />
+          <Route path="/courses/tcs-codevita/learn/:id" element={lazyPage(<CodevitaLesson />)} />
+          <Route path="/courses/tcs-codevita/mock/:id" element={lazyPage(<CodevitaMock />)} />
           <Route path="*" element={<NotFound />} />
         </Route>
         {/* The coding round fills the screen, without the site header and footer. */}
-        <Route path="/codevita/solve/:id" element={<ErrorBoundary>{lazyPage(<CodevitaArena />)}</ErrorBoundary>} />
+        <Route path="/courses/tcs-codevita/solve/:id" element={<ErrorBoundary>{lazyPage(<CodevitaArena />)}</ErrorBoundary>} />
       </Routes>
     </BrowserRouter>
   );
