@@ -87,7 +87,7 @@ const NAV = [
   ["/problems", "Coding practice"],
   ["/compiler", "Online compiler"],
   ["/practice", "Tests"],
-  ["/codevita", "TCS CodeVita Crash Course"],
+  ["/courses/tcs-codevita", "TCS CodeVita Crash Course"],
   ["/companies", "Company hiring guides"],
   ["/courses", "Courses"],
   ["/placement", "Placement guide"],
@@ -188,10 +188,11 @@ function pages({ faqs, courses, events }) {
   });
 
   add({
-    path: "/codevita",
+    path: "/courses/tcs-codevita",
     title: "TCS CodeVita Crash Course: Lessons, Practice, Mock Tests",
     description: "A complete TCS CodeVita preparation course: lessons on every topic, CodeVita-style problems with hidden tests, solutions in C++, Java and Python, timed mock tests and scorecards.",
     h1: "TCS CodeVita Crash Course",
+    ld: [crumbs([["Courses", "/courses"], ["TCS CodeVita Crash Course", "/courses/tcs-codevita"]])],
     body: [p("Learn every topic CodeVita tests with structured lessons and coding patterns, then practise and sit timed mock tests."), p("Practise CodeVita-style coding problems in a contest-style environment: problem on the left, editor on the right, C, C++, Java or Python, custom input, sample and hidden test cases, time and memory, and a scorecard after every submission."), p("Anobyt is an independent practice platform and is not affiliated with TCS. Practice scores are not official CodeVita results.")],
   });
 
@@ -254,7 +255,7 @@ function pages({ faqs, courses, events }) {
     title: "Courses",
     description: "Free and premium learning tracks on Anobyt for every year of college, from programming foundations to company preparation.",
     h1: "Courses",
-    body: [ul(courses.map((c) => `${a(`/courses/${c.id}`, c.title)}${c.summary ? `: ${esc(c.summary)}` : ""}`))],
+    body: [ul([`${a("/courses/tcs-codevita", "TCS CodeVita Crash Course")}: lessons, CodeVita-style practice, PYQs and timed mock tests.`, ...courses.map((c) => `${a(`/courses/${c.id}`, c.title)}${c.summary ? `: ${esc(c.summary)}` : ""}`)])],
     ld: [
       {
         "@type": "ItemList",
@@ -439,7 +440,8 @@ function llms(list, faqs, full) {
 
 const template = await readFile(join(DIST, "index.html"), "utf8");
 const [faqs, courses, events] = await Promise.all([live("faqs", DEFAULT_FAQS.filter((f) => f.published !== false)), live("courses", DEFAULT_COURSES), live("events", [])]);
-const list = pages({ faqs, courses, events });
+// The CodeVita crash course itself owns /courses/tcs-codevita (added above); CMS copies of it get no page of their own.
+const list = pages({ faqs, courses: courses.filter((c) => !/codevita/i.test(c.id)), events });
 
 // The shell first (from the untouched template), then the pages, which overwrite index.html.
 await writeFile(join(DIST, "app.html"), shell(template));
