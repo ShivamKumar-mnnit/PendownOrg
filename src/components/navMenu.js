@@ -27,7 +27,7 @@ import { COMPANIES } from "../lib/companies";
 export const MENUS = [
   {
     label: "Prepare",
-    match: ["/placement", "/courses", "/mentors", "/book", "/companies", "/codevita"],
+    match: ["/placement", "/courses", "/mentors", "/book", "/companies", "/courses/tcs-codevita"],
     columns: [
       [
         {
@@ -35,7 +35,7 @@ export const MENUS = [
           items: [
             { to: "/placement", icon: Compass, title: "Placement guide", desc: "Stages, resume and HR prep" },
             { to: "/courses", icon: BookOpen, title: "Courses", desc: "Free and premium tracks", tags: ["Free", "Premium"] },
-            { to: "/codevita", icon: Trophy, title: "TCS CodeVita Crash Course", desc: "Lessons, practice, PYQs and mock tests", tags: ["New"] },
+            { to: "/courses/tcs-codevita", icon: Trophy, title: "TCS CodeVita Crash Course", desc: "Lessons, practice, PYQs and mock tests", tags: ["New"] },
             { to: "/mentors", icon: Users, title: "Mentors", desc: "Industry mentors by domain" },
             { to: "/book", icon: Mic, title: "Mock interviews", desc: "1:1 with working professionals" },
           ],
@@ -69,7 +69,7 @@ export const MENUS = [
       [
         {
           title: "Contest prep",
-          items: [{ to: "/codevita?tab=practice", icon: Trophy, title: "CodeVita practice", desc: "CodeVita-style problems with a real judge", tags: ["New"] }],
+          items: [{ to: "/courses/tcs-codevita?tab=practice", icon: Trophy, title: "CodeVita practice", desc: "CodeVita-style problems with a real judge", tags: ["New"] }],
         },
         {
           title: "Tests",

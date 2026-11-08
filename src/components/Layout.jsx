@@ -13,7 +13,7 @@ import ErrorBoundary from "./ErrorBoundary";
 
 // Tool pages where the floating promo/chat buttons would sit on top of the
 // editor and its output.
-const NO_FLOATERS = ["/compiler", "/problem", "/problems/year", "/assessment", "/exam", "/admin", "/workspace", "/interview-report", "/trainer", "/code-room", "/codevita"];
+const NO_FLOATERS = ["/compiler", "/problem", "/problems/year", "/assessment", "/exam", "/admin", "/workspace", "/interview-report", "/trainer", "/code-room", "/courses/tcs-codevita"];
 
 export default function Layout() {
   const { pathname } = useLocation();
