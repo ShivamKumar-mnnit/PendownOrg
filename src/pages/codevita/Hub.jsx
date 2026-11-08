@@ -54,12 +54,12 @@ function Ring({ value, total, label }) {
   );
 }
 
-/** /codevita: the TCS CodeVita Crash Course. */
+/** /courses/tcs-codevita: the TCS CodeVita Crash Course. */
 export default function Hub() {
   usePageSEO({
     title: "TCS CodeVita Crash Course",
     description: "A complete TCS CodeVita preparation course: lessons on every topic, CodeVita-style problems with hidden tests, mock tests, solutions in C++, Java and Python, and scorecards.",
-    path: "/codevita",
+    path: "/courses/tcs-codevita",
   });
   const [bump, setBump] = useState(0);
   const home = useCv("/api/cv/home", bump);
@@ -156,7 +156,7 @@ function Hero({ h, price, onUpgrade, setTab }) {
             <GraduationCap className="h-4 w-4" /> Start learning free
           </button>
           {h?.startHere && (
-            <Link className="btn ghost" to={`/codevita/solve/${h.startHere.id}`}>
+            <Link className="btn ghost" to={`/courses/tcs-codevita/solve/${h.startHere.id}`}>
               <PlayCircle className="h-4 w-4" /> Try a free problem
             </Link>
           )}
@@ -239,7 +239,7 @@ function Overview({ h, price, setTab, onUpgrade }) {
   const me = h?.me;
   const steps = [
     { done: (h?.learn?.done || 0) > 0, title: "Read the CodeVita guide", text: "Format, rules, judging and a 4-week plan.", action: () => setTab("learn"), cta: "Open lessons" },
-    { done: (me?.attempted || 0) > 0, title: "Solve your first free problem", text: "Write code, run it on your own input and submit.", to: h?.startHere ? `/codevita/solve/${h.startHere.id}` : null, action: () => setTab("practice"), cta: "Practise" },
+    { done: (me?.attempted || 0) > 0, title: "Solve your first free problem", text: "Write code, run it on your own input and submit.", to: h?.startHere ? `/courses/tcs-codevita/solve/${h.startHere.id}` : null, action: () => setTab("practice"), cta: "Practise" },
     { done: false, title: "Take the free demo mock test", text: "Three problems against the clock, with a report at the end.", action: () => setTab("mocks"), cta: "Mock tests" },
     { done: false, title: "Track and fix weak topics", text: "Your performance page shows which topics need work.", action: () => setTab("progress"), cta: "Performance" },
   ];

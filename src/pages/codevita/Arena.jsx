@@ -38,7 +38,7 @@ const store = {
 const draftKey = (id, lang) => `anobyt_cv_draft:${id}:${lang}`;
 const dClass = (d) => (d === "Easy" ? "easy" : d === "Medium" ? "med" : "hard");
 
-/** /codevita/solve/:id: the full-screen coding round. */
+/** /courses/tcs-codevita/solve/:id: the full-screen coding round. */
 export default function Arena() {
   const { id } = useParams();
   const [bump, setBump] = useState(0);
@@ -46,13 +46,13 @@ export default function Arena() {
   const [params] = useSearchParams();
   const mockId = params.get("mock") || "";
   const mockRes = useCv(mockId ? `/api/cv/mocks/${encodeURIComponent(mockId)}` : null, bump);
-  usePageSEO({ title: data?.item?.title ? `${data.item.title} · CodeVita practice` : "CodeVita practice", description: "Solve a CodeVita-style problem.", path: `/codevita/solve/${id}`, noindex: true });
+  usePageSEO({ title: data?.item?.title ? `${data.item.title} · CodeVita practice` : "CodeVita practice", description: "Solve a CodeVita-style problem.", path: `/courses/tcs-codevita/solve/${id}`, noindex: true });
 
   if (error)
     return (
       <div className="cv-arena-msg">
         <p>{error}</p>
-        <Link className="btn" to="/codevita">
+        <Link className="btn" to="/courses/tcs-codevita">
           Back to the question bank
         </Link>
       </div>
@@ -86,7 +86,7 @@ function LockedProblem({ d, onUnlocked }) {
         <button type="button" className="btn" onClick={() => setOpen(true)}>
           <Crown className="h-4 w-4" /> See what premium includes
         </button>
-        <Link className="btn ghost" to="/codevita?access=free">
+        <Link className="btn ghost" to="/courses/tcs-codevita?access=free">
           Back to free problems
         </Link>
       </div>
@@ -286,11 +286,11 @@ function Round({ d, mock }) {
   ].filter(Boolean);
   // Previous / Next stay inside the mock test while one is running.
   const mi = mock ? mock.problems.findIndex((x) => x.id === p.id) : -1;
-  const mockLink = (x) => x && { to: `/codevita/solve/${x.id}?mock=${encodeURIComponent(mock.id)}`, title: x.title };
+  const mockLink = (x) => x && { to: `/courses/tcs-codevita/solve/${x.id}?mock=${encodeURIComponent(mock.id)}`, title: x.title };
   const nav = mock
     ? { prev: mockLink(mock.problems[mi - 1]), next: mockLink(mock.problems[mi + 1]) }
-    : { prev: d.prev && { to: `/codevita/solve/${d.prev.id}`, title: d.prev.title }, next: d.next && { to: `/codevita/solve/${d.next.id}`, title: d.next.title } };
-  const back = mock ? `/codevita/mock/${encodeURIComponent(mock.id)}` : "/codevita";
+    : { prev: d.prev && { to: `/courses/tcs-codevita/solve/${d.prev.id}`, title: d.prev.title }, next: d.next && { to: `/courses/tcs-codevita/solve/${d.next.id}`, title: d.next.title } };
+  const back = mock ? `/courses/tcs-codevita/mock/${encodeURIComponent(mock.id)}` : "/courses/tcs-codevita";
 
   return (
     <div ref={rootRef} className={`cv-arena${fs ? " is-fs" : ""}`} style={{ "--cv-split": `${split}%`, "--cv-console": `${consoleH}%` }}>
@@ -312,7 +312,7 @@ function Round({ d, mock }) {
           {mock && (
             <nav className="cv-mock-chips hide-sm" aria-label="Mock test problems">
               {mock.problems.map((x, i) => (
-                <Link key={x.id} to={`/codevita/solve/${x.id}?mock=${encodeURIComponent(mock.id)}`} className={`${x.id === p.id ? "on" : ""}${x.status === "Accepted" ? " ok" : ""}`} title={x.title}>
+                <Link key={x.id} to={`/courses/tcs-codevita/solve/${x.id}?mock=${encodeURIComponent(mock.id)}`} className={`${x.id === p.id ? "on" : ""}${x.status === "Accepted" ? " ok" : ""}`} title={x.title}>
                   {String.fromCharCode(65 + i)}
                 </Link>
               ))}
@@ -690,7 +690,7 @@ function ProblemSubs({ pid, signedIn, bump }) {
   return (
     <div className="cv-subs-mini">
       {state.map((s) => (
-        <Link key={s.id} to={`/codevita/report/${s.id}`}>
+        <Link key={s.id} to={`/courses/tcs-codevita/report/${s.id}`}>
           <span className={`tone-${STATUS_TONE[s.status] || "warn"}`}>{s.status}</span>
           <span>{CV_LANG_NAMES[s.language]}</span>
           <span>
@@ -767,7 +767,7 @@ function Results({ sampleOut, sub, err, busy }) {
                 {r.passed}/{r.total} test cases passed · score {r.score}/{r.maxScore} · {fmtMs(r.timeMs)} · {fmtKb(r.memoryKb)}
               </span>
             </div>
-            <Link className="btn" to={`/codevita/report/${sub.id}`}>
+            <Link className="btn" to={`/courses/tcs-codevita/report/${sub.id}`}>
               View scorecard
             </Link>
           </div>

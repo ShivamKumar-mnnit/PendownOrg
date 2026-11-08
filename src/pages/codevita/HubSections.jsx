@@ -57,7 +57,7 @@ export function LearnSection({ onUpgrade }) {
             <p className="cv-muted">{blurb}</p>
             <div className="cv-lcards">
               {list.map((l) => (
-                <Link key={l.id} to={`/codevita/learn/${l.id}`} className={`cv-lcard${l.locked ? " locked" : ""}${l.done ? " done" : ""}`}>
+                <Link key={l.id} to={`/courses/tcs-codevita/learn/${l.id}`} className={`cv-lcard${l.locked ? " locked" : ""}${l.done ? " done" : ""}`}>
                   <div className="cv-lcard-top">
                     <AccessPill access={l.access} locked={l.locked} />
                     <small>
@@ -157,7 +157,7 @@ export function PracticeSection({ onLocked }) {
   const solvedCount = items.filter((p) => p.solved).length;
   const filtersOn = diff.length + (topic ? 1 : 0) + (pattern ? 1 : 0) + (status !== "all") + (access !== "all");
   const clear = () => (setDiff([]), setTopic(""), setPattern(""), setStatus("all"), setAccess("all"));
-  const open = (p) => (p.locked ? onLocked(p) : nav(`/codevita/solve/${p.id}`));
+  const open = (p) => (p.locked ? onLocked(p) : nav(`/courses/tcs-codevita/solve/${p.id}`));
 
   return (
     <div className="cv-bank">
@@ -266,7 +266,7 @@ export function PyqSection({ onLocked }) {
   const pyqTopics = [...new Set(allPyqs.flatMap((p) => p.topics))].sort();
   const yearOf = (p) => p.season || "Year not set";
   const years = [...new Set(pyqs.map(yearOf))].sort().reverse();
-  const open = (p) => (p.locked ? onLocked(p) : nav(`/codevita/solve/${p.id}`));
+  const open = (p) => (p.locked ? onLocked(p) : nav(`/courses/tcs-codevita/solve/${p.id}`));
   if (!allPyqs.length)
     return (
       <div className="cv-empty cv-pyq-empty">
@@ -276,7 +276,7 @@ export function PyqSection({ onLocked }) {
           We only publish previous-year CodeVita questions we can verify, each tagged with its year, topic and difficulty. Until they are added, every problem in Practise follows the
           CodeVita format and difficulty, with full editorials.
         </p>
-        <Link className="btn" to="/codevita?tab=practice">
+        <Link className="btn" to="/courses/tcs-codevita?tab=practice">
           Practise CodeVita-style problems
         </Link>
       </div>
@@ -359,7 +359,7 @@ export function MocksSection({ onUpgrade }) {
                 <Lock className="h-4 w-4" /> Unlock with full access
               </button>
             ) : (
-              <Link className="btn" to={`/codevita/mock/${m.id}`}>
+              <Link className="btn" to={`/courses/tcs-codevita/mock/${m.id}`}>
                 {m.state === "active" ? "Continue" : m.state === "finished" ? "See report or retake" : "Open"} <ArrowRight className="h-4 w-4" />
               </Link>
             )}
@@ -382,7 +382,7 @@ export function PerformanceSection({ signedIn }) {
       <div className="cv-empty">
         <Trophy className="h-6 w-6" />
         <p>Sign in to see your scorecards, topic mastery and mock-test history.</p>
-        <Link className="btn" to="/account?next=/codevita?tab=progress">
+        <Link className="btn" to="/account?next=/courses/tcs-codevita?tab=progress">
           Sign in
         </Link>
       </div>
@@ -467,7 +467,7 @@ export function PerformanceSection({ signedIn }) {
               Work on next: {weak.map((w, i) => (
                 <span key={w.t}>
                   {i ? ", " : ""}
-                  <Link to={`/codevita?tab=practice&topic=${encodeURIComponent(w.t)}`}>{w.t}</Link>
+                  <Link to={`/courses/tcs-codevita?tab=practice&topic=${encodeURIComponent(w.t)}`}>{w.t}</Link>
                 </span>
               ))}
               . You have solved fewer than 60% of the problems you tried there.
@@ -479,7 +479,7 @@ export function PerformanceSection({ signedIn }) {
           <div className="cv-topics">
             {topics.map((x) => (
               <div key={x.t} className="cv-meter">
-                <Link to={`/codevita?tab=practice&topic=${encodeURIComponent(x.t)}`}>{x.t}</Link>
+                <Link to={`/courses/tcs-codevita?tab=practice&topic=${encodeURIComponent(x.t)}`}>{x.t}</Link>
                 <div className="cv-bar">
                   <span style={{ width: `${x.total ? (x.solved / x.total) * 100 : 0}%` }} />
                 </div>
@@ -499,7 +499,7 @@ export function PerformanceSection({ signedIn }) {
           </h2>
           <div className="cv-table subs mocks">
             {mockDone.map((m) => (
-              <Link key={m.id} className="cv-tr" to={`/codevita/mock/${m.id}`}>
+              <Link key={m.id} className="cv-tr" to={`/courses/tcs-codevita/mock/${m.id}`}>
                 <span className="cv-ti">
                   <b>{m.title}</b>
                   <small>{m.last ? when(m.last.finishedAt) : ""}</small>
@@ -532,7 +532,7 @@ export function PerformanceSection({ signedIn }) {
               <span>Score</span>
             </div>
             {subs.slice(0, 50).map((s) => (
-              <Link key={s.id} className="cv-tr" to={`/codevita/report/${s.id}`}>
+              <Link key={s.id} className="cv-tr" to={`/courses/tcs-codevita/report/${s.id}`}>
                 <span className="cv-faint">{when(s.at)}</span>
                 <span className="cv-ti">
                   <b>{s.title}</b>

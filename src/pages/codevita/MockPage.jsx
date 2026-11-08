@@ -34,7 +34,7 @@ function useCountdown(endsAt, serverNow, onEnd) {
   return left;
 }
 
-/** /codevita/mock/:id: lobby, live round and report for one mock test. */
+/** /courses/tcs-codevita/mock/:id: lobby, live round and report for one mock test. */
 export default function MockPage() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -48,7 +48,7 @@ export default function MockPage() {
   usePageSEO({
     title: m ? `${m.title} · CodeVita mock test` : "CodeVita mock test",
     description: m?.summary || "A timed CodeVita-style mock test on Anobyt.",
-    path: `/codevita/mock/${id}`,
+    path: `/courses/tcs-codevita/mock/${id}`,
   });
 
   if (error)
@@ -58,7 +58,7 @@ export default function MockPage() {
           <div className="cv-empty">
             <Timer className="h-6 w-6" />
             <p>{error}</p>
-            <Link className="btn ghost" to="/codevita?tab=mocks">
+            <Link className="btn ghost" to="/courses/tcs-codevita?tab=mocks">
               All mock tests
             </Link>
           </div>
@@ -79,7 +79,7 @@ export default function MockPage() {
   const refresh = () => setBump((n) => n + 1);
 
   const start = async () => {
-    if (!data.signedIn) return nav(`/account?next=${encodeURIComponent(`/codevita/mock/${id}`)}`);
+    if (!data.signedIn) return nav(`/account?next=${encodeURIComponent(`/courses/tcs-codevita/mock/${id}`)}`);
     if (m.locked) return setUpgrade(true);
     setBusy("start");
     setMsg("");
@@ -108,7 +108,7 @@ export default function MockPage() {
     <section className="page cv-page">
       <div className="wrap cv-lesson-wrap">
         <nav className="cv-crumbs" aria-label="Breadcrumb">
-          <Link to="/codevita">CodeVita Crash Course</Link> <span>/</span> <Link to="/codevita?tab=mocks">Mock tests</Link> <span>/</span> <b>{m.title}</b>
+          <Link to="/courses/tcs-codevita">CodeVita Crash Course</Link> <span>/</span> <Link to="/courses/tcs-codevita?tab=mocks">Mock tests</Link> <span>/</span> <b>{m.title}</b>
         </nav>
 
         {live ? (
@@ -183,7 +183,7 @@ function Lobby({ m, a, data, busy, onStart, onUpgrade }) {
               {!data.signedIn ? "Sign in to start" : retake ? "Retake the test" : "Start the test"}
             </button>
           )}
-          <Link className="btn ghost" to="/codevita?tab=mocks">
+          <Link className="btn ghost" to="/courses/tcs-codevita?tab=mocks">
             All mock tests
           </Link>
         </div>
@@ -242,7 +242,7 @@ function LiveRound({ data, mockId, onEnd, onFinish }) {
       <ol className="cv-mock-problems">
         {data.problems.map((p, i) => (
           <li key={p.id}>
-            <Link to={`/codevita/solve/${p.id}?mock=${encodeURIComponent(mockId)}`}>
+            <Link to={`/courses/tcs-codevita/solve/${p.id}?mock=${encodeURIComponent(mockId)}`}>
               <span className="cv-mock-n">{String.fromCharCode(65 + i)}</span>
               <div>
                 <b>{p.title}</b>
@@ -321,8 +321,8 @@ function Report({ data }) {
                 {p.score}/{p.points}
               </td>
               <td className="cv-row-links">
-                {p.subId && <Link to={`/codevita/report/${p.subId}`}>Scorecard</Link>}
-                <Link to={`/codevita/solve/${p.id}`}>Editorial</Link>
+                {p.subId && <Link to={`/courses/tcs-codevita/report/${p.subId}`}>Scorecard</Link>}
+                <Link to={`/courses/tcs-codevita/solve/${p.id}`}>Editorial</Link>
               </td>
             </tr>
           ))}
@@ -333,7 +333,7 @@ function Report({ data }) {
           <b>Practise next:</b> {[...new Set(missed.flatMap((p) => p.topics))].slice(0, 4).map((t, i) => (
             <span key={t}>
               {i ? ", " : ""}
-              <Link to={`/codevita?tab=practice&topic=${encodeURIComponent(t)}`}>{t}</Link>
+              <Link to={`/courses/tcs-codevita?tab=practice&topic=${encodeURIComponent(t)}`}>{t}</Link>
             </span>
           ))}
           . Editorials are open now that the test is over.

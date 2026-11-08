@@ -10,10 +10,10 @@ import "./codevita.css";
 const fmtWhen = (ts) => new Date(ts).toLocaleString("en-IN", { dateStyle: "long", timeStyle: "short" });
 const studentId = (uid) => "ANB-" + String(uid || "").replace(/^d/, "").toUpperCase().padStart(5, "0");
 
-/** /codevita/report/:sid: the scorecard for one submission. */
+/** /courses/tcs-codevita/report/:sid: the scorecard for one submission. */
 export default function Report() {
   const { sid } = useParams();
-  usePageSEO({ title: "Practice scorecard", description: "Your CodeVita practice scorecard.", path: `/codevita/report/${sid}`, noindex: true });
+  usePageSEO({ title: "Practice scorecard", description: "Your CodeVita practice scorecard.", path: `/courses/tcs-codevita/report/${sid}`, noindex: true });
   const { data, error } = useCv(`/api/cv/submissions/${encodeURIComponent(sid)}`);
   const [showCode, setShowCode] = useState(false);
 
@@ -22,7 +22,7 @@ export default function Report() {
       <section className="page cv-page">
         <div className="wrap" style={{ maxWidth: 640 }}>
           <p className="note bad">{error}</p>
-          <Link className="btn" to={`/account?next=/codevita/report/${sid}`}>
+          <Link className="btn" to={`/account?next=/courses/tcs-codevita/report/${sid}`}>
             Sign in
           </Link>
         </div>
@@ -44,7 +44,7 @@ export default function Report() {
       <section className="page cv-page">
         <div className="wrap" style={{ maxWidth: 640 }}>
           <p className="note">This submission is still being judged. Open the problem again to finish judging it.</p>
-          <Link className="btn" to={`/codevita/solve/${s.pid}`}>
+          <Link className="btn" to={`/courses/tcs-codevita/solve/${s.pid}`}>
             Back to the problem
           </Link>
         </div>
@@ -61,11 +61,11 @@ export default function Report() {
     <section className="page cv-page">
       <div className="wrap cv-report-wrap">
         <div className="cv-report-tools cv-noprint">
-          <Link to="/codevita?tab=subs" className="linkish">
+          <Link to="/courses/tcs-codevita?tab=subs" className="linkish">
             <ArrowLeft className="h-4 w-4" /> My submissions
           </Link>
           <div className="row" style={{ gap: 8 }}>
-            <Link className="btn ghost" to={`/codevita/solve/${s.pid}`}>
+            <Link className="btn ghost" to={`/courses/tcs-codevita/solve/${s.pid}`}>
               <RotateCcw className="h-4 w-4" /> Try again
             </Link>
             <button type="button" className="btn" onClick={() => window.print()}>
@@ -238,7 +238,7 @@ export default function Report() {
                 <ul className="cv-rep-next">
                   {data.next.map((n) => (
                     <li key={n.id}>
-                      <Link to={`/codevita/solve/${n.id}`}>
+                      <Link to={`/courses/tcs-codevita/solve/${n.id}`}>
                         {n.locked && <Lock className="h-3.5 w-3.5" />} {n.title}
                       </Link>
                       <small>
@@ -249,7 +249,7 @@ export default function Report() {
                 </ul>
               ) : (
                 <p className="cv-muted">
-                  Pick your next problem from the <Link to="/codevita">question bank</Link>.
+                  Pick your next problem from the <Link to="/courses/tcs-codevita">question bank</Link>.
                 </p>
               )}
             </section>

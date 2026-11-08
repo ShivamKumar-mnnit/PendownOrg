@@ -9,7 +9,7 @@ import "./codevita.css";
 
 const KIND = { guide: "Preparation guide", topic: "Topic lesson", pattern: "Problem-solving patterns" };
 
-/** /codevita/learn/:id: one lesson of the crash course. */
+/** /courses/tcs-codevita/learn/:id: one lesson of the crash course. */
 export default function LessonPage() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -22,7 +22,7 @@ export default function LessonPage() {
   usePageSEO({
     title: l ? `${l.title} · TCS CodeVita Crash Course` : "TCS CodeVita Crash Course",
     description: l?.summary || "A lesson from the TCS CodeVita Crash Course on Anobyt.",
-    path: `/codevita/learn/${id}`,
+    path: `/courses/tcs-codevita/learn/${id}`,
   });
 
   if (error)
@@ -32,7 +32,7 @@ export default function LessonPage() {
           <div className="cv-empty">
             <BookOpen className="h-6 w-6" />
             <p>{error}</p>
-            <Link className="btn ghost" to="/codevita?tab=learn">
+            <Link className="btn ghost" to="/courses/tcs-codevita?tab=learn">
               All lessons
             </Link>
           </div>
@@ -49,7 +49,7 @@ export default function LessonPage() {
     );
 
   const toggleDone = async () => {
-    if (!data.signedIn) return nav(`/account?next=${encodeURIComponent(`/codevita/learn/${id}`)}`);
+    if (!data.signedIn) return nav(`/account?next=${encodeURIComponent(`/courses/tcs-codevita/learn/${id}`)}`);
     setBusy(true);
     setMsg("");
     try {
@@ -60,13 +60,13 @@ export default function LessonPage() {
     }
     setBusy(false);
   };
-  const openProblem = (p) => (p.locked ? setUpgrade({ problem: p }) : nav(`/codevita/solve/${p.id}`));
+  const openProblem = (p) => (p.locked ? setUpgrade({ problem: p }) : nav(`/courses/tcs-codevita/solve/${p.id}`));
 
   return (
     <section className="page cv-page">
       <div className="wrap cv-lesson-wrap">
         <nav className="cv-crumbs" aria-label="Breadcrumb">
-          <Link to="/codevita">CodeVita Crash Course</Link> <span>/</span> <Link to="/codevita?tab=learn">Learn</Link> <span>/</span> <b>{l.title}</b>
+          <Link to="/courses/tcs-codevita">CodeVita Crash Course</Link> <span>/</span> <Link to="/courses/tcs-codevita?tab=learn">Learn</Link> <span>/</span> <b>{l.title}</b>
         </nav>
 
         <header className="cv-lesson-head">
@@ -134,7 +134,7 @@ export default function LessonPage() {
 
         <nav className="cv-lesson-nav" aria-label="Lessons">
           {data.prev ? (
-            <Link to={`/codevita/learn/${data.prev.id}`} className="cv-lesson-step">
+            <Link to={`/courses/tcs-codevita/learn/${data.prev.id}`} className="cv-lesson-step">
               <small>
                 <ArrowLeft className="h-3.5 w-3.5" /> Previous
               </small>
@@ -146,7 +146,7 @@ export default function LessonPage() {
             <span />
           )}
           {data.next ? (
-            <Link to={`/codevita/learn/${data.next.id}`} className="cv-lesson-step next">
+            <Link to={`/courses/tcs-codevita/learn/${data.next.id}`} className="cv-lesson-step next">
               <small>
                 Next <ArrowRight className="h-3.5 w-3.5" />
               </small>
@@ -155,7 +155,7 @@ export default function LessonPage() {
               </b>
             </Link>
           ) : (
-            <Link to="/codevita?tab=mocks" className="cv-lesson-step next">
+            <Link to="/courses/tcs-codevita?tab=mocks" className="cv-lesson-step next">
               <small>
                 Up next <ArrowRight className="h-3.5 w-3.5" />
               </small>
