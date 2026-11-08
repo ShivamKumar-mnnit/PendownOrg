@@ -34,6 +34,26 @@
   to = "/sitemap.xml"
   status = 301
 
+# The TCS CodeVita Crash Course lives inside Courses at /courses/tcs-codevita.
+# Earlier /codevita links (and their sub-pages) move there permanently.
+[[redirects]]
+  from = "/codevita"
+  to = "/courses/tcs-codevita"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/codevita/*"
+  to = "/courses/tcs-codevita/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/courses/tcs-codevita-crash-course"
+  to = "/courses/tcs-codevita"
+  status = 301
+  force = true
+
 # Client-side routing (React Router). Public pages are pre-built as real files by
 # scripts/prerender.mjs (dist/<path>.html, served before this rule); every other route
 # (dashboards, problems, tests …) gets app.html, the same app without a home-page canonical.
