@@ -68,10 +68,10 @@ export default function Courses() {
   );
 }
 
-/** Featured card for the TCS CodeVita Crash Course. It opens the course itself (/codevita), not a copy. */
+/** Featured card for the TCS CodeVita Crash Course. It opens the course itself (/courses/tcs-codevita), not a copy. */
 function CodevitaCard({ promo }) {
   return (
-    <Link to="/codevita" className="card cv-course-card">
+    <Link to="/courses/tcs-codevita" className="card cv-course-card">
       <div className="cv-course-thumb" aria-hidden="true">
         <Trophy className="h-7 w-7" />
         <b>TCS CodeVita</b>

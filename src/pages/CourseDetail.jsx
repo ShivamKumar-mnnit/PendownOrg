@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, FileText, Link2, Lock, PlayCircle } from "lucide-react";
 import { Head, Page } from "../components/ui";
 import RichText from "../components/RichText";
@@ -61,7 +61,14 @@ function Unlock({ course, onUnlocked }) {
   );
 }
 
+// Other CodeVita course addresses (e.g. /courses/tcs-codevita-crash-course) open the crash course at /courses/tcs-codevita.
 export default function CourseDetail() {
+  const { id } = useParams();
+  if (/codevita/i.test(id || "")) return <Navigate to="/courses/tcs-codevita" replace />;
+  return <CourseDetailPage />;
+}
+
+function CourseDetailPage() {
   const { id } = useParams();
   const nav = useNavigate();
   const cvPromo = useCvPromo();
@@ -123,7 +130,7 @@ export default function CourseDetail() {
       </Link>
       {cvPromo?.visible && isCodevitaCourse(course.id, cvPromo) && (
         <p className="note" style={{ margin: "10px 0 0" }}>
-          The full TCS CodeVita Crash Course, with lessons, practice, PYQs and mock tests, is here: <Link to="/codevita">open the crash course</Link>.
+          The full TCS CodeVita Crash Course, with lessons, practice, PYQs and mock tests, is here: <Link to="/courses/tcs-codevita">open the crash course</Link>.
         </p>
       )}
       <div className="course-hero">
