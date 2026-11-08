@@ -11,7 +11,7 @@ const SEEN_KEY = "anobyt_cv_promo_seen";
 const OTHER_POPUP_KEY = "anobyt_demo_popup_seen";
 const IS_BOT = typeof navigator !== "undefined" && (navigator.webdriver || /bot|crawl|spider|lighthouse|pagespeed|headless/i.test(navigator.userAgent));
 // Pages where a popup would get in the way: the course itself, sign-in, admin, and anywhere students write code or take a test.
-const SKIP = [/^\/codevita/, /^\/admin/, /^\/account/, /^\/login/, /^\/verify-email/, /^\/reset-password/, /^\/workspace/, /^\/compiler/, /^\/problem/, /^\/assessment/, /^\/exam/, /^\/take/, /^\/t\//, /^\/results\//, /^\/courses\/[^/]+\/learn\//, /^\/junior/, /^\/code-room/, /^\/trainer/, /^\/interview-report/];
+const SKIP = [/^\/courses\/tcs-codevita/, /^\/admin/, /^\/account/, /^\/login/, /^\/verify-email/, /^\/reset-password/, /^\/workspace/, /^\/compiler/, /^\/problem/, /^\/assessment/, /^\/exam/, /^\/take/, /^\/t\//, /^\/results\//, /^\/courses\/[^/]+\/learn\//, /^\/junior/, /^\/code-room/, /^\/trainer/, /^\/interview-report/];
 
 const session = {
   get(k) {
@@ -131,7 +131,7 @@ export default function PromoPopup() {
               </ul>
               {promo.price > 0 && <p className="cvp-price">{p.priceText}</p>}
               <div className="cvp-cta">
-                <Link to="/codevita" className="btn" onClick={close}>
+                <Link to="/courses/tcs-codevita" className="btn" onClick={close}>
                   {p.cta} <ArrowRight className="h-4 w-4" />
                 </Link>
                 <button type="button" className="btn ghost" onClick={close}>
