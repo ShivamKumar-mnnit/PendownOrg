@@ -34,7 +34,7 @@ export default function CodevitaAdmin() {
     <div>
       <SectionTop
         title="CodeVita crash course"
-        text="The TCS CodeVita Crash Course at /codevita: its price, course card and launch popup, the lessons, the question bank and PYQs, mock tests and every student's submissions. Add real PYQs one by one or in bulk with a Season (year) so they appear under PYQs."
+        text="The TCS CodeVita Crash Course at /courses/tcs-codevita: its price, course card and launch popup, the lessons, the question bank and PYQs, mock tests and every student's submissions. Add real PYQs one by one or in bulk with a Season (year) so they appear under PYQs."
       >
         <button type="button" className="btn" onClick={() => setEditing({})}>
           <Plus className="h-4 w-4" /> New problem
@@ -176,7 +176,7 @@ function Problems({ data, reload, onEdit }) {
                   <button type="button" className="ib" title="Edit" onClick={async () => onEdit(await full(p.id))}>
                     <Pencil className="h-4 w-4" />
                   </button>
-                  <a className="ib" title="Open in the coding round" href={`/codevita/solve/${p.id}`} target="_blank" rel="noreferrer">
+                  <a className="ib" title="Open in the coding round" href={`/courses/tcs-codevita/solve/${p.id}`} target="_blank" rel="noreferrer">
                     <Play className="h-4 w-4" />
                   </a>
                   <button type="button" className="ib" title={p.hidden ? "Show" : "Hide"} onClick={() => toggleHidden(p)}>
@@ -664,7 +664,7 @@ function Submissions({ items }) {
                     {s.score}/{s.maxScore}
                   </td>
                   <td>
-                    <a className="linkish" href={`/codevita/report/${s.id}`} target="_blank" rel="noreferrer">
+                    <a className="linkish" href={`/courses/tcs-codevita/report/${s.id}`} target="_blank" rel="noreferrer">
                       Scorecard
                     </a>
                   </td>

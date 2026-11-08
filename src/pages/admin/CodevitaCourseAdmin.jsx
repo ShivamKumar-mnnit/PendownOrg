@@ -34,7 +34,7 @@ export function LessonsAdmin() {
         <div className="row" style={{ justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
           <p className="note" style={{ margin: 0 }}>
             {items.length} lessons: {items.filter((l) => !l.hidden && l.access === "free").length} free, {items.filter((l) => !l.hidden && l.access === "premium").length} premium,{" "}
-            {items.filter((l) => l.hidden).length} hidden. Students see them under Learn at /codevita, in this order.
+            {items.filter((l) => l.hidden).length} hidden. Students see them under Learn at /courses/tcs-codevita, in this order.
           </p>
           <button type="button" className="btn" onClick={() => setEditing({ kind: "topic", access: "premium", minutes: 15, order: (items.at(-1)?.order || 0) + 10, topics: [], body: "" })}>
             <Plus className="h-4 w-4" /> New lesson
@@ -141,7 +141,7 @@ function LessonEditor({ initial, onCancel, onSaved }) {
         <input className="inp" value={l.title || ""} onChange={(e) => set("title", e.target.value)} />
       </Field>
       {isNew && (
-        <Field label="Id (optional)" hint="Used in the link /codevita/learn/<id>. Left empty, it is made from the title.">
+        <Field label="Id (optional)" hint="Used in the link /courses/tcs-codevita/learn/<id>. Left empty, it is made from the title.">
           <input className="inp" value={l.id || ""} onChange={(e) => set("id", e.target.value)} />
         </Field>
       )}
@@ -269,7 +269,7 @@ function MocksEditor({ items: initial, bank, reload }) {
           <input className="inp" value={m.problems} onChange={(e) => set(i, "problems", e.target.value)} placeholder="Problem ids, comma separated" aria-label="Problem ids" />
           {unknown(m).length > 0 && <p className="note bad" style={{ margin: 0 }}>Not in the question bank: {unknown(m).join(", ")}</p>}
           <small className="mini">
-            Id: {m.id || "(made from the title)"} · link /codevita/mock/{m.id || "…"}
+            Id: {m.id || "(made from the title)"} · link /courses/tcs-codevita/mock/{m.id || "…"}
           </small>
         </div>
       ))}
@@ -316,7 +316,7 @@ export function CourseAdmin({ data, onSaved }) {
     <div className="panel" style={{ maxWidth: 760, display: "grid", gap: 14 }}>
       <h3 style={{ margin: 0 }}>Course</h3>
       <label className="cv-check">
-        <input type="checkbox" checked={s.visible} onChange={(e) => set("visible", e.target.checked)} /> Show the course to students (when off, /codevita, the Courses card and the popup are hidden; admins can still open it)
+        <input type="checkbox" checked={s.visible} onChange={(e) => set("visible", e.target.checked)} /> Show the course to students (when off, /courses/tcs-codevita, the Courses card and the popup are hidden; admins can still open it)
       </label>
       <Field label="Course card title" hint="Shown on the Courses page.">
         <input className="inp" value={s.cardTitle} onChange={(e) => set("cardTitle", e.target.value)} />
