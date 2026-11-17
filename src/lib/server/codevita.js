@@ -26,7 +26,6 @@
 // Hidden test cases never leave the server. Each judge call runs at most
 // BATCH cases, so a submission never runs into the function time limit.
 
-import { CV_BUILTIN } from "../codevita/bank.js";
 import { CV_LANGS, DEFAULT_POINTS, DIFFICULTIES, DISCLAIMER, TOPICS, improvementAreas, overallStatus, performanceLevel } from "../codevita/common.js";
 import { readProbe, withProbe } from "../codevita/probe.js";
 import { explainResult } from "../compiler.js";
@@ -165,12 +164,31 @@ export function cleanProblem(p, id) {
 
 const cleanCases = (v) => list(v, MAX_CASES).map((c) => ioCase(c)).filter((c) => c.input !== "" || c.output !== "");
 
+// The built-in problem bank (with hidden test cases) is plugged in by the host, not imported here,
+// so it stays out of bundles that can't carry 8 MB: Netlify passes the bundled bank
+// (netlify/functions/codevita.js), Cloudflare loads it from private R2 storage (functions/api/[[path]].js).
+let CV_BUILTIN = [];
+let bankLoader = null;
+let bankLoaded = false;
+/** Sets how the built-in bank is loaded: an async function returning the problem array. */
+export function setBuiltinBank(loader) {
+  bankLoader = loader;
+  bankLoaded = false;
+}
+async function ensureBuiltins() {
+  if (bankLoaded || !bankLoader) return;
+  CV_BUILTIN = (await bankLoader()) || [];
+  builtCache = null;
+  builtInCases = new Map(CV_BUILTIN.map((p) => [p.id, p.cases || []]));
+  bankLoaded = true;
+}
+
 let builtCache = null;
 function builtIns() {
   if (!builtCache) builtCache = CV_BUILTIN.map((p, i) => ({ ...cleanProblem(p, p.id), builtIn: true, seq: i, updatedAt: 0 }));
   return builtCache;
 }
-const builtInCases = new Map(CV_BUILTIN.map((p) => [p.id, p.cases || []]));
+let builtInCases = new Map();
 
 /** Every problem (built-in plus the admin's), in display order. */
 async function loadBank(store, { includeHidden = false } = {}) {
@@ -403,6 +421,7 @@ async function finalize(store, sub, p, user) {
 // ---- Router ----
 
 export async function handleCodevitaApi(request, store, content, env, compile = handleCompile) {
+  await ensureBuiltins();
   const url = new URL(request.url);
   const parts = url.pathname.replace(/\/+$/, "").split("/").filter(Boolean).slice(2); // drop "api", "cv"
   const method = request.method;

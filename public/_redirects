@@ -1,0 +1,7 @@
+# Cloudflare Pages redirects (the netlify.toml [[redirects]] equivalents).
+# Unknown paths need no rule: Pages serves index.html for them (single-page app mode).
+/sitemap                              /sitemap.xml                    301
+/sitemap_index.xml                    /sitemap.xml                    301
+/codevita                             /courses/tcs-codevita           301
+/codevita/*                           /courses/tcs-codevita/:splat    301
+/courses/tcs-codevita-crash-course    /courses/tcs-codevita           301
