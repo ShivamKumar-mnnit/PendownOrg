@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Blocks, BookOpen, Bot, Building2, Check, ClipboardCheck, Code2, Crown, Globe, Lock, ShieldCheck, Sparkles, SquareTerminal } from "lucide-react";
+import { ArrowRight, Blocks, BookOpen, Bot, Building2, Check, ClipboardCheck, Code2, Crown, Globe, Landmark, Lock, ShieldCheck, Sparkles, SquareTerminal, TrainFront, Shield, Banknote, GraduationCap } from "lucide-react";
 import { Head } from "../components/ui";
 import { useCollection } from "../lib/contentApi";
 import { COMPANIES } from "../lib/companyPrep";
@@ -33,6 +33,7 @@ const EXPLORE = [
   ["/tests", "Create tests", "Build tests for your students"],
   ["/dashboard", "Student dashboard", "Track solves, rank and rewards"],
   ["/colleges", "For colleges", "Onboard a whole batch"],
+  ["/government-exams", "Government exam preparation", "SSC, Banking, Railways, UPSC and more"],
   ["/junior", "Anobyt Junior", "Workshops for schools, classes 6 to 12"],
   ["/about", "About Anobyt", "Who we are and how to contact us"],
 ];
@@ -297,6 +298,45 @@ export default function Home() {
       </section>
 
       <section className="sec">
+        <div className="wrap">
+          <div className="jr-teaser">
+            <div>
+              <span className="jr-badge">
+                <Landmark className="h-4 w-4" /> New · Government exam preparation
+              </span>
+              <h2>A government exam preparation cell for your college</h2>
+              <p>Structured coaching for SSC, Banking, Railways, UPSC, Defence, Police, Teaching and State exams. We set up the cell, run it, or deliver the programme, on campus or online.</p>
+              <div className="row">
+                <Link className="btn" to="/government-exams#enquire">
+                  Set up a cell <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link className="btn ghost" to="/government-exams">
+                  Explore government exams
+                </Link>
+              </div>
+            </div>
+            <ul>
+              <li>
+                <Landmark className="h-5 w-5" /> SSC, UPSC and State PSC
+              </li>
+              <li>
+                <Banknote className="h-5 w-5" /> Banking and insurance
+              </li>
+              <li>
+                <TrainFront className="h-5 w-5" /> Railways
+              </li>
+              <li>
+                <Shield className="h-5 w-5" /> Defence and Police
+              </li>
+              <li>
+                <GraduationCap className="h-5 w-5" /> Teaching (CTET, TET, KVS)
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="sec" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <div className="jr-teaser">
             <div>

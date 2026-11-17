@@ -1,0 +1,86 @@
+/* Government Exam Preparation page (/government-exams). Loaded only with that
+   page and built on the site's shared classes (.hero, .sec, .card, .panel,
+   .chip, .btn), so it follows the light/dark theme like every other page. */
+
+.gx-hero h1 { max-width: 15ch; }
+.gx-glance { padding: 24px; }
+.gx-glance .stats { margin: 0 0 18px; }
+.gx-glance .stats > div { padding: 12px 6px; border-radius: 12px; background: var(--ab-soft); }
+.gx-week-h { font-size: 16px !important; margin: 4px 0 10px !important; }
+.gx-week { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.gx-week li { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--color-border); background: var(--color-card-alt); font-size: 14.5px; }
+.gx-week b { width: 36px; flex: none; color: var(--color-accent); font-weight: 700; }
+.gx-week span { color: var(--color-fg-muted); }
+.gx-week li:last-child { border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-border)); }
+.gx-week li:last-child b { color: var(--color-gold); }
+
+.gx-for { padding-top: 24px; padding-bottom: 24px; }
+.gx-callout {
+  display: flex; gap: 20px; align-items: flex-start; padding: clamp(22px, 3.5vw, 36px); border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 40%, var(--color-border));
+  background: radial-gradient(500px 240px at 100% 0%, color-mix(in srgb, var(--color-gold) 14%, transparent), transparent 70%), var(--color-card);
+}
+.gx-callout .ic { flex: none; color: var(--color-accent); }
+.gx-callout h2 { font-size: clamp(22px, 3vw, 30px); margin: 0 0 10px; max-width: 32ch; }
+.gx-callout p { margin: 0; color: var(--color-fg-muted); font-size: 16.5px; max-width: 78ch; }
+
+.gx-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: -20px 0 24px; }
+.gx-exams { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.gx-exam { display: flex; flex-direction: column; animation: gx-in 0.3s ease both; }
+.gx-exam .tag { align-self: flex-start; }
+.gx-exam h3 { margin-top: 12px; }
+.gx-exam ul { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.gx-exam li { font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-card-alt); color: var(--color-fg); }
+
+.gx-models { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
+.gx-model { position: relative; display: flex; flex-direction: column; }
+.gx-model .ic { color: var(--color-accent); }
+.gx-model .ck { flex: 1; margin-bottom: 20px; }
+.gx-model .btn { align-self: flex-start; }
+.gx-model.best { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent), var(--ab-shadow); }
+.gx-badge {
+  position: absolute; top: 22px; right: 20px; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  background: var(--color-accent-solid); color: #fff;
+}
+
+.gx-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.gx-grid .ic { color: var(--color-accent); }
+
+.gx-split { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(28px, 5vw, 72px); align-items: start; }
+.gx-split .head { margin-bottom: 0; }
+.gx-gets { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.gx-gets > div { display: flex; gap: 14px; padding: 20px; border-radius: 16px; border: 1px solid var(--color-border); background: var(--color-card); }
+.gx-gets svg { flex: none; color: var(--color-accent); margin-top: 3px; }
+.gx-gets b { display: block; font: 600 17px var(--font-display); margin-bottom: 4px; }
+.gx-gets span { color: var(--color-fg-muted); font-size: 14.5px; }
+
+.gx-book { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: clamp(28px, 5vw, 72px); align-items: start; }
+.gx-book .head { margin-bottom: 24px; }
+.gx-promise { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.gx-promise li { display: flex; align-items: center; gap: 12px; font-weight: 600; }
+.gx-promise svg { color: var(--color-accent-emerald); flex: none; }
+.gx-form h3 { font-size: 22px; }
+.gx-pick { display: flex; flex-wrap: wrap; gap: 8px; }
+.gx-pick .chip { display: inline-flex; align-items: center; gap: 4px; }
+.gx-wide { width: 100%; }
+.gx-done { text-align: center; padding: 40px 26px; }
+.gx-done p { color: var(--color-fg-muted); margin: 8px 0 22px; }
+.gx-done-ic {
+  display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; margin-bottom: 12px;
+  background: color-mix(in srgb, var(--color-accent-emerald) 16%, transparent); color: var(--color-accent-emerald);
+}
+
+@keyframes gx-in { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .gx-exam { animation: none; } }
+
+@media (max-width: 960px) {
+  .gx-models, .gx-grid, .gx-exams { grid-template-columns: 1fr 1fr; }
+  .gx-split, .gx-book { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .gx-models, .gx-grid, .gx-gets, .gx-exams { grid-template-columns: 1fr; }
+  .gx-callout { flex-direction: column; }
+  .gx-form .two { grid-template-columns: 1fr; gap: 0; }
+  .gx-hero .row .btn { width: 100%; }
+  .gx-tabs { margin-top: -16px; }
+}
