@@ -28,6 +28,7 @@ const Talks = lazy(() => import("./pages/Talks"));
 const Faq = lazy(() => import("./pages/Faq"));
 const About = lazy(() => import("./pages/About"));
 const Junior = lazy(() => import("./pages/Junior"));
+const GovtExams = lazy(() => import("./pages/GovtExams"));
 const CourseDetail = lazy(() => import("./pages/CourseDetail"));
 const EventDetail = lazy(() => import("./pages/EventDetail"));
 
@@ -118,6 +119,7 @@ export default function App() {
           <Route path="/faq" element={lazyPage(<Faq />)} />
           <Route path="/about" element={lazyPage(<About />)} />
           <Route path="/junior" element={lazyPage(<Junior />)} />
+          <Route path="/government-exams" element={lazyPage(<GovtExams />)} />
           <Route path="/courses/tcs-codevita" element={lazyPage(<CodevitaHub />)} />
           <Route path="/courses/tcs-codevita/report/:sid" element={lazyPage(<CodevitaReport />)} />
           <Route path="/courses/tcs-codevita/learn/:id" element={lazyPage(<CodevitaLesson />)} />
