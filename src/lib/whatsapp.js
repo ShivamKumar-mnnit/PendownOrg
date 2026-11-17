@@ -4,8 +4,8 @@
 // (student, college coordinator, or admin) press Send inside WhatsApp.
 
 // Admin's WhatsApp number (digits only, with country code, no + or spaces).
-export const ADMIN_WHATSAPP = "917017903175";
-export const ADMIN_WHATSAPP_DISPLAY = "+91 70179 03175";
+export const ADMIN_WHATSAPP = "917060580713";
+export const ADMIN_WHATSAPP_DISPLAY = "+91 70605 80713";
 
 /**
  * Normalize a loosely-typed phone number into digits-only, assuming Indian
