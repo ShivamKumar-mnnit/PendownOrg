@@ -9,6 +9,7 @@ import {
   FilePlus2,
   HelpCircle,
   Home,
+  Landmark,
   Info,
   LayoutDashboard,
   LayoutGrid,
@@ -27,7 +28,7 @@ import { COMPANIES } from "../lib/companies";
 export const MENUS = [
   {
     label: "Prepare",
-    match: ["/placement", "/courses", "/mentors", "/book", "/companies", "/courses/tcs-codevita"],
+    match: ["/placement", "/courses", "/mentors", "/book", "/companies", "/courses/tcs-codevita", "/government-exams"],
     columns: [
       [
         {
@@ -39,6 +40,10 @@ export const MENUS = [
             { to: "/mentors", icon: Users, title: "Mentors", desc: "Industry mentors by domain" },
             { to: "/book", icon: Mic, title: "Mock interviews", desc: "1:1 with working professionals" },
           ],
+        },
+        {
+          title: "Government exams",
+          items: [{ to: "/government-exams", icon: Landmark, title: "Government exams", desc: "SSC, Banking, Railways, UPSC and more", tags: ["New"] }],
         },
       ],
       [
@@ -96,6 +101,7 @@ export const MENUS = [
             { to: "/colleges", icon: Building2, title: "Onboard your college", desc: "Bring a whole batch on board" },
             { to: "/workspace", icon: LayoutGrid, title: "College panel", desc: "Batches, tests and scorecards" },
             { to: "/talks", icon: CalendarDays, title: "Tech talks and events", desc: "Workshops and mock drives" },
+            { to: "/government-exams#models", icon: Landmark, title: "Govt exam preparation cell", desc: "We set up and run it on your campus", tags: ["New"] },
           ],
         },
         {

@@ -40,6 +40,7 @@ const SITE_LINKS = [
   ["/talks", "Tech talks"],
   ["/colleges", "For colleges"],
   ["/junior", "Anobyt Junior (schools)"],
+  ["/government-exams", "Government exam preparation"],
   ["/faq", "FAQ"],
 ];
 
@@ -66,6 +67,10 @@ export default function Footer() {
             <Link className="fbox" to="/about#contact">
               <b>Contact us</b>
               <span>Questions, feedback or partnerships</span>
+            </Link>
+            <Link className="fbox" to="/government-exams">
+              <b>Government exam preparation</b>
+              <span>A preparation cell for your college</span>
             </Link>
             <Link className="fbox" to="/junior">
               <b>Anobyt Junior</b>
